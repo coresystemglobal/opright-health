@@ -1,0 +1,27 @@
+{
+  "name": "hospital-management",
+  "version": "1.0.0",
+  "description": "Hospital/health facility management application",
+  "keywords": [
+    "hospital",
+    "management"
+  ],
+  "homepage": "https://github.com/stevesdiary/hospital-management#readme",
+  "bugs": {
+    "url": "https://github.com/stevesdiary/hospital-management/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stevesdiary/hospital-management.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Stephen Oyeyemi",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
