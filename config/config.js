@@ -15,10 +15,10 @@ module.exports = {
     ssl: process.env.NODE_ENV === 'production',
     dialectOptions: {
       ssl: process.env.NODE_ENV === 'production' ? {
-        require: true,
+        require: process.env.SSL,
         rejectUnauthorized: true,
         ca: process.env.DB_SSL_CA || undefined
-      } : false
+      } : true
     }
   },
   test: {
@@ -29,7 +29,7 @@ module.exports = {
     port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
     logging: false,
-    ssl: false,
+    ssl: true,
     dialectOptions: {
       ssl: false
     }

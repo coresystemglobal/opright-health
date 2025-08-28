@@ -26,7 +26,7 @@ module.exports = {
       email: {
         type: Sequelize.STRING(255),
         allowNull: false,
-        unique: true,
+        unique: 'users_email_unique',
         validate: {
           isEmail: true
         }
@@ -93,10 +93,7 @@ module.exports = {
     });
 
     // Add indexes
-    await queryInterface.addIndex('users', ['email'], {
-      unique: true,
-      name: 'users_email_unique'
-    });
+    // Unique index for 'email' is now defined in the table definition above.
 
     await queryInterface.addIndex('users', ['username'], {
       unique: true,
