@@ -1,18 +1,25 @@
 import jwt from 'jsonwebtoken';
+import { Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../types/common.types';
 
-import { Request as ExpressRequest, Response, NextFunction } from 'express';
-import { JwtPayload } from '../modules/types/type';
+interface JwtPayload {
+  userId: string;
+  email: string;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
 
-const secret: string = process.env.JWT_SECRET || 'secret';
+const secret: string = process.env.JWT_SECRET as string;
 
-const authentication = (req: ExpressRequest, res: Response, next: NextFunction) => {
+const authentication = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
 	if (!secret) {
 		throw new Error('JWT_SECRET must be defined in environment variables');
 	}
 	let token;
 	token = req.headers.authorization?.split(' ')[1] as string;
 	if (!token) {
-			res.status(401).json({ message: 'No token provided' });
+			return res.status(401).json({ message: 'No token provided' });
 		}
 	try {
 		const decoded = jwt.verify(token, secret as string) as JwtPayload;
@@ -21,7 +28,11 @@ const authentication = (req: ExpressRequest, res: Response, next: NextFunction) 
 			return;
 		}
 		
-		req.user = decoded //as  { id: string; role: UserRole };
+		req.user = {
+			userId: decoded.userId,
+			email: decoded.email,
+			role: decoded.role
+		};
 		next();
 
 	} catch (error) {
