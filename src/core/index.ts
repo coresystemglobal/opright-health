@@ -1,28 +1,113 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit';
+import cors from 'cors';
+import morgan from 'morgan';
 
 import sequelize from './database';
 import router from '../router';
+import { setupSwagger } from '../config/swagger.config';
+import { 
+  generalRateLimit, 
+  authRateLimit, 
+  paymentRateLimit,
+  apiRateLimit
+} from '../middleware/rate-limiter.middleware';
 const server = express();
 
 const port = process.env.LOCAL_PORT || 3000;
 
-server.use(express.json());
-const limiter = rateLimit ({
-  windowMs: 10 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: 'Too many request from this IP, try again after 10 minutes'
+server.use(express.json({ limit: '10mb' }));
+server.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-})
+// Apply security middleware
+// server.use(applySecurity);
 
-server.get("/home", (req, res) => {
-  res.json({ message: "Hello, World! of tech." });
+// CORS configuration
+server.use(cors({
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://your-frontend-domain.com'
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Count']
+}));
+
+// Request logging
+if (process.env.NODE_ENV !== 'test') {
+  server.use(morgan('combined'));
+}
+
+// Setup Swagger documentation
+setupSwagger(server);
+
+// Apply rate limiting - specific routes first
+server.use('/api/v1/auth', authRateLimit);
+server.use('/api/v1/payments', paymentRateLimit);
+server.use('/api/v1', apiRateLimit);
+server.use(generalRateLimit);
+
+server.get("/", (req, res) => {
+  res.json({ 
+    message: "Hospital Management System API",
+    version: "1.0.0",
+    documentation: "/api-docs",
+    endpoints: {
+      health: "/health",
+      api: "/api/v1"
+    }
+  });
 });
 
-server.use(limiter);
+server.get("/health", (req, res) => {
+  res.json({ 
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 server.use('/api/v1', router);
+
+// Error handling for security violations
+server.use((err: any, req: any, res: any, next: any) => {
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      success: false,
+      message: 'CORS policy violation',
+      error: 'CORS_ERROR'
+    });
+  }
+  
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      message: 'Request entity too large',
+      error: 'PAYLOAD_TOO_LARGE'
+    });
+  }
+  
+  console.error('[SECURITY_ERROR]', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: 'INTERNAL_ERROR'
+  });
+});
 
 const startServer = async () => {
   try {

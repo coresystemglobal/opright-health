@@ -1,12 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import { Sequelize } from 'sequelize-typescript';
-import { User } from '../modules/user/user.model';
-import { Appointment } from '../modules/appointment/appointment.model';
-import { Hospital } from '../modules/hospital/hospital.model';
-import { Doctor } from '../modules/doctor/doctor.model';
-import { Patient } from '../modules/patient/patient.model';
-import { Payment } from '../modules/payment/payment.model';
+import { models } from '../models';
 
 const sequelize = new Sequelize({
   dialect: 'postgres',
@@ -16,13 +11,14 @@ const sequelize = new Sequelize({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'your_database',
-  models: [User, Appointment, Hospital, Doctor, Patient, Payment],
-  ssl: true,
+  models,
+  ssl: process.env.NODE_ENV === 'production',
   dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false
-    },
+    ssl: process.env.NODE_ENV === 'production' ? {
+      require: process.env.SSL,
+      rejectUnauthorized: true,
+      ca: process.env.DB_SSL_CA || undefined
+    } : false,
     connectionTimeout: 30000
   },
   pool: {
