@@ -1,4 +1,4 @@
-import { Appointment } from '../models';
+import { Appointment, Patient, Doctor, User } from '../models';
 import { PaginationQuery } from '../types/common.types';
 import { PaginationUtil } from '../utils/pagination.util';
 import { ValidationUtil } from '../utils/validation.util';
@@ -49,22 +49,22 @@ export const appointmentService = {
         where: whereConditions,
         include: [
           {
-            model: 'Patient',
+            model: Patient,
             as: 'patient',
             include: [
               {
-                model: 'User',
+                model: User,
                 as: 'user',
                 attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
               }
             ]
           },
           {
-            model: 'Doctor',
+            model: Doctor,
             as: 'doctor',
             include: [
               {
-                model: 'User',
+                model: User,
                 as: 'user',
                 attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
               }
@@ -97,22 +97,22 @@ export const appointmentService = {
       const appointment = await Appointment.findByPk(appointmentId, {
         include: [
           {
-            model: 'Patient',
+            model: Patient,
             as: 'patient',
             include: [
               {
-                model: 'User',
+                model: User,
                 as: 'user',
                 attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
               }
             ]
           },
           {
-            model: 'Doctor',
+            model: Doctor,
             as: 'doctor',
             include: [
               {
-                model: 'User',
+                model: User,
                 as: 'user',
                 attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
               }
@@ -153,11 +153,11 @@ export const appointmentService = {
         where: whereConditions,
         include: [
           {
-            model: 'Doctor',
+            model: Doctor,
             as: 'doctor',
             include: [
               {
-                model: 'User',
+                model: User,
                 as: 'user',
                 attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
               }
@@ -213,11 +213,11 @@ export const appointmentService = {
         where: whereConditions,
         include: [
           {
-            model: 'Patient',
+            model: Patient,
             as: 'patient',
             include: [
               {
-                model: 'User',
+                model: User,
                 as: 'user',
                 attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
               }
@@ -438,6 +438,268 @@ export const appointmentService = {
       return true;
     } catch (error) {
       console.error('Delete appointment error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Check doctor availability for a specific date and time
+   */
+  checkDoctorAvailability: async (doctorId: string, appointmentDate: Date, appointmentTime: string, duration: number = 30, excludeAppointmentId?: string) => {
+    try {
+      if (!ValidationUtil.isValidUUID(doctorId)) {
+        throw new Error('Invalid doctor ID format');
+      }
+
+      // Get doctor details to check working hours and days
+      const doctor = await Doctor.findByPk(doctorId);
+      if (!doctor) {
+        throw new Error('Doctor not found');
+      }
+
+      // Check if doctor is available
+      if (!doctor.is_available) {
+        return {
+          available: false,
+          reason: 'Doctor is not currently available'
+        };
+      }
+
+      // Check if it's a working day
+      const dayOfWeek = appointmentDate.getDay();
+      if (!doctor.working_days?.includes(dayOfWeek)) {
+        return {
+          available: false,
+          reason: 'Doctor does not work on this day'
+        };
+      }
+
+      // Check working hours
+      if (!doctor.isWithinWorkingHours(appointmentTime)) {
+        return {
+          available: false,
+          reason: 'Appointment time is outside doctor working hours'
+        };
+      }
+
+      // Calculate appointment end time
+      const [hours, minutes] = appointmentTime.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes + duration;
+      const endHours = Math.floor(totalMinutes / 60);
+      const endMinutes = totalMinutes % 60;
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+
+      // Check for conflicting appointments
+      const whereConditions: any = {
+        doctor_id: doctorId,
+        appointment_date: appointmentDate,
+        status: ['scheduled', 'confirmed', 'in_progress']
+      };
+
+      if (excludeAppointmentId) {
+        whereConditions.id = { $ne: excludeAppointmentId };
+      }
+
+      const conflictingAppointments = await Appointment.findAll({
+        where: whereConditions
+      });
+
+      // Check for time conflicts
+      for (const appointment of conflictingAppointments) {
+        const existingStart = appointment.appointment_time;
+        const existingEnd = appointment.end_time;
+
+        // Check if times overlap
+        if ((appointmentTime < existingEnd && endTime > existingStart)) {
+          return {
+            available: false,
+            reason: 'Doctor has a conflicting appointment at this time',
+            conflictingAppointment: {
+              id: appointment.id,
+              time: existingStart,
+              duration: appointment.duration_minutes
+            }
+          };
+        }
+      }
+
+      return {
+        available: true,
+        reason: 'Doctor is available for this time slot'
+      };
+    } catch (error) {
+      console.error('Check doctor availability error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get available time slots for a doctor on a specific date
+   */
+  getDoctorAvailableSlots: async (doctorId: string, date: Date, duration: number = 30) => {
+    try {
+      if (!ValidationUtil.isValidUUID(doctorId)) {
+        throw new Error('Invalid doctor ID format');
+      }
+
+      const doctor = await Doctor.findByPk(doctorId);
+      if (!doctor) {
+        throw new Error('Doctor not found');
+      }
+
+      if (!doctor.is_available) {
+        return {
+          availableSlots: [],
+          message: 'Doctor is not currently available'
+        };
+      }
+
+      // Check if it's a working day
+      const dayOfWeek = date.getDay();
+      if (!doctor.working_days?.includes(dayOfWeek)) {
+        return {
+          availableSlots: [],
+          message: 'Doctor does not work on this day'
+        };
+      }
+
+      // Get all possible time slots
+      const allSlots = doctor.getAvailableTimeSlots(date);
+
+      // Get existing appointments for the day
+      const existingAppointments = await Appointment.findAll({
+        where: {
+          doctor_id: doctorId,
+          appointment_date: date,
+          status: ['scheduled', 'confirmed', 'in_progress']
+        },
+        order: [['appointment_time', 'ASC']]
+      });
+
+      // Filter out conflicting slots
+      const availableSlots = allSlots.filter(slot => {
+        const [hours, minutes] = slot.split(':').map(Number);
+        const totalMinutes = hours * 60 + minutes + duration;
+        const endHours = Math.floor(totalMinutes / 60);
+        const endMinutes = totalMinutes % 60;
+        const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+
+        // Check against existing appointments
+        return !existingAppointments.some(appointment => {
+          const existingStart = appointment.appointment_time;
+          const existingEnd = appointment.end_time;
+          return (slot < existingEnd && endTime > existingStart);
+        });
+      });
+
+      return {
+        availableSlots,
+        workingHours: {
+          start: doctor.working_hours_start,
+          end: doctor.working_hours_end
+        },
+        slotDuration: duration,
+        date: date.toISOString().split('T')[0]
+      };
+    } catch (error) {
+      console.error('Get doctor available slots error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get doctor schedule for a date range
+   */
+  getDoctorSchedule: async (doctorId: string, startDate: Date, endDate: Date) => {
+    try {
+      if (!ValidationUtil.isValidUUID(doctorId)) {
+        throw new Error('Invalid doctor ID format');
+      }
+
+      const doctor = await Doctor.findByPk(doctorId, {
+        include: [{
+          model: User,
+          as: 'user',
+          attributes: ['first_name', 'last_name', 'email']
+        }]
+      });
+
+      if (!doctor) {
+        throw new Error('Doctor not found');
+      }
+
+      // Get appointments in the date range
+      const appointments = await Appointment.findAll({
+        where: {
+          doctor_id: doctorId,
+          appointment_date: {
+            $gte: startDate,
+            $lte: endDate
+          },
+          status: ['scheduled', 'confirmed', 'in_progress', 'completed']
+        },
+        include: [{
+          model: Patient,
+          as: 'patient',
+          attributes: ['id', 'first_name', 'last_name', 'mrn'],
+          include: [{
+            model: User,
+            as: 'user',
+            attributes: ['email', 'phone']
+          }]
+        }],
+        order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
+      });
+
+      // Group appointments by date
+      const schedule: any = {};
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayOfWeek = currentDate.getDay();
+        
+        schedule[dateStr] = {
+          date: dateStr,
+          dayOfWeek,
+          isWorkingDay: doctor.working_days?.includes(dayOfWeek) || false,
+          workingHours: doctor.working_days?.includes(dayOfWeek) ? {
+            start: doctor.working_hours_start,
+            end: doctor.working_hours_end
+          } : null,
+          appointments: appointments.filter(apt => 
+            apt.appointment_date.toISOString().split('T')[0] === dateStr
+          ),
+          totalAppointments: 0,
+          availableSlots: []
+        };
+
+        schedule[dateStr].totalAppointments = schedule[dateStr].appointments.length;
+        
+        // Calculate available slots if it's a working day
+        if (schedule[dateStr].isWorkingDay && doctor.is_available) {
+          const availableSlots = await appointmentService.getDoctorAvailableSlots(doctorId, currentDate);
+          schedule[dateStr].availableSlots = availableSlots.availableSlots;
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return {
+        doctor: {
+          id: doctor.id,
+          name: doctor.full_name,
+          specialization: doctor.specialization,
+          isAvailable: doctor.is_available
+        },
+        schedule,
+        dateRange: {
+          start: startDate.toISOString().split('T')[0],
+          end: endDate.toISOString().split('T')[0]
+        }
+      };
+    } catch (error) {
+      console.error('Get doctor schedule error:', error);
       throw error;
     }
   }
