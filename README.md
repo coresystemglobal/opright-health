@@ -27,6 +27,13 @@ The system supports multiple payment processors:
    - Webhook support for payment status updates
    - Refund processing
 
+For detailed documentation and implementation guidance, see:
+- [Payment Integration Documentation](docs/payment-integration.md)
+
+### API Integration
+
+The payment system provides RESTful API endpoints for backend integration. Frontend applications should integrate through these API endpoints rather than direct payment processor integration.
+
 ### Configuration
 
 To use the payment processors, add the following environment variables to your `.env` file:
