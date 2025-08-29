@@ -1,4 +1,7 @@
 node_modules
-
+coverage
 .env
-
+docs
+/tests
+dist
+build

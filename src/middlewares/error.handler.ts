@@ -1,4 +1,4 @@
-import yup from 'yup';
+// Error handler utility - no external dependencies needed
 
 interface ErrorResponse {
   statusCode: number;

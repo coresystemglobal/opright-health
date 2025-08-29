@@ -23,7 +23,7 @@ async function initializeRedisConnection(): Promise<Redis> {
         console.log(`Retrying redis connection in ${delay}ms... (Attempt ${times}/${MAX_RETRIES})`);
         return delay;
       },
-      reconnectOnError(err) {
+      reconnectOnError(err: { message: string | string[]; }) {
         const targetError = 'READONLY';
         if (err.message.includes(targetError)) {
           return true;
