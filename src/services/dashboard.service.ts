@@ -293,7 +293,7 @@ export const dashboardService = {
             patient: `${apt.patient?.first_name} ${apt.patient?.last_name}`,
             doctor: apt.doctor?.user ? `Dr. ${apt.doctor.user.first_name} ${apt.doctor.user.last_name}` : 'Unknown',
             status: apt.status,
-            createdAt: apt.created_at
+            createdAt: apt.createdAt
           })),
           recentPayments: recentPayments.map(payment => ({
             id: payment.id,
@@ -302,7 +302,7 @@ export const dashboardService = {
             status: payment.payment_status,
             patient: payment.invoice?.patient ? 
               `${payment.invoice.patient.first_name} ${payment.invoice.patient.last_name}` : 'Unknown',
-            createdAt: payment.created_at
+            createdAt: payment.createdAt
           })),
           recentRegistrations: recentRegistrations.map(patient => ({
             id: patient.id,
@@ -310,7 +310,7 @@ export const dashboardService = {
             mrn: patient.mrn,
             email: patient.user?.email,
             phone: patient.user?.phone,
-            createdAt: patient.created_at
+            createdAt: patient.createdAt
           }))
         }
       };
