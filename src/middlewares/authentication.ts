@@ -24,8 +24,7 @@ const authentication = (req: AuthenticatedRequest, res: Response, next: NextFunc
 	try {
 		const decoded = jwt.verify(token, secret as string) as JwtPayload;
 		if (!decoded) {
-			res.status(401).json({ message: 'Unauthorized' });
-			return;
+			return res.status(401).json({ message: 'Unauthorized' });
 		}
 		
 		req.user = {
@@ -37,7 +36,7 @@ const authentication = (req: AuthenticatedRequest, res: Response, next: NextFunc
 
 	} catch (error) {
 		console.error('AUTHENTICATION ERROR:', error);
-		res.status(401).send({ error: 'Please authenticate.' });
+		return res.status(401).send({ error: 'Please authenticate.' });
 	}
 };
 export default authentication;
