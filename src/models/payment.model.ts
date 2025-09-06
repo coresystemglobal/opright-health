@@ -268,6 +268,11 @@ export class Payment extends Model {
   })
   authorization_code?: string;
 
+  // Timestamp fields (provided by Sequelize with underscored: true)
+  declare createdAt: Date;
+  declare updatedAt: Date;
+  declare deletedAt?: Date;
+
   // Virtual fields
   get is_successful(): boolean {
     return this.payment_status === PaymentStatus.COMPLETED;
