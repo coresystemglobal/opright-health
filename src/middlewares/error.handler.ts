@@ -11,13 +11,13 @@ interface ErrorResponse {
 }
 
 export const handleError = (error: unknown): ErrorResponse => {
-  if (error instanceof yup.ValidationError) {
+  if (error instanceof Error && error.name === 'ValidationError') {
     return {
       statusCode: 400,
       status: 'error',
       message: 'Validation failed',
       data: {
-        errors: (error as yup.ValidationError).errors
+        errors: [(error as any).errors || error.message]
       }
     };
   }
