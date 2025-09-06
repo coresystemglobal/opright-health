@@ -332,11 +332,13 @@ export const invoiceService = {
       const newBalance = invoice.total_amount - newPaidAmount;
 
       // Update payment status
-      let newPaymentStatus: PaymentStatus = invoice.payment_status;
+      let newPaymentStatus: PaymentStatus;
       if (newBalance <= 0) {
         newPaymentStatus = PaymentStatus.PAID;
       } else if (newPaidAmount > 0) {
         newPaymentStatus = PaymentStatus.PARTIAL;
+      } else {
+        newPaymentStatus = PaymentStatus.PENDING;
       }
 
       // Record payment transaction
