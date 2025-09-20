@@ -8,6 +8,7 @@ import paymentRouter from './routes/payment.route';
 import dashboardRouter from './routes/dashboard.route';
 import reportsRouter from './routes/reports.route';
 import authRouter from './routes/auth.route';
+import laboratoryRouter from './routes/laboratory.route';
 
 // Initialize router
 const router = Router();
@@ -25,5 +26,6 @@ router.use('/invoices', invoiceRouter);
 router.use('/payments', paymentRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/reports', reportsRouter);
+router.use('/laboratory', laboratoryRouter);
 
 export default router;
