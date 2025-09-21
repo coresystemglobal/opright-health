@@ -6,6 +6,9 @@ export { Appointment, AppointmentStatus, AppointmentType, Priority } from './app
 export { Invoice, PaymentStatus as InvoicePaymentStatus, InvoiceType, InvoiceLineItem } from './invoice.model';
 export { Payment, PaymentMethod, PaymentStatus } from './payment.model';
 export { Hospital, HospitalType, AccreditationStatus, ContactPerson, OperatingHours, DayHours } from './hospital.model';
+export { LabTest } from './lab-test.model';
+export { TestOrder } from './test-order.model';
+export { TestResult } from './test-result.model';
 
 // Re-export model instances for database setup
 import { User } from './user.model';
@@ -15,6 +18,9 @@ import { Appointment } from './appointment.model';
 import { Invoice } from './invoice.model';
 import { Payment } from './payment.model';
 import { Hospital } from './hospital.model';
+import { LabTest } from './lab-test.model';
+import { TestOrder } from './test-order.model';
+import { TestResult } from './test-result.model';
 
 export const models = [
   User,
@@ -23,7 +29,10 @@ export const models = [
   Appointment,
   Invoice,
   Payment,
-  Hospital
+  Hospital,
+  LabTest,
+  TestOrder,
+  TestResult
 ];
 
 export default models;
