@@ -31,7 +31,12 @@ export enum AppointmentType {
   EMERGENCY = 'emergency',
   ROUTINE_CHECKUP = 'routine_checkup',
   CONSULTATION = 'consultation',
-  PROCEDURE = 'procedure'
+  PROCEDURE = 'procedure',
+  LAB_TEST = 'lab_test',
+  PATHOLOGY = 'pathology',
+  RADIOLOGY_IMAGING = 'radiology_imaging',
+  BLOOD_WORK = 'blood_work',
+  SPECIMEN_COLLECTION = 'specimen_collection'
 }
 
 export enum Priority {
