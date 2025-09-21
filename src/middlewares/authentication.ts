@@ -32,7 +32,7 @@ const authentication = (req: AuthenticatedRequest, res: Response, next: NextFunc
 			email: decoded.email,
 			role: decoded.role
 		};
-		next();
+		return next();
 
 	} catch (error) {
 		console.error('AUTHENTICATION ERROR:', error);
