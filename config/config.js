@@ -12,13 +12,11 @@ module.exports = {
     logging: console.log,
     migrationStorageTableName: 'sequelize_meta',
     seederStorageTableName: 'sequelize_data',
-    ssl: process.env.NODE_ENV === 'production',
     dialectOptions: {
-      ssl: process.env.NODE_ENV === 'production' ? {
-        require: process.env.SSL,
-        rejectUnauthorized: true,
-        ca: process.env.DB_SSL_CA || undefined
-      } : true
+      ssl: process.env.SSL === 'true' ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
     }
   },
   test: {
