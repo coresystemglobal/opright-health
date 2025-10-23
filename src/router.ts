@@ -20,6 +20,9 @@ import fhirRouter from './routes/fhir.route';
 import mobileRouter from './routes/mobile.route';
 import billingRouter from './routes/billing.route';
 import advancedRouter from './routes/advanced-features.route';
+import faqRouter from './routes/faq.route';
+import queueRouter from './routes/queue.route';
+import ambulanceRouter from './routes/ambulance.route';
 
 // Initialize router
 const router = Router();
@@ -55,5 +58,8 @@ router.use('/api/fhir', fhirRouter);
 router.use('/api/mobile', mobileRouter);
 router.use('/api/billing', billingRouter);
 router.use('/api/advanced', advancedRouter);
+router.use('/api/faqs', faqRouter);
+router.use('/api/queue', queueRouter);
+router.use('/api/ambulance', ambulanceRouter);
 
 export default router;
