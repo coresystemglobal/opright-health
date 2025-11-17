@@ -4,7 +4,7 @@ import morgan from 'morgan';
 
 import sequelize from './database';
 import router from '../router';
-import { setupSwagger } from '../config/swagger.config';
+import { specs, swaggerUi, swaggerUiOptions } from '../config/swagger.config';
 import { 
   generalRateLimit, 
   authRateLimit, 
@@ -52,7 +52,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Setup Swagger documentation
-setupSwagger(server);
+server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerUiOptions));
 
 // Apply rate limiting - specific routes first
 server.use('/api/v1/auth', authRateLimit);
