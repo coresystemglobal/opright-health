@@ -5,14 +5,25 @@ import {
   DataType, 
   HasMany,
   HasOne,
-  ForeignKey
+  ForeignKey,
+  BelongsTo
 } from 'sequelize-typescript';
+import { Role } from './role.model';
+import { Tenant } from './tenant.model';
 
 export enum UserRole {
   PATIENT = 'patient',
+  SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   STAFF = 'staff',
-  DOCTOR = 'doctor'
+  DOCTOR = 'doctor',
+  VISITOR = 'visitor',
+  NURSE = 'nurse',
+  LABORATORY = 'laboratory',
+  PHARMACY = 'pharmacy',
+  ACCOUNTANT = 'accountant',
+  RECEPTIONIST = 'receptionist',
+  OTHER = 'other'
 }
 
 @Table({
@@ -61,11 +72,27 @@ export class User extends Model {
   })
   password!: string;
 
+  @ForeignKey(() => Role)
   @Column({
-    type: DataType.ENUM(...Object.values(UserRole)),
-    defaultValue: UserRole.PATIENT
+    type: DataType.UUID,
+    allowNull: true
   })
-  role?: UserRole;
+  role_id?: string;
+
+  @BelongsTo(() => Role)
+  role?: Role;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
+
+
 
   @Column({
     type: DataType.STRING
@@ -122,5 +149,10 @@ export class User extends Model {
     allowNull: true
   })
   reset_token_expires?: Date;
-  // verified_at: Date;
+
+  declare createdAt: Date;
+  declare updatedAt: Date;
+  declare deletedAt?: Date;
 }
+
+
