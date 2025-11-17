@@ -90,8 +90,7 @@ export const authService = {
 
       const tokenPayload = {
         userId: user.id,
-        email: user.email,
-        role: user.role
+        email: user.email
       };
       
       const accessToken = signToken(tokenPayload, jwtSecret, { expiresIn: jwtExpiry });
@@ -102,7 +101,6 @@ export const authService = {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        role: user.role,
         phone: user.phone,
         verified: user.verified,
         is_active: user.is_active
@@ -170,7 +168,6 @@ export const authService = {
         email: email.toLowerCase().trim(),
         password: hashedPassword,
         phone: phone?.trim(),
-        role: role || 'patient',
         verified: false,
         is_active: true
       });
@@ -180,7 +177,6 @@ export const authService = {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        role: user.role,
         phone: user.phone,
         verified: user.verified,
         is_active: user.is_active
@@ -234,8 +230,7 @@ export const authService = {
 
       const tokenPayload = {
         userId: user.id,
-        email: user.email,
-        role: user.role
+        email: user.email
       };
       
       const newAccessToken = signToken(tokenPayload, jwtSecret, { expiresIn: jwtExpiry });

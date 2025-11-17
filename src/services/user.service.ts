@@ -1,4 +1,4 @@
-import { User, UserRole } from '../models';
+import { User } from '../models';
 import bcrypt from 'bcryptjs';
 import { PaginationQuery } from '../types/common.types';
 import { PaginationUtil } from '../utils/pagination.util';
@@ -10,7 +10,7 @@ interface CreateUserData {
   email: string;
   password: string;
   phone?: string;
-  role: UserRole;
+
 }
 
 interface UpdateUserData {
@@ -18,7 +18,7 @@ interface UpdateUserData {
   last_name?: string;
   email?: string;
   phone?: string;
-  role?: UserRole;
+
   is_active?: boolean;
 }
 
@@ -96,10 +96,10 @@ export const userService = {
 
   createUser: async (userData: CreateUserData) => {
     try {
-      const { first_name, last_name, email, password, phone, role } = userData;
+      const { first_name, last_name, email, password, phone } = userData;
 
       // Validate required fields
-      const requiredFields = ['first_name', 'last_name', 'email', 'password', 'role'];
+      const requiredFields = ['first_name', 'last_name', 'email', 'password'];
       const missingFields = ValidationUtil.validateRequiredFields(userData, requiredFields);
       
       if (missingFields.length > 0) {
@@ -124,11 +124,6 @@ export const userService = {
 
       if (!ValidationUtil.isValidName(last_name)) {
         throw new Error('Invalid last name format');
-      }
-
-      // Validate role
-      if (!ValidationUtil.isValidEnumValue(role, UserRole)) {
-        throw new Error('Invalid role');
       }
 
       // Validate phone if provided
@@ -156,7 +151,6 @@ export const userService = {
         email: email.toLowerCase().trim(),
         password: hashedPassword,
         phone: phone?.trim(),
-        role,
         verified: true, // Admin-created users are auto-verified
         is_active: true
       });
@@ -167,7 +161,6 @@ export const userService = {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        role: user.role,
         phone: user.phone,
         verified: user.verified,
         is_active: user.is_active,
@@ -198,9 +191,9 @@ export const userService = {
         throw new Error('You can only update your own profile');
       }
 
-      // Only admins can change roles and activation status
-      if ((updates.role || updates.is_active !== undefined) && currentUserRole !== 'admin') {
-        throw new Error('Only administrators can change user roles or activation status');
+      // Only admins can change activation status
+      if (updates.is_active !== undefined && currentUserRole !== 'admin') {
+        throw new Error('Only administrators can change user activation status');
       }
 
       // Validate updates
@@ -218,10 +211,6 @@ export const userService = {
 
       if (updates.phone && !ValidationUtil.isValidPhoneNumber(updates.phone)) {
         throw new Error('Invalid phone number format');
-      }
-
-      if (updates.role && !ValidationUtil.isValidEnumValue(updates.role, UserRole)) {
-        throw new Error('Invalid role');
       }
 
       // Check if email is already taken by another user
@@ -250,7 +239,6 @@ export const userService = {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        role: user.role,
         phone: user.phone,
         verified: user.verified,
         is_active: user.is_active,
@@ -339,19 +327,7 @@ export const userService = {
     }
   },
 
-  getUserRoles: async () => {
-    try {
-      const roles = Object.values(UserRole).map(role => ({
-        value: role,
-        label: role.charAt(0).toUpperCase() + role.slice(1)
-      }));
 
-      return roles;
-    } catch (error) {
-      console.error('Get user roles error:', error);
-      throw error;
-    }
-  },
 
   searchUsers: async (params: SearchUsersParams) => {
     try {
