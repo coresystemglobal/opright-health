@@ -469,3 +469,66 @@ export const sanitizeInput = (input: any): any => {
   
   return input;
 };
+
+// RBAC validation schemas
+export const rbacValidation = {
+  createRole: Joi.object({
+    role: Joi.string().valid('visitor', 'manager', 'admin', 'security', 'super_admin', 'doctor', 'patient').required(),
+    description: commonSchemas.text.optional()
+  }),
+
+  assignPermissions: Joi.object({
+    permissionIds: Joi.array().items(commonSchemas.uuid).min(1).required()
+  }),
+
+  createPermission: Joi.object({
+    name: Joi.string().max(100).trim().required(),
+    resource: Joi.string().max(50).trim().required(),
+    action: Joi.string().max(50).trim().required(),
+    description: commonSchemas.text.optional()
+  }),
+
+  updatePermission: Joi.object({
+    name: Joi.string().max(100).trim().optional(),
+    resource: Joi.string().max(50).trim().optional(),
+    action: Joi.string().max(50).trim().optional(),
+    description: commonSchemas.text.optional()
+  }),
+
+  assignRoleToUser: Joi.object({
+    userId: commonSchemas.uuid,
+    roleId: commonSchemas.uuid
+  })
+};
+
+// File upload validation schemas
+export const fileValidation = {
+  upload: Joi.object({
+    file_type: Joi.string().valid('image', 'document', 'report', 'prescription', 'lab_result').optional(),
+    folder: Joi.string().max(50).optional()
+  })
+};
+
+// Tenant validation schemas
+export const tenantValidation = {
+  create: Joi.object({
+    name: Joi.string().max(200).required(),
+    subdomain: Joi.string().alphanum().min(3).max(100).required(),
+    contact_email: commonSchemas.email.required(),
+    contact_phone: commonSchemas.phone.required(),
+    address: commonSchemas.longText.optional()
+  })
+};
+
+// Audit validation schemas
+export const auditValidation = {
+  search: Joi.object({
+    userId: commonSchemas.optionalUuid,
+    resource: Joi.string().max(100).optional(),
+    action: Joi.string().valid('create', 'update', 'delete', 'login', 'logout', 'access', 'export').optional(),
+    startDate: commonSchemas.date.optional(),
+    endDate: commonSchemas.date.optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(50)
+  })
+};
