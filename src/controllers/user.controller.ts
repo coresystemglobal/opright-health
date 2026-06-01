@@ -123,15 +123,7 @@ export class UserController {
     }
   }
 
-  static async getUserRoles(req: Request, res: Response) {
-    try {
-      const roles = await userService.getUserRoles();
-      return ResponseUtil.success(res, roles, 'User roles retrieved successfully');
-    } catch (error) {
-      console.error('Get user roles error:', error);
-      return ResponseUtil.error(res, 'Failed to retrieve user roles');
-    }
-  }
+
 
   static async searchUsers(req: Request, res: Response) {
     try {

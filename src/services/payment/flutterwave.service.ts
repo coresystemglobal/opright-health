@@ -68,13 +68,15 @@ class FlutterwavePaymentProcessor {
 
       const response = await axios.post(`${this.baseUrl}/payments`, requestBody, config);
 
-      if (response.data.status === 'success') {
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success') {
         return {
           statusCode: 200,
           status: 'success',
           message: 'Flutterwave payment initiated successfully',
           data: {
-            authorization_url: response.data.data.link,
+            authorization_url: responseData.data.link,
             reference: txRef
           }
         };
@@ -83,7 +85,7 @@ class FlutterwavePaymentProcessor {
           statusCode: 400,
           status: 'error',
           message: 'Failed to initiate Flutterwave payment',
-          data: response.data
+          data: responseData
         };
       }
     } catch (error) {
@@ -110,20 +112,21 @@ class FlutterwavePaymentProcessor {
       };
 
       const response = await axios.get(`${this.baseUrl}/transactions/${transactionId}/verify`, config);
-
-      if (response.data.status === 'success' && response.data.data.status === 'successful') {
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success' && responseData.data.status === 'successful') {
         return {
           statusCode: 200,
           status: 'success',
           message: 'Payment verified successfully',
           data: {
-            transaction_id: response.data.data.id,
-            tx_ref: response.data.data.tx_ref,
-            amount: response.data.data.amount,
-            currency: response.data.data.currency,
-            status: response.data.data.status,
-            payment_type: response.data.data.payment_type,
-            customer: response.data.data.customer
+            transaction_id: responseData.data.id,
+            tx_ref: responseData.data.tx_ref,
+            amount: responseData.data.amount,
+            currency: responseData.data.currency,
+            status: responseData.data.status,
+            payment_type: responseData.data.payment_type,
+            customer: responseData.data.customer
           }
         };
       } else {
@@ -131,7 +134,7 @@ class FlutterwavePaymentProcessor {
           statusCode: 400,
           status: 'error',
           message: 'Payment verification failed',
-          data: response.data
+          data: responseData
         };
       }
     } catch (error) {
@@ -158,20 +161,21 @@ class FlutterwavePaymentProcessor {
       };
 
       const response = await axios.get(`${this.baseUrl}/transactions/verify_by_reference?tx_ref=${txRef}`, config);
-
-      if (response.data.status === 'success' && response.data.data.status === 'successful') {
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success' && responseData.data.status === 'successful') {
         return {
           statusCode: 200,
           status: 'success',
           message: 'Payment verified successfully',
           data: {
-            transaction_id: response.data.data.id,
-            tx_ref: response.data.data.tx_ref,
-            amount: response.data.data.amount,
-            currency: response.data.data.currency,
-            status: response.data.data.status,
-            payment_type: response.data.data.payment_type,
-            customer: response.data.data.customer
+            transaction_id: responseData.data.id,
+            tx_ref: responseData.data.tx_ref,
+            amount: responseData.data.amount,
+            currency: responseData.data.currency,
+            status: responseData.data.status,
+            payment_type: responseData.data.payment_type,
+            customer: responseData.data.customer
           }
         };
       } else {
@@ -179,7 +183,7 @@ class FlutterwavePaymentProcessor {
           statusCode: 400,
           status: 'error',
           message: 'Payment verification failed',
-          data: response.data
+          data: responseData
         };
       }
     } catch (error) {
@@ -269,16 +273,17 @@ class FlutterwavePaymentProcessor {
       }
 
       const response = await axios.post(`${this.baseUrl}/transactions/${transactionId}/refund`, requestBody, config);
-
-      if (response.data.status === 'success') {
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success') {
         return {
           statusCode: 200,
           status: 'success',
           message: 'Refund initiated successfully',
           data: {
-            refund_id: response.data.data.id,
-            amount: response.data.data.amount,
-            status: response.data.data.status,
+            refund_id: responseData.data.id,
+            amount: responseData.data.amount,
+            status: responseData.data.status,
             transaction_id: transactionId
           }
         };
@@ -287,7 +292,7 @@ class FlutterwavePaymentProcessor {
           statusCode: 400,
           status: 'error',
           message: 'Failed to initiate refund',
-          data: response.data
+          data: responseData
         };
       }
     } catch (error) {

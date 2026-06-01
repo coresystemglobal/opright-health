@@ -62,7 +62,12 @@ module.exports = {
           'emergency',
           'routine_checkup',
           'consultation',
-          'procedure'
+          'procedure',
+          'lab_test',
+          'pathology',
+          'radiology_imaging',
+          'blood_work',
+          'specimen_collection'
         ),
         allowNull: false,
         defaultValue: 'consultation'

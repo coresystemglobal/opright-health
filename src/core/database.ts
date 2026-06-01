@@ -12,12 +12,10 @@ const sequelize = new Sequelize({
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'your_database',
   models,
-  ssl: process.env.NODE_ENV === 'production',
   dialectOptions: {
-    ssl: process.env.NODE_ENV === 'production' ? {
-      require: process.env.SSL,
-      rejectUnauthorized: true,
-      ca: process.env.DB_SSL_CA || undefined
+    ssl: process.env.SSL === 'true' ? {
+      require: true,
+      rejectUnauthorized: false
     } : false,
     connectionTimeout: 30000
   },

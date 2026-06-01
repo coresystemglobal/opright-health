@@ -1,136 +1,210 @@
-# Hospital Management System
+# MediCore HMS — Backend API
 
-A comprehensive hospital management system with patient management, appointment scheduling, billing, and payment processing.
+The core backend service for the MediCore Hospital Management System. Powers all clinical, operational, and administrative features across the platform.
 
-## Payment Integration
+**Role in the monorepo:**
+- `hms/` → **This repo** — Express REST API (api.yourapp.com)
+- `Health-bridge/` → Hospital web app (app.yourapp.com)
+- `healthbridge/` → Public landing page (yourapp.com)
 
-The system supports multiple payment processors:
+---
 
-### Supported Payment Providers
+## Tech Stack
 
-1. **Stripe**
-   - Credit/debit card payments
-   - Webhook support for payment status updates
-   - Refund processing
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js 18+ |
+| Framework | Express 5 |
+| Language | TypeScript 5 |
+| Database | PostgreSQL + Sequelize ORM |
+| Cache | Redis (ioredis) |
+| Message Queue | RabbitMQ (amqplib) |
+| Real-time | Socket.IO |
+| Auth | JWT + bcrypt |
+| Payments | Stripe, Paystack, Flutterwave |
+| File Storage | Backblaze B2 (S3-compatible) |
+| Email | Nodemailer + Brevo SMTP |
+| API Docs | Swagger / OpenAPI |
+| Tests | Jest + Supertest |
+| Security | Helmet, express-rate-limit, XSS sanitizer |
 
-2. **Paystack**
-   - Credit/debit card payments
-   - Bank transfers
-   - USSD payments
-   - Webhook support for payment status updates
-   - Refund processing
+---
 
-3. **Flutterwave**
-   - Credit/debit card payments
-   - Bank transfers
-   - Mobile money
-   - Webhook support for payment status updates
-   - Refund processing
+## Feature Modules
 
-For detailed documentation and implementation guidance, see:
-- [Payment Integration Documentation](docs/payment-integration.md)
+### Clinical
+| Module | Endpoints | Description |
+|--------|-----------|-------------|
+| Patients | `GET POST PUT DELETE /api/patients` | Patient profiles, MRN generation, medical history |
+| Doctors | `GET POST PUT DELETE /api/doctors` | Doctor profiles, specializations, availability |
+| Appointments | `GET POST PUT DELETE /api/appointments` | Scheduling, waitlist, conflict detection, time slots |
+| Triage | `POST /api/triage/start` `POST /api/triage/answer` `GET /api/triage/result/:id` | Adaptive symptom checker — rule engine scores answers to produce low/moderate/urgent/emergency risk levels with clinical recommendations |
+| Laboratory | `GET POST PUT DELETE /api/laboratory` | Test catalog, orders, results, Quest/LabCorp integration |
+| Medications | `GET POST PUT DELETE /api/medications` | Prescriptions, dosage, frequency, route, active tracking |
+| Allergies | via EMR | Allergen type, severity, reactions |
+| Vital Signs | via EMR | BP, pulse, temperature, SpO2, weight tracking |
+| Clinical Notes | via EMR | SOAP notes, follow-up, discharge notes |
+| Medical Records | via EMR | Structured patient history |
+| ICD-10 Codes | via service | Diagnosis code lookup |
+| FHIR R4 | `GET POST /api/fhir` | Patient and Appointment resources, bidirectional conversion |
+| Telemedicine | via service | Video sessions, in-session chat, prescription issuance |
+| Family Members | `GET POST PUT DELETE /api/family` | Per-patient family health tracking |
+| Doctor Reviews | `GET POST DELETE /api/reviews` | Patient ratings, aggregate avg, one review per doctor per user |
 
-### API Integration
+### Operations
+| Module | Endpoints | Description |
+|--------|-----------|-------------|
+| Queue | `GET POST PATCH /api/queue` | Patient check-in, call-next, priority, analytics |
+| Ambulance | `GET POST PATCH /api/ambulance` | Dispatch, fleet tracking, status lifecycle |
+| Departments | `GET POST PUT DELETE /api/departments` | Dept management, staff assignment, bed tracking |
+| Hospitals | `GET POST PUT DELETE /api/hospitals` | Facility management, accreditation, status |
 
-The payment system provides RESTful API endpoints for backend integration. Frontend applications should integrate through these API endpoints rather than direct payment processor integration.
+### Business
+| Module | Endpoints | Description |
+|--------|-----------|-------------|
+| Invoices | `GET POST PUT DELETE /api/invoices` | Invoice generation, line items, status tracking |
+| Payments | `GET POST /api/payments` | Stripe, Paystack, Flutterwave — initiate, verify, refund, webhooks |
+| Billing | `GET POST /api/billing` | 4-tier subscription plans, usage tracking, feature gating |
+| Dashboard | `GET /api/dashboard` | KPI metrics, summary statistics |
+| Reports | `GET POST /api/reports` | 9 report types, custom builder, PDF/CSV/Excel export |
+| Advanced Analytics | `GET /api/advanced` | ML predictions (no-show, risk score), IoT device data, trend analysis |
+| Workflow Automation | via service | 5 trigger types × 6 action types, delayed scheduling |
 
-### Configuration
+### Platform
+| Module | Endpoints | Description |
+|--------|-----------|-------------|
+| Auth | `POST /auth/login` `POST /auth/register` `POST /auth/refresh` etc. | JWT access + refresh tokens, email verification, password reset |
+| Users | `GET POST PUT DELETE /api/users` | User CRUD, role assignment, status toggle |
+| Roles | `GET POST PUT DELETE /api/roles` | Role management |
+| Permissions | `GET POST PUT DELETE /api/permissions` | Granular permission management |
+| Files | `GET POST DELETE /api/files` | Multi-tenant cloud file storage (Backblaze B2) |
+| Audit Logs | `GET /api/audit` | All system events — CREATE/UPDATE/DELETE/LOGIN/LOGOUT/ACCESS/EXPORT |
+| Notifications | `GET /api/notifications` | Real-time via Socket.IO, 5 notification types |
+| Mobile API | `GET /api/mobile` | Patient-optimised compact endpoints for future mobile app |
+| FAQs | `GET POST PUT DELETE /api/faqs` | Public + private FAQ management |
+| Insurance | via service | Clearinghouse integration, NPI, coverage verification |
+| Health Checks | `GET /health` `GET /ready` `GET /live` | Kubernetes-ready probes |
+| API Docs | `GET /api-docs` | Swagger UI |
 
-To use the payment processors, add the following environment variables to your `.env` file:
+### Subscription Plans (Billing Tiers)
+| Plan | Price | Patients | Users | Storage |
+|------|-------|----------|-------|---------|
+| Individual | $49/mo | 50 | 1 | 512MB |
+| Basic | $99/mo | 100 | 5 | 1GB |
+| Standard | $299/mo | 500 | 20 | 5GB |
+| Pro | $599/mo | Unlimited | Unlimited | 20GB |
 
+### RBAC — 8 Roles
+`super_admin` · `admin` · `doctor` · `nurse` · `receptionist` · `lab_technician` · `billing_staff` · `patient`
+
+---
+
+## Database
+
+**39 migrations · 35 models**
+
+Core entities: User, Patient, Doctor, Hospital, Tenant, Appointment, AppointmentWaitlist
+
+Clinical: Allergy, Medication, VitalSign, ClinicalNote, MedicalRecord, ICD10Code, LabTest, TestOrder, TestResult, DoctorReview, FamilyMember
+
+Triage: TriageSession, TriageQuestion, TriageRule, TriageAnswer, TriageResult, TriageAuditLog
+
+Operations: Queue, Ambulance, AmbulanceRequest, Department, DepartmentStaff, Resource
+
+Business: Invoice, Payment, Subscription, UsageTracking, FAQ, File, AuditLog, Role, Permission, RolePermission
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 13+
+- Redis
+- RabbitMQ
+
+### Install & Run
+
+```bash
+cd hms
+npm install
+
+# Copy and fill in environment variables
+cp .env.example .env
+
+# Run database migrations
+npm run migrate
+
+# Seed triage data (questions + rules)
+npm run seed
+
+# Start development server
+npm run dev
 ```
-# Stripe Configuration
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
 
-# Paystack Configuration
-PAYSTACK_SECRET_KEY=sk_test_your_paystack_secret_key
-PAYSTACK_CALLBACK_URL=http://your-domain.com/verify-payment
+### Run Tests
 
-# Flutterwave Configuration
-FLUTTERWAVE_SECRET_KEY=FLWSECK_TEST-your_flutterwave_secret_key
-FLUTTERWAVE_PUBLIC_KEY=FLWPUBK_TEST-your_flutterwave_public_key
-FLUTTERWAVE_REDIRECT_URL=http://your-domain.com/verify-payment
-FLUTTERWAVE_WEBHOOK_HASH=your_flutterwave_webhook_hash
+```bash
+npm test              # all tests
+npm run test:unit     # unit tests only
+npm run test:integration  # integration tests only
 ```
 
-### Payment Flow
+---
 
-1. **Initiate Payment**
-   - Endpoint: `POST /api/payments/initiate`
-   - Request body:
-     ```json
-     {
-       "amount": 5000,
-       "email": "patient@example.com",
-       "currency": "NGN",
-       "payment_provider": "stripe", // or "paystack", "flutterwave"
-       "payment_method": "credit_card" // from PaymentMethod enum
-     }
-     ```
+## Environment Variables
 
-2. **Verify Payment**
-   - Endpoint: `GET /api/payments/verify/:reference`
-   - Response includes payment status and details
+```env
+# Server
+PORT=3000
+NODE_ENV=development
 
-3. **Webhook Integration**
-   - Stripe: `POST /api/payments/webhook/stripe`
-   - Paystack: `POST /api/payments/webhook/paystack`
-   - Flutterwave: `POST /api/payments/webhook/flutterwave`
-   
-4. **Process Refunds**
-   - Endpoint: `POST /api/payments/refund/:paymentId`
-   - Request body:
-     ```json
-     {
-       "amount": 5000, // Optional. If not provided, full refund
-       "reason": "Patient requested refund" // Optional
-     }
-     ```
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=hms_db
+DB_USER=postgres
+DB_PASSWORD=yourpassword
 
-### Testing Payments
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_REFRESH_SECRET=your_refresh_secret
+JWT_EXPIRES_IN=1h
+JWT_REFRESH_EXPIRES_IN=7d
 
-For testing, use the following test cards:
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-**Stripe Test Card**
-- Card Number: 4242 4242 4242 4242
-- Expiry: Any future date
-- CVV: Any 3 digits
+# RabbitMQ
+RABBITMQ_URL=amqp://localhost
 
-**Paystack Test Card**
-- Card Number: 4084 0840 8408 4081
-- Expiry: Any future date
-- CVV: Any 3 digits
+# Email (Brevo SMTP)
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=your_brevo_login
+SMTP_PASS=your_brevo_key
 
-**Flutterwave Test Card**
-- Card Number: 5531 8866 5214 2950
-- Expiry: 09/32
-- CVV: 564
-- PIN: 3310
-- OTP: 12345
+# Payments
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+PAYSTACK_SECRET_KEY=sk_test_...
+FLUTTERWAVE_SECRET_KEY=FLWSECK_TEST-...
 
-## Installation
-
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables (copy `.env.example` to `.env` and fill in values)
-4. Run database migrations: `npm run migrate`
-5. Start the server: `npm run dev`
-
-## Testing
-
-The project includes unit tests for all payment processors:
-
-```
-npm test
+# File Storage (Backblaze B2)
+B2_KEY_ID=your_key_id
+B2_APPLICATION_KEY=your_app_key
+B2_BUCKET_NAME=your_bucket
 ```
 
-To run tests for just the payment services:
-
-```
-npm test -- src/tests/services/payment
-```
+---
 
 ## API Documentation
 
-API documentation is available at `/api-docs` when the server is running.
+Swagger UI available at `http://localhost:3000/api-docs` when running locally.
+
+---
+
+## Multi-Tenancy
+
+Every hospital is a tenant. All patient/clinical data is isolated by `tenant_id`. The tenant context is injected via the `X-Tenant-ID` request header or the `tenantMiddleware`. CORS is configured to allow `yourapp.com` and `app.yourapp.com`.

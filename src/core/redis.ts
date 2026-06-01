@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 10;
 const RETRY_BASE_DELAY = 1000; // 1 second
 
 let redisClient: Redis | null = null;

@@ -11,6 +11,7 @@ import {
 } from 'sequelize-typescript';
 import { User } from './user.model';
 import { Appointment } from './appointment.model';
+import { Tenant } from './tenant.model';
 
 export enum Gender {
   MALE = 'male',
@@ -122,6 +123,16 @@ export class Patient extends Model {
 
   @BelongsTo(() => User)
   user?: User;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: false
+  })
+  tenant_id!: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
 
   @HasMany(() => Appointment)
   appointments?: Appointment[];

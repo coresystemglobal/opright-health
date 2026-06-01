@@ -5,3 +5,4 @@ docs
 /tests
 dist
 build
+.DS_Store
