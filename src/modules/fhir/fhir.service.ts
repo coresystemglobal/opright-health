@@ -1,5 +1,7 @@
-import { Patient } from '../models/patient.model';
-import { Appointment } from '../models/appointment.model';
+import { Patient } from '@modules/patients/patient.model';
+
+import { Appointment } from '@modules/appointments/appointment.model';
+
 
 interface FHIRResource {
   resourceType: string;

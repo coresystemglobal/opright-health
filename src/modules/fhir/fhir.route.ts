@@ -1,8 +1,8 @@
 
 import express from 'express';
-import { FHIRController } from '../controllers/fhir.controller';
-import { tenantMiddleware } from '../middlewares/tenant.middleware';
-import authentication from '../middlewares/authentication';
+import { FHIRController } from './fhir.controller';
+import { tenantMiddleware } from '@middlewares/tenant.middleware';
+import authentication from '@middlewares/authentication';
 
 const fhirRouter = express.Router();
 

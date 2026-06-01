@@ -1,9 +1,12 @@
 import { Response } from 'express';
-import { FHIRService } from '../services/fhir.service';
-import { Patient } from '../models/patient.model';
-import { Appointment } from '../models/appointment.model';
-import { ResponseUtil } from '../utils/response.util';
-import { TenantRequest } from '../middlewares/tenant.middleware';
+import { FHIRService } from '@modules/fhir/fhir.service';
+
+import { Patient } from '@modules/patients/patient.model';
+
+import { Appointment } from '@modules/appointments/appointment.model';
+
+import { ResponseUtil } from '@utils/response.util';
+import { TenantRequest } from '@middlewares/tenant.middleware';
 
 export class FHIRController {
   static async getPatient(req: TenantRequest, res: Response) {
