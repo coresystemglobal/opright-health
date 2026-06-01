@@ -8,9 +8,11 @@ import {
   HasMany,
   Index
 } from 'sequelize-typescript';
-import { Doctor } from './doctor.model';
-import { Tenant } from './tenant.model';
-import { User } from './user.model';
+import { Doctor } from '@modules/doctors/doctor.model';
+
+import { Tenant } from '@modules/tenancy/tenant.model';
+import { User } from '@modules/users/user.model';
+
 
 @Table({
   tableName: 'departments',

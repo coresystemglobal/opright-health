@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { DepartmentService } from '../services/department.service';
-import { ResponseUtil } from '../utils/response.util';
+import { DepartmentService } from '@modules/hospital/department.service';
+
+import { ResponseUtil } from '@utils/response.util';
 
 const departmentController = {
   getAllDepartments: async (req: Request, res: Response): Promise<Response> => {

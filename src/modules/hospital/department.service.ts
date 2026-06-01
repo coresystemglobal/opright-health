@@ -1,7 +1,11 @@
-import { Department as DepartmentModel } from '../models/department.model';
-import { DepartmentStaff, DepartmentRole } from '../models/department-staff.model';
-import { Doctor } from '../models/doctor.model';
-import { User } from '../models/user.model';
+import { Department as DepartmentModel } from '@modules/hospital/department.model';
+
+import { DepartmentStaff, DepartmentRole } from '@modules/hospital/department-staff.model';
+
+import { Doctor } from '@modules/doctors/doctor.model';
+
+import { User } from '@modules/users/user.model';
+
 import { Op, CreationAttributes } from 'sequelize';
 
 interface CreateDepartmentDTO {

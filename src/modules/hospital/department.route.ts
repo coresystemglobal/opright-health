@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
-import departmentController from '../controllers/department.controller';
-import authentication from '../middlewares/authentication';
-import { checkPermission } from '../middlewares/permission.middleware';
-import { PERMISSIONS } from '../config/rbac.config';
-import { validateParams, genericValidation } from '../utils/validator';
+import departmentController from './department.controller';
+import authentication from '@middlewares/authentication';
+import { checkPermission } from '@middlewares/permission.middleware';
+import { PERMISSIONS } from '@config/rbac.config';
+import { validateParams, genericValidation } from '@utils/validator';
 
 const departmentRouter = express.Router();
 
