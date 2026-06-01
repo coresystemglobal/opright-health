@@ -1,8 +1,8 @@
 import express from 'express';
-import { BillingController } from '../controllers/billing.controller';
-import authentication from '../middlewares/authentication';
-import { tenantMiddleware } from '../middlewares/tenant.middleware';
-import { checkPlanLimits, requireFeature } from '../middlewares/billing.middleware';
+import { BillingController } from './billing.controller';
+import authentication from '@middlewares/authentication';
+import { tenantMiddleware } from '@middlewares/tenant.middleware';
+import { checkPlanLimits, requireFeature } from '@middlewares/billing.middleware';
 
 const billingRouter = express.Router();
 

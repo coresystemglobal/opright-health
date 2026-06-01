@@ -1,8 +1,10 @@
 import { Response } from 'express';
-import { BillingService } from '../services/billing.service';
-import { PlanType, BillingCycle } from '../models/subscription.model';
-import { ResponseUtil } from '../utils/response.util';
-import { TenantRequest } from '../middlewares/tenant.middleware';
+import { BillingService } from '@modules/billing/billing.service';
+
+import { PlanType, BillingCycle } from '@modules/billing/subscription.model';
+
+import { ResponseUtil } from '@utils/response.util';
+import { TenantRequest } from '@middlewares/tenant.middleware';
 
 export class BillingController {
   static async getPlans(req: TenantRequest, res: Response) {

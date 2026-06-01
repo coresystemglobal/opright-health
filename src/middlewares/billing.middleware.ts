@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { BillingService } from '../services/billing.service';
+import { BillingService } from '@modules/billing/billing.service';
+
 import { TenantRequest } from './tenant.middleware';
 
 export const checkPlanLimits = (feature?: string) => {

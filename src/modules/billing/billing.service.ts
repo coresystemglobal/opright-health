@@ -1,53 +1,18 @@
-import { Subscription, PlanType, BillingCycle, SubscriptionStatus } from '../models/subscription.model';
-import { UsageTracking } from '../models/usage-tracking.model';
-import { Tenant } from '../models/tenant.model';
+import { Subscription, PlanType, BillingCycle, SubscriptionStatus } from '@modules/billing/subscription.model';
+
+import { UsageTracking } from '@modules/billing/usage-tracking.model';
+
+import { Tenant } from '@modules/tenancy/tenant.model';
+import { PlanConfig } from '@config/plan.config';
+import type { PlanLimits, PlanPricing } from '@config/plan.config';
 import Stripe from 'stripe';
-
-interface PlanLimits {
-  maxPatients: number;
-  maxUsers: number;
-  maxStorageMB: number;
-  maxAPICallsPerMonth: number;
-  features: string[];
-}
-
-interface PlanPricing {
-  monthly: number;
-  yearly: number;
-}
 
 export class BillingService {
   private static stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' });
 
-  private static readonly PLAN_LIMITS: Record<PlanType, PlanLimits> = {
-    [PlanType.BASIC]: {
-      maxPatients: 100,
-      maxUsers: 5,
-      maxStorageMB: 1024, // 1GB
-      maxAPICallsPerMonth: 10000,
-      features: ['basic_reporting', 'patient_management', 'appointments']
-    },
-    [PlanType.STANDARD]: {
-      maxPatients: 500,
-      maxUsers: 20,
-      maxStorageMB: 5120, // 5GB
-      maxAPICallsPerMonth: 50000,
-      features: ['basic_reporting', 'advanced_reporting', 'patient_management', 'appointments', 'lab_integration', 'mobile_api']
-    },
-    [PlanType.PRO]: {
-      maxPatients: -1, // Unlimited
-      maxUsers: -1, // Unlimited
-      maxStorageMB: 20480, // 20GB
-      maxAPICallsPerMonth: 200000,
-      features: ['all_features', 'fhir_compliance', 'insurance_verification', 'advanced_analytics', 'ml_predictions', 'iot_integration', 'workflow_automation', 'telemedicine', 'priority_support']
-    }
-  };
-
-  private static readonly PLAN_PRICING: Record<PlanType, PlanPricing> = {
-    [PlanType.BASIC]: { monthly: 99, yearly: 990 },
-    [PlanType.STANDARD]: { monthly: 299, yearly: 2990 },
-    [PlanType.PRO]: { monthly: 599, yearly: 5990 }
-  };
+  // Use configurable pricing and limits from PlanConfig
+  private static readonly PLAN_LIMITS: Record<PlanType, PlanLimits> = PlanConfig.limits;
+  private static readonly PLAN_PRICING: Record<PlanType, PlanPricing> = PlanConfig.pricing;
 
   static async createSubscription(
     tenantId: string,
@@ -227,6 +192,10 @@ export class BillingService {
   private static getStripePriceId(planType: PlanType, billingCycle: BillingCycle): string {
     // These would be actual Stripe price IDs from your Stripe dashboard
     const priceIds = {
+      [PlanType.INDIVIDUAL]: {
+        [BillingCycle.MONTHLY]: 'price_individual_monthly',
+        [BillingCycle.YEARLY]: 'price_individual_yearly'
+      },
       [PlanType.BASIC]: {
         [BillingCycle.MONTHLY]: 'price_basic_monthly',
         [BillingCycle.YEARLY]: 'price_basic_yearly'
