@@ -9,8 +9,10 @@ import {
   BeforeCreate
 } from 'sequelize-typescript';
 import { Op } from 'sequelize';
-import { Invoice } from './invoice.model';
-import { User } from './user.model';
+import { Invoice } from '@modules/billing/invoice.model';
+
+import { User } from '@modules/users/user.model';
+
 
 export enum PaymentMethod {
   CASH = 'cash',
@@ -72,9 +74,9 @@ export class Payment extends Model {
   @ForeignKey(() => Invoice)
   @Column({
     type: DataType.UUID,
-    allowNull: false
+    allowNull: true   // nullable — some payments are initiated before invoice is created
   })
-  invoice_id!: string;
+  invoice_id?: string;
 
   @BelongsTo(() => Invoice)
   invoice?: Invoice;
@@ -137,6 +139,13 @@ export class Payment extends Model {
     allowNull: true
   })
   reference_number?: string;
+
+  @Column({
+    type: DataType.STRING(10),
+    allowNull: false,
+    defaultValue: 'NGN'
+  })
+  currency!: string;
 
   @Column({
     type: DataType.DECIMAL(5, 4),

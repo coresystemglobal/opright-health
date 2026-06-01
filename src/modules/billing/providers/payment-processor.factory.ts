@@ -1,7 +1,10 @@
-import { PaymentRequestData, PaymentResponse } from '../../types/payment.types';
-import stripeService from './stripe.service';
-import paystackService from './paystack.service';
-import flutterwaveService from './flutterwave.service';
+import { PaymentRequestData, PaymentResponse } from '@appTypes/payment.types';
+import stripeService from '@modules/billing/providers/stripe.service';
+
+import paystackService from '@modules/billing/providers/paystack.service';
+
+import flutterwaveService from '@modules/billing/providers/flutterwave.service';
+
 
 /**
  * Payment Processor Factory Service
