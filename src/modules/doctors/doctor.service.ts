@@ -1,20 +1,37 @@
-import { Doctor, User } from '../models';
-import { PaginationQuery } from '../types/common.types';
-import { PaginationUtil } from '../utils/pagination.util';
-import { ValidationUtil } from '../utils/validation.util';
+import { Doctor, User } from '../../models';
+import { PaginationQuery } from '@appTypes/common.types';
+import { PaginationUtil } from '@utils/pagination.util';
+import { ValidationUtil } from '@utils/validation.util';
+import { Op } from 'sequelize';
+import { Specialization } from '@modules/doctors/doctor.model';
+
 
 interface CreateDoctorData {
   user_id: string;
-  specialization: string;
+  specialization: Specialization;
   license_number: string;
+  consultation_fee: number;
   experience_years?: number;
+  qualification?: string;
+  department_id?: string;
+  working_hours_start?: string;
+  working_hours_end?: string;
+  appointment_duration_minutes?: number;
+  max_appointments_per_day?: number;
 }
 
 interface UpdateDoctorData {
-  specialization?: string;
+  specialization?: Specialization;
   license_number?: string;
+  consultation_fee?: number;
   experience_years?: number;
+  qualification?: string;
+  department_id?: string;
   is_available?: boolean;
+  working_hours_start?: string;
+  working_hours_end?: string;
+  appointment_duration_minutes?: number;
+  max_appointments_per_day?: number;
 }
 
 export const doctorService = {
@@ -22,27 +39,40 @@ export const doctorService = {
     try {
       const paginationOptions = PaginationUtil.parsePaginationQuery(paginationQuery);
 
-      // Build search conditions
       const whereConditions: any = {};
-      
-      if (search) {
-        whereConditions['$User.first_name$'] = { $iLike: `%${search}%` };
-        // Add more search conditions as needed
-      }
 
       if (specialization) {
         whereConditions.specialization = specialization;
       }
 
+      const includeConditions: any = [];
+
+      if (search) {
+        const sanitizedSearch = search.trim();
+        includeConditions.push({
+          model: User,
+          as: 'user',
+          attributes: ['id', 'first_name', 'last_name', 'email', 'phone'],
+          where: {
+            [Op.or]: [
+              { first_name: { [Op.iLike]: `%${sanitizedSearch}%` } },
+              { last_name: { [Op.iLike]: `%${sanitizedSearch}%` } },
+              { email: { [Op.iLike]: `%${sanitizedSearch}%` } }
+            ]
+          }
+        });
+      } else {
+        includeConditions.push({
+          model: User,
+          as: 'user',
+          attributes: ['id', 'first_name', 'last_name', 'email', 'phone'],
+          required: false
+        });
+      }
+
       const { count, rows: doctors } = await Doctor.findAndCountAll({
         where: whereConditions,
-        include: [
-          {
-            model: User,
-            as: 'user',
-            attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
-          }
-        ],
+        include: includeConditions,
         order: [['createdAt', 'DESC']],
         ...PaginationUtil.getSequelizePagination(paginationOptions),
         paranoid: true
@@ -117,30 +147,34 @@ export const doctorService = {
 
   createDoctor: async (doctorData: CreateDoctorData) => {
     try {
-      const { user_id, specialization, license_number, experience_years } = doctorData;
+      const {
+        user_id,
+        specialization,
+        license_number,
+        consultation_fee,
+        experience_years,
+        qualification,
+        department_id,
+        working_hours_start,
+        working_hours_end,
+        appointment_duration_minutes,
+        max_appointments_per_day
+      } = doctorData;
 
-      if (!user_id || !specialization || !license_number) {
-        throw new Error('User ID, specialization, and license number are required');
+      if (!user_id || !specialization || !license_number || consultation_fee === undefined) {
+        throw new Error('User ID, specialization, license number, and consultation fee are required');
       }
 
       if (!ValidationUtil.isValidUUID(user_id)) {
         throw new Error('Invalid user ID format');
       }
 
-      // Check if doctor with this user_id already exists
-      const existingDoctor = await Doctor.findOne({
-        where: { user_id }
-      });
-
+      const existingDoctor = await Doctor.findOne({ where: { user_id } });
       if (existingDoctor) {
         throw new Error('Doctor profile already exists for this user');
       }
 
-      // Check if license number is unique
-      const doctorWithLicense = await Doctor.findOne({
-        where: { license_number }
-      });
-
+      const doctorWithLicense = await Doctor.findOne({ where: { license_number } });
       if (doctorWithLicense) {
         throw new Error('License number already in use');
       }
@@ -149,9 +183,16 @@ export const doctorService = {
         user_id,
         specialization,
         license_number,
-        experience_years: experience_years || 0,
+        consultation_fee,
+        experience_years: experience_years ?? 0,
+        qualification: qualification || null,
+        department_id: department_id || null,
+        working_hours_start: working_hours_start || '09:00:00',
+        working_hours_end: working_hours_end || '17:00:00',
+        appointment_duration_minutes: appointment_duration_minutes ?? 30,
+        max_appointments_per_day: max_appointments_per_day ?? 20,
         is_available: true
-      });
+      } as any);
 
       return doctor;
     } catch (error) {
@@ -167,24 +208,18 @@ export const doctorService = {
       }
 
       const doctor = await Doctor.findByPk(doctorId);
-
       if (!doctor) {
         throw new Error('Doctor not found');
       }
 
-      // Check if license number is unique if it's being updated
       if (updateData.license_number && updateData.license_number !== doctor.license_number) {
-        const doctorWithLicense = await Doctor.findOne({
-          where: { license_number: updateData.license_number }
-        });
-
+        const doctorWithLicense = await Doctor.findOne({ where: { license_number: updateData.license_number } });
         if (doctorWithLicense) {
           throw new Error('License number already in use');
         }
       }
 
       await doctor.update(updateData);
-
       return doctor;
     } catch (error) {
       console.error('Update doctor error:', error);
@@ -199,14 +234,11 @@ export const doctorService = {
       }
 
       const doctor = await Doctor.findByPk(doctorId);
-
       if (!doctor) {
         throw new Error('Doctor not found');
       }
 
-      // Soft delete
       await doctor.destroy();
-
       return true;
     } catch (error) {
       console.error('Delete doctor error:', error);
@@ -221,18 +253,14 @@ export const doctorService = {
       }
 
       const doctor = await Doctor.findByPk(doctorId);
-
       if (!doctor) {
         throw new Error('Doctor not found');
       }
 
-      // Toggle status
       doctor.is_available = !doctor.is_available;
       await doctor.save();
 
-      return {
-        is_available: doctor.is_available
-      };
+      return { is_available: doctor.is_available };
     } catch (error) {
       console.error('Toggle doctor status error:', error);
       throw error;

@@ -8,8 +8,10 @@ import {
   ForeignKey,
   Index
 } from 'sequelize-typescript';
-import { User } from './user.model';
-import { Appointment } from './appointment.model';
+import { User } from '@modules/users/user.model';
+
+import { Appointment } from '@modules/appointments/appointment.model';
+
 
 export enum Specialization {
   GENERAL_MEDICINE = 'general_medicine',
@@ -131,6 +133,14 @@ export class Doctor extends Model {
     allowNull: true
   })
   department?: Department;
+
+  // New: Department entity reference (for formal department management)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+    comment: 'Reference to departments table for formal department management'
+  })
+  department_id?: string;
 
   @Column({
     type: DataType.BOOLEAN,
