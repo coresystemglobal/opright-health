@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import { AuthenticatedRequest, TypedRequest } from '../types/common.types';
-import { ResponseUtil } from '../utils/response.util';
-import { authService } from '../services';
+import { AuthenticatedRequest, TypedRequest } from '@appTypes/common.types';
+import { ResponseUtil } from '@utils/response.util';
+import { authService } from '../../services';
 
 // Request interfaces
 interface LoginRequest {

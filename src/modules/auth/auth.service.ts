@@ -1,8 +1,8 @@
-import { User } from '../models';
+import { User } from '../../models';
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from "jsonwebtoken";
-import { ValidationUtil } from '../utils/validation.util';
-import { sendVerificationEmail, sendPasswordResetEmail } from './email.service';
+import { ValidationUtil } from '@utils/validation.util';
+import { sendVerificationEmail, sendPasswordResetEmail } from '@shared/email/email.service';
 
 interface LoginData {
   email: string;
