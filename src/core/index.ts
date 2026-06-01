@@ -10,7 +10,7 @@ import {
   authRateLimit, 
   paymentRateLimit,
   apiRateLimit
-} from '../middleware/rate-limiter.middleware';
+} from '../middlewares/rate-limiter.middleware';
 const server = express();
 
 const port = process.env.LOCAL_PORT || 3000;
