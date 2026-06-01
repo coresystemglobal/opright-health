@@ -1,7 +1,7 @@
-import { Appointment, Patient, Doctor, User } from '../models';
-import { PaginationQuery } from '../types/common.types';
-import { PaginationUtil } from '../utils/pagination.util';
-import { ValidationUtil } from '../utils/validation.util';
+import { Appointment, Patient, Doctor, User } from '../../models';
+import { PaginationQuery } from '@appTypes/common.types';
+import { PaginationUtil } from '@utils/pagination.util';
+import { ValidationUtil } from '@utils/validation.util';
 
 interface CreateAppointmentData {
   patient_id: string;

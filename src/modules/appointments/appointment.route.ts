@@ -1,7 +1,7 @@
 import express from 'express';
 import { Request as ExpressRequest, Response } from 'express';
-import appointmentController from '../controllers/appointment.controller';
-import { validate, validateParams, validateQuery, appointmentValidation, genericValidation } from '../utils/validator';
+import appointmentController from './appointment.controller';
+import { validate, validateParams, validateQuery, appointmentValidation, genericValidation } from '@utils/validator';
 
 const appointmentRouter = express.Router();
 

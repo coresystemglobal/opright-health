@@ -1,7 +1,8 @@
 import { Request as ExpressRequest, Response } from 'express';
-import { appointmentService } from '../services/appointment.service';
-import { ResponseUtil } from '../utils/response.util';
-import { PaginationQuery } from '../types/common.types';
+import { appointmentService } from '@modules/appointments/appointment.service';
+
+import { ResponseUtil } from '@utils/response.util';
+import { PaginationQuery } from '@appTypes/common.types';
 
 /**
  * Appointment controller for handling appointment operations
