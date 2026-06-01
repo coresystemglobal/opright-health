@@ -1,6 +1,8 @@
 import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Ambulance } from './ambulance.model';
-import { Patient } from './patient.model';
+import { Ambulance } from '@modules/ambulance/ambulance.model';
+
+import { Patient } from '@modules/patients/patient.model';
+
 
 export enum RequestStatus {
   PENDING = 'pending',

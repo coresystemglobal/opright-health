@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { AmbulanceService } from '../services/ambulance.service';
-import { ResponseUtil } from '../utils/response.util';
+import { AmbulanceService } from '@modules/ambulance/ambulance.service';
+
+import { ResponseUtil } from '@utils/response.util';
 
 const ambulanceService = new AmbulanceService();
 

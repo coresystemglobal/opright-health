@@ -1,5 +1,6 @@
 import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
-import { AmbulanceRequest } from './ambulance-request.model';
+import { AmbulanceRequest } from '@modules/ambulance/ambulance-request.model';
+
 
 export enum AmbulanceStatus {
   AVAILABLE = 'available',
