@@ -1,5 +1,5 @@
 import { Role, Permission, RolePermission } from '../models';
-import { RoleType } from '../models/role.model';
+import { RoleType } from '@modules/rbac/role.model';
 
 export class RBACSeeder {
   static async seedAll() {
