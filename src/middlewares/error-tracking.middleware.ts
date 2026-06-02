@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ErrorTrackingService } from '../services/error-tracking.service';
+import { ErrorTrackingService } from '@shared/error-tracking/error-tracking.service';
 
 export const errorTrackingMiddleware = (err: Error, req: Request, res: Response, next: NextFunction) => {
   // Determine severity based on status code

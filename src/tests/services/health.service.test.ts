@@ -1,4 +1,4 @@
-import { HealthService } from '../../services/health.service';
+import { HealthService } from '@modules/health/health.service';
 
 // Mock database and Redis
 jest.mock('../../core/database', () => ({

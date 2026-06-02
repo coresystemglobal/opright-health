@@ -1,0 +1,475 @@
+{
+  "questions": [
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50001",
+      "code": "age_years",
+      "text": "How old is the patient in years?",
+      "type": "number",
+      "symptom_group": "general",
+      "order": 1,
+      "condition": null,
+      "options": null
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50002",
+      "code": "age_in_months",
+      "text": "If the patient is under 1 year old, how old are they in months?",
+      "type": "number",
+      "symptom_group": "general",
+      "order": 2,
+      "condition": {
+        "all": [
+          { "fact": "primary_symptom", "operator": "eq", "value": "fever" },
+          { "fact": "age_years", "operator": "lt", "value": 1 }
+        ]
+      },
+      "options": null
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50003",
+      "code": "seizure",
+      "text": "Has there been any seizure with the fever?",
+      "type": "boolean",
+      "symptom_group": "fever",
+      "order": 3,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50004",
+      "code": "unconscious",
+      "text": "Is the patient unconscious, extremely drowsy, or hard to wake?",
+      "type": "boolean",
+      "symptom_group": "fever",
+      "order": 4,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50005",
+      "code": "temperature_c",
+      "text": "What is the highest measured temperature in degrees Celsius?",
+      "type": "number",
+      "symptom_group": "fever",
+      "order": 5,
+      "condition": null,
+      "options": null
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50006",
+      "code": "fever_duration_days",
+      "text": "How many days has the fever lasted?",
+      "type": "number",
+      "symptom_group": "fever",
+      "order": 6,
+      "condition": null,
+      "options": null
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50007",
+      "code": "vomiting",
+      "text": "Is there vomiting along with the fever?",
+      "type": "boolean",
+      "symptom_group": "fever",
+      "order": 7,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50008",
+      "code": "fatigue",
+      "text": "Is there unusual weakness or fatigue?",
+      "type": "boolean",
+      "symptom_group": "fever",
+      "order": 8,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50009",
+      "code": "location_malaria_zone",
+      "text": "Is the patient in or recently returned from a malaria-prone area?",
+      "type": "boolean",
+      "symptom_group": "fever",
+      "order": 9,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50010",
+      "code": "chills",
+      "text": "Are there chills or shaking with the fever?",
+      "type": "boolean",
+      "symptom_group": "fever",
+      "order": 10,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50011",
+      "code": "headache",
+      "text": "Is there headache with the fever?",
+      "type": "boolean",
+      "symptom_group": "fever",
+      "order": 11,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50012",
+      "code": "shortness_of_breath",
+      "text": "Is there shortness of breath with the chest pain?",
+      "type": "boolean",
+      "symptom_group": "chest_pain",
+      "order": 2,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50013",
+      "code": "pain_radiates_arm",
+      "text": "Does the chest pain spread to the arm, jaw, or back?",
+      "type": "boolean",
+      "symptom_group": "chest_pain",
+      "order": 3,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50014",
+      "code": "sweating",
+      "text": "Is the patient sweating heavily or clammy with the chest pain?",
+      "type": "boolean",
+      "symptom_group": "chest_pain",
+      "order": 4,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50015",
+      "code": "diabetes",
+      "text": "Does the patient have diabetes?",
+      "type": "boolean",
+      "symptom_group": "chest_pain",
+      "order": 5,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50016",
+      "code": "pain_duration_minutes",
+      "text": "How many minutes has the chest pain lasted?",
+      "type": "number",
+      "symptom_group": "chest_pain",
+      "order": 6,
+      "condition": null,
+      "options": null
+    },
+    {
+      "id": "fa6e5dd7-2505-4877-8db8-447523e50017",
+      "code": "pain_worse_with_movement",
+      "text": "Is the chest pain worse with movement or pressing on the area?",
+      "type": "boolean",
+      "symptom_group": "chest_pain",
+      "order": 7,
+      "condition": null,
+      "options": [
+        { "label": "Yes", "value": true },
+        { "label": "No", "value": false }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410001",
+      "rule_code": "FEVER_UNDER_3_MONTHS",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "fever", "operator": "eq", "value": true },
+          { "fact": "age_in_months", "operator": "lt", "value": 3 }
+        ]
+      },
+      "weight": 0,
+      "severity": "critical",
+      "action_override": "emergency",
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410002",
+      "rule_code": "FEVER_SEIZURE",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "fever", "operator": "eq", "value": true },
+          { "fact": "seizure", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 0,
+      "severity": "critical",
+      "action_override": "emergency",
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410003",
+      "rule_code": "FEVER_UNCONSCIOUS",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "fever", "operator": "eq", "value": true },
+          { "fact": "unconscious", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 0,
+      "severity": "critical",
+      "action_override": "emergency",
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410004",
+      "rule_code": "FEVER_3_DAYS",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "fever_duration_days", "operator": "gt", "value": 3 }
+        ]
+      },
+      "weight": 3,
+      "severity": "high",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410005",
+      "rule_code": "FEVER_HIGH_TEMP",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "temperature_c", "operator": "gt", "value": 39 }
+        ]
+      },
+      "weight": 3,
+      "severity": "high",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410006",
+      "rule_code": "FEVER_CHILD_UNDER_5",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "age_years", "operator": "lt", "value": 5 }
+        ]
+      },
+      "weight": 4,
+      "severity": "high",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410007",
+      "rule_code": "FEVER_VOMITING",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "vomiting", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 2,
+      "severity": "moderate",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410008",
+      "rule_code": "FEVER_WEAKNESS",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "fatigue", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 2,
+      "severity": "moderate",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410009",
+      "rule_code": "MALARIA_REGION_FEVER",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "fever", "operator": "eq", "value": true },
+          { "fact": "location_malaria_zone", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 3,
+      "severity": "moderate",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410010",
+      "rule_code": "MALARIA_CHILLS",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "chills", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 2,
+      "severity": "moderate",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410011",
+      "rule_code": "MALARIA_HEADACHE",
+      "symptom_group": "fever",
+      "condition": {
+        "all": [
+          { "fact": "headache", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 2,
+      "severity": "moderate",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410012",
+      "rule_code": "CHEST_PAIN_BREATHLESS",
+      "symptom_group": "chest_pain",
+      "condition": {
+        "all": [
+          { "fact": "chest_pain", "operator": "eq", "value": true },
+          { "fact": "shortness_of_breath", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 0,
+      "severity": "critical",
+      "action_override": "emergency",
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410013",
+      "rule_code": "CHEST_PAIN_RADIATING",
+      "symptom_group": "chest_pain",
+      "condition": {
+        "all": [
+          { "fact": "pain_radiates_arm", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 0,
+      "severity": "critical",
+      "action_override": "emergency",
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410014",
+      "rule_code": "CHEST_PAIN_SWEATING",
+      "symptom_group": "chest_pain",
+      "condition": {
+        "all": [
+          { "fact": "sweating", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 0,
+      "severity": "critical",
+      "action_override": "emergency",
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410015",
+      "rule_code": "CHEST_PAIN_AGE_OVER_50",
+      "symptom_group": "chest_pain",
+      "condition": {
+        "all": [
+          { "fact": "age_years", "operator": "gt", "value": 50 }
+        ]
+      },
+      "weight": 4,
+      "severity": "high",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410016",
+      "rule_code": "CHEST_PAIN_DIABETES",
+      "symptom_group": "chest_pain",
+      "condition": {
+        "all": [
+          { "fact": "diabetes", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 3,
+      "severity": "high",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410017",
+      "rule_code": "CHEST_PAIN_DURATION",
+      "symptom_group": "chest_pain",
+      "condition": {
+        "all": [
+          { "fact": "pain_duration_minutes", "operator": "gt", "value": 20 }
+        ]
+      },
+      "weight": 3,
+      "severity": "high",
+      "action_override": null,
+      "is_active": true
+    },
+    {
+      "id": "ab566f40-6ff7-4a85-a3c8-ac26e6410018",
+      "rule_code": "CHEST_PAIN_MOVEMENT",
+      "symptom_group": "chest_pain",
+      "condition": {
+        "all": [
+          { "fact": "pain_worse_with_movement", "operator": "eq", "value": true }
+        ]
+      },
+      "weight": 1,
+      "severity": "moderate",
+      "action_override": null,
+      "is_active": true
+    }
+  ]
+}
+

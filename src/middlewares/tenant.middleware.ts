@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Tenant } from '../models/tenant.model';
+import { Tenant } from '@modules/tenancy/tenant.model';
 
 export interface TenantRequest extends Request {
   tenant?: Tenant;

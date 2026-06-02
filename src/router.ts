@@ -1,65 +1,128 @@
 import { Router } from 'express';
+import { authRateLimit, apiRateLimit } from './middlewares/rate-limiter.middleware';
 
-// Import route files - using existing routes
-// Note: Some module routes may not exist, using available routes
-import appointmentRouter from './routes/appointment.route';
-import invoiceRouter from './routes/invoice.route';
-import paymentRouter from './routes/payment.route';
-import dashboardRouter from './routes/dashboard.route';
-import reportsRouter from './routes/reports.route';
-import authRouter from './routes/auth.route';
-import laboratoryRouter from './routes/laboratory.route';
-import roleRouter from './routes/role.route';
-import permissionRouter from './routes/permission.route';
-import fileRouter from './routes/file.route';
-import auditRouter from './routes/audit.route';
-import healthRouter from './routes/health.route';
-import notificationRouter from './routes/notification.route';
-import docsRouter from './routes/docs.route';
-import fhirRouter from './routes/fhir.route';
-import mobileRouter from './routes/mobile.route';
-import billingRouter from './routes/billing.route';
-import advancedRouter from './routes/advanced-features.route';
-import faqRouter from './routes/faq.route';
-import queueRouter from './routes/queue.route';
-import ambulanceRouter from './routes/ambulance.route';
+// Auth & Users
+import authRouter from '@modules/auth/auth.route';
+import userRouter from '@modules/users/user.route';
 
-// Initialize router
+// RBAC
+import roleRouter from '@modules/rbac/role.route';
+import permissionRouter from '@modules/rbac/permission.route';
+
+// Patients
+import patientRouter from '@modules/patients/patient.route';
+import familyRouter from '@modules/patients/family.route';
+
+// Doctors
+import doctorRouter from '@modules/doctors/doctor.route';
+import reviewRouter from '@modules/doctors/review.route';
+
+// Hospital
+import hospitalRouter from '@modules/hospital/hospital.route';
+import departmentRouter from '@modules/hospital/department.route';
+
+// Appointments & Clinical
+import appointmentRouter from '@modules/appointments/appointment.route';
+import medicationRouter from '@modules/clinical/medication.route';
+
+// Triage
+import triageRouter from '@modules/triage/triage.route';
+
+// Operations
+import queueRouter from '@modules/queue/queue.route';
+import ambulanceRouter from '@modules/ambulance/ambulance.route';
+
+// Laboratory
+import laboratoryRouter from '@modules/laboratory/laboratory.route';
+
+// Billing
+import billingRouter from '@modules/billing/billing.route';
+import invoiceRouter from '@modules/billing/invoice.route';
+import paymentRouter from '@modules/billing/payment.route';
+
+// Reports & Analytics
+import reportsRouter from '@modules/reports/reports.route';
+import dashboardRouter from '@modules/reports/dashboard.route';
+import advancedRouter from '@modules/reports/advanced-features.route';
+
+// Notifications & Files
+import notificationRouter from '@modules/notifications/notification.route';
+import fileRouter from '@modules/files/file.route';
+
+// Integrations
+import fhirRouter from '@modules/fhir/fhir.route';
+
+// System
+import auditRouter from '@modules/audit/audit.route';
+import faqRouter from '@modules/faq/faq.route';
+import mobileRouter from '@modules/mobile/mobile.route';
+import healthRouter from '@modules/health/health.route';
+import docsRouter from '@modules/health/docs.route';
+
 const router = Router();
 
-// Apply rate limiting to auth routes
-import { authRateLimit, apiRateLimit } from './middlewares/rate-limit.middleware';
-
-// Mount routes
+// Auth (rate-limited separately)
 router.use('/auth', authRateLimit, authRouter);
 
 // Apply general rate limiting to all API routes
 router.use('/api', apiRateLimit);
-// router.use('/users', userRouter); // Commented out - module may not exist
-// router.use('/login', loginRouter); // Commented out - module may not exist
+
+// Users & RBAC
+router.use('/api/users', userRouter);
 router.use('/api/roles', roleRouter);
-// router.use('/profiles', profileRouter); // Commented out - module may not exist
-// router.use('/patients', patientRouter); // Commented out - module may not exist
-// router.use('/doctors', doctorRouter); // Commented out - module may not exist
-router.use('/api/appointments', appointmentRouter);
-router.use('/api/invoices', invoiceRouter);
-router.use('/api/payments', paymentRouter);
-router.use('/api/dashboard', dashboardRouter);
-router.use('/api/reports', reportsRouter);
-router.use('/api/laboratory', laboratoryRouter);
 router.use('/api/permissions', permissionRouter);
-router.use('/api/files', fileRouter);
-router.use('/api/audit', auditRouter);
-router.use('/api/notifications', notificationRouter);
-router.use('/', healthRouter);
-router.use('/notifications', notificationRouter);
-router.use('/api-docs', docsRouter);
-router.use('/api/fhir', fhirRouter);
-router.use('/api/mobile', mobileRouter);
-router.use('/api/billing', billingRouter);
-router.use('/api/advanced', advancedRouter);
-router.use('/api/faqs', faqRouter);
+
+// Patients
+router.use('/api/patients', patientRouter);
+router.use('/api/family', familyRouter);
+
+// Doctors
+router.use('/api/doctors', doctorRouter);
+router.use('/api/reviews', reviewRouter);
+
+// Hospital
+router.use('/api/hospitals', hospitalRouter);
+router.use('/api/departments', departmentRouter);
+
+// Appointments & Clinical
+router.use('/api/appointments', appointmentRouter);
+router.use('/api/medications', medicationRouter);
+
+// Triage
+router.use('/api/triage', triageRouter);
+
+// Operations
 router.use('/api/queue', queueRouter);
 router.use('/api/ambulance', ambulanceRouter);
+
+// Laboratory
+router.use('/api/laboratory', laboratoryRouter);
+
+// Billing
+router.use('/api/billing', billingRouter);
+router.use('/api/invoices', invoiceRouter);
+router.use('/api/payments', paymentRouter);
+
+// Reports & Analytics
+router.use('/api/reports', reportsRouter);
+router.use('/api/dashboard', dashboardRouter);
+router.use('/api/advanced', advancedRouter);
+
+// Notifications & Files
+router.use('/api/notifications', notificationRouter);
+router.use('/api/files', fileRouter);
+
+// Integrations
+router.use('/api/fhir', fhirRouter);
+
+// System
+router.use('/api/audit', auditRouter);
+router.use('/api/faqs', faqRouter);
+router.use('/api/mobile', mobileRouter);
+
+// Health & Docs (no /api prefix)
+router.use('/', healthRouter);
+router.use('/api-docs', docsRouter);
+router.use('/notifications', notificationRouter);
 
 export default router;
