@@ -100,6 +100,7 @@ export class AuthController {
       } catch (serviceError: any) {
         if (serviceError.message === 'Refresh token is required' ||
             serviceError.message === 'Invalid refresh token' ||
+            serviceError.message === 'Refresh token has been revoked' ||
             serviceError.message === 'User not found' ||
             serviceError.message === 'Account is deactivated') {
           return ResponseUtil.unauthorized(res, 'Invalid refresh token');
@@ -139,11 +140,12 @@ export class AuthController {
   }
 
   /**
-   * Logout (client-side token invalidation)
+   * Logout (server-side token revocation)
    */
   static async logout(req: AuthenticatedRequest, res: Response) {
     try {
-      const result = await authService.logout();
+      const refreshToken = req.body?.refresh_token as string | undefined;
+      const result = await authService.logout(refreshToken);
       return ResponseUtil.success(res, null, result.message);
     } catch (error) {
       console.error('Logout error:', error);

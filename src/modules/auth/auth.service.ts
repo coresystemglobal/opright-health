@@ -1,6 +1,8 @@
-import { User } from '../../models';
+import { User, TokenBlacklist } from '../../models';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt, { SignOptions } from "jsonwebtoken";
+import { Op } from 'sequelize';
 import { ValidationUtil } from '@utils/validation.util';
 import { sendVerificationEmail, sendPasswordResetEmail } from '@shared/email/email.service';
 
@@ -31,14 +33,34 @@ interface EmailVerificationData {
   token: string;
 }
 
-const jwtSecret = process.env.JWT_SECRET || "secret";
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`FATAL: ${name} must be defined in environment variables. Server cannot start without it.`);
+  }
+  return value;
+}
+
+const jwtSecret = () => requireEnv('JWT_SECRET');
+const jwtRefreshSecret = () => requireEnv('JWT_REFRESH_SECRET');
 const jwtExpiry = (process.env.JWT_EXPIRES_IN || "15m") as jwt.SignOptions["expiresIn"];
-const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || "refresh_secret";
 const jwtRefreshExpiry = (process.env.JWT_REFRESH_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"];
 
 const signToken = (payload: object, secret: string, options: SignOptions) => {
   return jwt.sign(payload, secret, options);
 };
+
+/**
+ * Parse a JWT expiry string (e.g. "15m", "7d", "1h") into milliseconds.
+ */
+function parseExpiryToMs(expiry: string): number {
+  const match = expiry.match(/^(\d+)([smhd])$/);
+  if (!match) return 24 * 60 * 60 * 1000; // default 24h
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  const multipliers: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
+  return value * (multipliers[unit] || 60_000);
+}
 
 export const authService = {
   login: async (loginData: LoginData) => {
@@ -93,8 +115,13 @@ export const authService = {
         email: user.email
       };
       
-      const accessToken = signToken(tokenPayload, jwtSecret, { expiresIn: jwtExpiry });
-      const refreshToken = signToken({ userId: user.id }, jwtRefreshSecret, { expiresIn: jwtRefreshExpiry });
+      const accessToken = signToken(tokenPayload, jwtSecret(), { expiresIn: jwtExpiry });
+      const refreshJti = crypto.randomUUID();
+      const refreshToken = signToken(
+        { userId: user.id, jti: refreshJti },
+        jwtRefreshSecret(),
+        { expiresIn: jwtRefreshExpiry }
+      );
 
       const userResponse = {
         id: user.id,
@@ -184,7 +211,7 @@ export const authService = {
 
       const verificationToken = signToken(
         { userId: user.id, purpose: 'email_verification' },
-        jwtSecret,
+        jwtSecret(),
         { expiresIn: '24h' }
       );
 
@@ -210,10 +237,18 @@ export const authService = {
         throw new Error('Refresh token is required');
       }
 
-      const decoded: any = jwt.verify(refreshToken, jwtRefreshSecret);
+      const decoded: any = jwt.verify(refreshToken, jwtRefreshSecret());
       
       if (!decoded || !decoded.userId) {
         throw new Error('Invalid refresh token');
+      }
+
+      // Check if the refresh token has been blacklisted (revoked)
+      if (decoded.jti) {
+        const blacklisted = await TokenBlacklist.findOne({ where: { jti: decoded.jti } });
+        if (blacklisted) {
+          throw new Error('Refresh token has been revoked');
+        }
       }
 
       const user = await User.findByPk(decoded.userId, {
@@ -233,7 +268,7 @@ export const authService = {
         email: user.email
       };
       
-      const newAccessToken = signToken(tokenPayload, jwtSecret, { expiresIn: jwtExpiry });
+      const newAccessToken = signToken(tokenPayload, jwtSecret(), { expiresIn: jwtExpiry });
 
       return {
         accessToken: newAccessToken
@@ -289,7 +324,7 @@ export const authService = {
 
       const resetToken = signToken(
         { userId: user.id, purpose: 'password_reset' },
-        jwtSecret,
+        jwtSecret(),
         { expiresIn: '1h' }
       );
 
@@ -321,7 +356,7 @@ export const authService = {
         throw new Error(passwordValidation.errors.join(', '));
       }
 
-      const decoded: any = jwt.verify(token, jwtSecret);
+      const decoded: any = jwt.verify(token, jwtSecret());
       
       if (!decoded || !decoded.userId || decoded.purpose !== 'password_reset') {
         throw new Error('Invalid or expired token');
@@ -367,7 +402,7 @@ export const authService = {
         throw new Error('Verification token is required');
       }
 
-      const decoded: any = jwt.verify(token, jwtSecret);
+      const decoded: any = jwt.verify(token, jwtSecret());
       
       if (!decoded || !decoded.userId || decoded.purpose !== 'email_verification') {
         throw new Error('Invalid or expired verification token');
@@ -399,7 +434,33 @@ export const authService = {
     }
   },
 
-  logout: async () => {
+  logout: async (refreshToken?: string) => {
+    if (refreshToken) {
+      try {
+        // Decode without verification to extract jti/exp even if token is expired
+        const decoded: any = jwt.decode(refreshToken);
+        if (decoded?.jti && decoded?.userId) {
+          const expiresAt = decoded.exp
+            ? new Date(decoded.exp * 1000)
+            : new Date(Date.now() + parseExpiryToMs(jwtRefreshExpiry as string));
+
+          await TokenBlacklist.create({
+            jti: decoded.jti,
+            user_id: decoded.userId,
+            token_type: 'refresh',
+            expires_at: expiresAt,
+          });
+        }
+      } catch (error) {
+        // Log but don't fail logout — the client-side token removal is the primary mechanism
+        console.error('Failed to blacklist refresh token on logout:', error);
+      }
+
+      // Periodic cleanup of expired blacklist entries (fire-and-forget)
+      TokenBlacklist.destroy({ where: { expires_at: { [Op.lt]: new Date() } } })
+        .catch(() => {});
+    }
+
     return {
       message: 'Logged out successfully'
     };
