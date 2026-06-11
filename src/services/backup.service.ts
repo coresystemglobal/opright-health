@@ -3,6 +3,8 @@ import { promisify } from 'util';
 import { fileUploadService } from './file-upload.service';
 import fs from 'fs';
 import path from 'path';
+import https from 'https';
+import http from 'http';
 
 const execAsync = promisify(exec);
 
@@ -75,8 +77,41 @@ export class BackupService {
   }
 
   static async restoreBackup(backupUrl: string, tenantId?: string): Promise<void> {
-    // Implementation for restore would go here
-    // This is a placeholder for the restore functionality
-    throw new Error('Restore functionality not implemented - requires careful planning');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `restore-${tenantId || 'all'}-${timestamp}.sql`;
+    const filepath = path.join('/tmp', filename);
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const file = fs.createWriteStream(filepath);
+        const transport = backupUrl.startsWith('https') ? https : http;
+
+        transport.get(backupUrl, (response) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Failed to download backup: HTTP ${response.statusCode}`));
+            return;
+          }
+          response.pipe(file);
+          file.on('finish', () => { file.close(); resolve(); });
+          file.on('error', reject);
+        }).on('error', reject);
+      });
+
+      const dbConfig = {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || '5432',
+        database: process.env.DB_NAME || 'hospital_management',
+        username: process.env.DB_USER || 'postgres'
+      };
+
+      const command = `psql -h ${dbConfig.host} -p ${dbConfig.port} -U ${dbConfig.username} -d ${dbConfig.database} -f ${filepath}`;
+      await execAsync(command, { env: { ...process.env, PGPASSWORD: process.env.DB_PASSWORD } });
+
+      console.log(`Database restored from backup: ${backupUrl}`);
+    } finally {
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+      }
+    }
   }
 }
