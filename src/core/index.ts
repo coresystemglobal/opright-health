@@ -10,12 +10,19 @@ import {
   authRateLimit, 
   paymentRateLimit,
   apiRateLimit
-} from '../middlewares/rate-limiter.middleware';
+} from '../middleware/rate-limiter.middleware';
 const server = express();
 
 const port = process.env.LOCAL_PORT || 3000;
 
-server.use(express.json({ limit: '10mb' }));
+// Capture the raw request body for webhook signature verification
+// (Paystack/Stripe/Flutterwave sign the exact bytes they send)
+server.use(express.json({
+  limit: '10mb',
+  verify: (req, _res, buf) => {
+    (req as any).rawBody = buf;
+  }
+}));
 server.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Apply security middleware

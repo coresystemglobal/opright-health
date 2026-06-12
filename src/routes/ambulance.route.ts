@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as ambulanceController from '../controllers/ambulance.controller';
+import * as ambulanceController from '../modules/ambulance/ambulance.controller';
 import { checkPermission } from '../middlewares/permission.middleware';
 import { PERMISSIONS } from '../config/rbac.config';
 

@@ -192,10 +192,6 @@ export class BillingService {
   private static getStripePriceId(planType: PlanType, billingCycle: BillingCycle): string {
     // These would be actual Stripe price IDs from your Stripe dashboard
     const priceIds = {
-      [PlanType.INDIVIDUAL]: {
-        [BillingCycle.MONTHLY]: 'price_individual_monthly',
-        [BillingCycle.YEARLY]: 'price_individual_yearly'
-      },
       [PlanType.BASIC]: {
         [BillingCycle.MONTHLY]: 'price_basic_monthly',
         [BillingCycle.YEARLY]: 'price_basic_yearly'

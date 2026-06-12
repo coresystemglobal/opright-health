@@ -24,9 +24,9 @@
     "test:verbose": "jest --verbose",
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",
-    "dev": "nodemon --exec ts-node /main.ts",
-    "build": "tsc",
-    "start": "tsc && node dist/main.js",
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/main.ts",
+    "build": "tsc && tsc-alias",
+    "start": "npm run build && node dist/main.js",
     "migrate": "sequelize-cli db:migrate",
     "migrate:test": "NODE_ENV=test sequelize-cli db:migrate",
     "seed": "sequelize-cli db:seed:all",
@@ -36,7 +36,6 @@
   },
   "dependencies": {
     "@types/aws-sdk": "^0.0.42",
-    "@types/axios": "^0.9.36",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "amqplib": "^0.10.3",
@@ -95,6 +94,8 @@
     "supertest": "^6.3.4",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.1",
+    "tsc-alias": "^1.8.17",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.2.2"
   }
 }
