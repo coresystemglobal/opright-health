@@ -39,18 +39,20 @@
 
 ## 2. Payment Collection
 
-The billing and payment modules are scaffolded but gateway integration is missing.
+Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
-- [ ] 🟡 `billing.service.ts` and `payment.service.ts` exist — review for completeness
-- [ ] 🔴 Integrate **Paystack** as primary gateway (local cards, bank transfer, USSD) — *decided*
-- [ ] 🔴 Integrate **Stripe** as fallback for international payments — *decided*
-- [ ] 🔴 Webhook handler for payment events (success, failure, refund, dispute)
+- [x] 🟢 `billing.service.ts` and `payment.service.ts` reviewed and wired to real providers
+- [x] 🟢 Paystack primary gateway — initialize, verify, HMAC-SHA512 webhooks, refunds
+- [x] 🟢 Stripe international fallback — Checkout Sessions, signed webhooks, refunds
+- [x] 🟢 Flutterwave alternative gateway — initialize, verify, webhooks, refunds
+- [x] 🟢 Webhook handlers for success / failure / refund events (raw-body signature verification)
+- [ ] 🔴 Dispute/chargeback webhook events
 - [ ] 🔴 Automatic invoice generation on payment
 - [ ] 🟡 Invoice model exists — add PDF export using PDFKit — *decided*
 - [ ] 🔴 Payment retry logic for failed recurring charges
 - [ ] 🔴 Dunning flow: email sequence for overdue accounts (Day 1, Day 3, Day 7, suspend)
-- [ ] 🔴 Refund handling API
-- [ ] 🔴 Multi-currency support (NGN, USD, GBP minimum)
+- [x] 🟢 Refund handling API (`POST /refund/:paymentId`, backed by all three providers)
+- [ ] 🟡 Multi-currency support — NGN via Paystack, USD/GBP/EUR via Stripe; needs per-invoice currency handling
 - [ ] 🔴 VAT / tax calculation per region
 - [ ] 🔴 Payment receipt emails (update `email.service.ts`)
 - [ ] 🔴 Bulk payment collection for patient fees (outpatient, inpatient, lab, pharmacy)
