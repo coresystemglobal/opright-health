@@ -42,14 +42,11 @@
 The billing and payment modules are scaffolded but gateway integration is missing.
 
 - [ ] 🟡 `billing.service.ts` and `payment.service.ts` exist — review for completeness
-- [ ] 🔴 **Choose payment gateway** (decision needed):
-  - **Stripe** — best for international / card payments
-  - **Paystack** — best for Nigeria / West Africa (local cards, bank transfer, USSD)
-  - **Flutterwave** — broader Africa coverage
-  - *Recommendation: Paystack as primary + Stripe as fallback for international*
+- [ ] 🔴 Integrate **Paystack** as primary gateway (local cards, bank transfer, USSD) — *decided*
+- [ ] 🔴 Integrate **Stripe** as fallback for international payments — *decided*
 - [ ] 🔴 Webhook handler for payment events (success, failure, refund, dispute)
 - [ ] 🔴 Automatic invoice generation on payment
-- [ ] 🟡 Invoice model exists — add PDF export (using Puppeteer or pdf-lib)
+- [ ] 🟡 Invoice model exists — add PDF export using PDFKit — *decided*
 - [ ] 🔴 Payment retry logic for failed recurring charges
 - [ ] 🔴 Dunning flow: email sequence for overdue accounts (Day 1, Day 3, Day 7, suspend)
 - [ ] 🔴 Refund handling API
@@ -125,7 +122,7 @@ The billing and payment modules are scaffolded but gateway integration is missin
 
 - [ ] 🟡 Appointment scheduling (module exists)
 - [ ] 🟡 Appointment waitlist (model exists — implement waitlist promotion)
-- [ ] 🟡 Telemedicine / video consultation (`telemedicine.service.ts` — review depth)
+- [ ] 🟡 Telemedicine / video consultation via Daily.co (`telemedicine.service.ts` — review depth) — *decided*
 - [ ] 🔴 Electronic prescriptions (generate, send to pharmacy, track fulfilment)
 - [ ] 🔴 Clinical notes (SOAP format: Subjective, Objective, Assessment, Plan)
 - [ ] 🔴 Referral management (internal department-to-department, external)
@@ -194,7 +191,7 @@ The billing and payment modules are scaffolded but gateway integration is missin
 
 - [ ] 🟡 In-app notifications (service exists)
 - [ ] 🟡 Email notifications (service exists, updated to Clinical Blue)
-- [ ] 🔴 SMS notifications (integrate Twilio or Termii for local delivery)
+- [ ] 🔴 SMS notifications — VTpass (primary, Nigeria) + Twilio (global) — *decided*
 - [ ] 🔴 WhatsApp notifications (Twilio WhatsApp API or 360dialog)
 - [ ] 🔴 Push notifications for mobile (FCM / APNs)
 - [ ] 🔴 Appointment reminders (24h and 2h before, configurable per tenant)
@@ -211,9 +208,9 @@ The billing and payment modules are scaffolded but gateway integration is missin
 - [ ] 🟡 Audit logging (`audit.middleware.ts` exists — review coverage)
 - [ ] 🟡 Error tracking (`error-tracking.service.ts` — `sendToExternalService` is a stub)
 - [ ] 🟡 Rate limiting (middleware exists)
-- [ ] 🔴 **HIPAA compliance checklist** (for US deployments)
-- [ ] 🔴 **NDPR compliance** (Nigeria Data Protection Regulation — for local deployments)
-- [ ] 🔴 **GDPR compliance** (for EU deployments)
+- [ ] 🔴 **NDPR compliance** (Nigeria Data Protection Regulation) — *priority 1, decided*
+- [ ] 🔴 **GDPR compliance** (EU deployments) — *priority 1, decided*
+- [ ] 🔴 **HIPAA compliance checklist** (US deployments) — *deferred until US expansion*
 - [ ] 🔴 Data encryption at rest (database-level and field-level for PII)
 - [ ] 🔴 Data retention and purge policies (configurable per tenant)
 - [ ] 🔴 Patient data export (right to access / right to portability)
@@ -267,15 +264,15 @@ The billing and payment modules are scaffolded but gateway integration is missin
 
 ---
 
-## Open Decisions to Resolve
+## Decisions — Resolved (2026-06-12)
 
-| # | Decision | Options | Recommended |
-|---|---|---|---|
-| 1 | Subscription model | Feature-gated vs capacity-based flat | Capacity-based flat |
-| 2 | Primary payment gateway | Stripe, Paystack, Flutterwave | Paystack (primary) + Stripe (international) |
-| 3 | SMS provider | Twilio, Termii, AfricasTalking | Termii for Nigeria, Twilio globally |
-| 4 | Telemedicine approach | Build in-house vs Twilio Video vs Daily.co | Daily.co (fastest integration, HIPAA-ready) |
-| 5 | Analytics charts | Server-side (Chart.js PDF) vs frontend only | Frontend-rendered, backend serves raw data |
-| 6 | PDF generation | Puppeteer vs pdf-lib vs PDFKit | PDFKit (lightweight, no headless browser needed) |
-| 7 | Deployment target | AWS, GCP, Azure, DigitalOcean | DigitalOcean / Railway for early stage, AWS for scale |
-| 8 | Compliance priority | HIPAA, GDPR, NDPR | NDPR first (local market), HIPAA for US expansion |
+| # | Decision | Resolution |
+|---|---|---|
+| 1 | Subscription model | ✅ Capacity-based flat — all features for everyone, tiers by volume/seats/storage |
+| 2 | Payment gateway | ✅ Paystack (primary) + Stripe (international) |
+| 3 | SMS provider | ✅ VTpass (primary, Nigeria) + Twilio (global) |
+| 4 | Telemedicine | ✅ Daily.co |
+| 5 | Analytics charts | ✅ Frontend-rendered, backend serves raw data |
+| 6 | PDF generation | ✅ PDFKit |
+| 7 | Deployment target | ✅ Railway (early stage) → Contabo VPS (later) |
+| 8 | Compliance priority | ✅ NDPR + GDPR first, HIPAA later for US expansion |
