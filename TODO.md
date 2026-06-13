@@ -48,10 +48,12 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Webhook handlers for success / failure / refund events (raw-body signature verification)
 - [ ] 🔴 Dispute/chargeback webhook events
 - [ ] 🔴 Automatic invoice generation on payment
-- [ ] 🟡 Invoice model exists — add PDF export using PDFKit — *decided*
+- [x] 🟢 PDF invoice export — `pdf-invoice.service.ts` using PDFKit; Clinical Blue design; `GET /invoices/:id/pdf` download endpoint
 - [ ] 🔴 Payment retry logic for failed recurring charges
-- [ ] 🔴 Dunning flow: email sequence for overdue accounts (Day 1, Day 3, Day 7, suspend)
+- [x] 🟢 Dunning flow — `dunning.service.ts`: marks overdue, sends day-1/3/7/14 branded emails; idempotent per stage; cron fires at 08:00 daily
 - [x] 🟢 Refund handling API (`POST /refund/:paymentId`, backed by all three providers)
+- [x] 🟢 Automatic invoice generation on payment — `invoice-auto.service.ts` creates a linked invoice when none was supplied at initiation
+- [x] 🟢 Payment receipt emails — `payment-email.service.ts` sends branded receipt after every verified payment
 - [ ] 🟡 Multi-currency support — NGN via Paystack, USD/GBP/EUR via Stripe; needs per-invoice currency handling
 - [ ] 🔴 VAT / tax calculation per region
 - [ ] 🔴 Payment receipt emails (update `email.service.ts`)
