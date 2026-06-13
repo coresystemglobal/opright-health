@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { Subscription, PlanType, BillingCycle, SubscriptionStatus } from '@modules/billing/subscription.model';
 
 import { UsageTracking } from '@modules/billing/usage-tracking.model';
@@ -5,7 +6,10 @@ import { UsageTracking } from '@modules/billing/usage-tracking.model';
 import { Tenant } from '@modules/tenancy/tenant.model';
 import { PlanConfig } from '@config/plan.config';
 import type { PlanLimits, PlanPricing } from '@config/plan.config';
+import { getFromRedis, saveToRedis } from '@core/redis';
 import Stripe from 'stripe';
+
+const SUBSCRIPTION_CACHE_TTL = 300; // 5 minutes
 
 export class BillingService {
   private static stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' });
@@ -56,7 +60,10 @@ export class BillingService {
 
   static async checkUsageLimits(tenantId: string): Promise<{ withinLimits: boolean; violations: string[] }> {
     const subscription = await Subscription.findOne({
-      where: { tenant_id: tenantId, status: SubscriptionStatus.ACTIVE }
+      where: {
+        tenant_id: tenantId,
+        status: { [Op.in]: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] }
+      }
     });
 
     if (!subscription) {
@@ -67,8 +74,12 @@ export class BillingService {
     const usage = await this.getCurrentUsage(tenantId);
     const violations: string[] = [];
 
-    if (limits.maxPatients !== -1 && usage.patients_count > limits.maxPatients) {
-      violations.push(`Patient limit exceeded: ${usage.patients_count}/${limits.maxPatients}`);
+    if (limits.maxPatients !== -1 && usage.patients_count >= limits.maxPatients) {
+      violations.push(`Patient limit reached: ${usage.patients_count}/${limits.maxPatients}`);
+    }
+
+    if (limits.maxUsers !== -1 && usage.users_count >= limits.maxUsers) {
+      violations.push(`User seat limit reached: ${usage.users_count}/${limits.maxUsers}`);
     }
 
     if (limits.maxStorageMB !== -1 && usage.storage_used_mb > limits.maxStorageMB) {
@@ -76,7 +87,7 @@ export class BillingService {
     }
 
     if (limits.maxAPICallsPerMonth !== -1 && usage.api_calls_count > limits.maxAPICallsPerMonth) {
-      violations.push(`API calls limit exceeded: ${usage.api_calls_count}/${limits.maxAPICallsPerMonth}`);
+      violations.push(`API call limit exceeded: ${usage.api_calls_count}/${limits.maxAPICallsPerMonth}`);
     }
 
     return { withinLimits: violations.length === 0, violations };
@@ -101,7 +112,8 @@ export class BillingService {
         appointments_count: 0,
         lab_tests_count: 0,
         storage_used_mb: 0,
-        api_calls_count: 0
+        api_calls_count: 0,
+        users_count: 0
       }
     });
 
@@ -127,7 +139,8 @@ export class BillingService {
         appointments_count: 0,
         lab_tests_count: 0,
         storage_used_mb: 0,
-        api_calls_count: 0
+        api_calls_count: 0,
+        users_count: 0
       }
     });
 
@@ -174,8 +187,42 @@ export class BillingService {
 
   static async getCurrentSubscription(tenantId: string): Promise<Subscription | null> {
     return Subscription.findOne({
-      where: { tenant_id: tenantId, status: SubscriptionStatus.ACTIVE }
+      where: {
+        tenant_id: tenantId,
+        status: { [Op.in]: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING, SubscriptionStatus.PAST_DUE] }
+      },
+      order: [['createdAt', 'DESC']]
     });
+  }
+
+  static async getSubscriptionContext(tenantId: string): Promise<{
+    subscription: Subscription | null;
+    isAccessAllowed: boolean;
+    isTrialing: boolean;
+    trialDaysRemaining: number;
+    isInGracePeriod: boolean;
+    graceDaysRemaining: number;
+    status: string | null;
+  }> {
+    const cacheKey = `sub_ctx:${tenantId}`;
+    const cached = await getFromRedis(cacheKey).catch(() => null);
+    if (cached) {
+      try { return JSON.parse(cached as string); } catch { /* fall through */ }
+    }
+
+    const subscription = await this.getCurrentSubscription(tenantId);
+    const ctx = {
+      subscription,
+      isAccessAllowed:    subscription ? subscription.is_access_allowed    : false,
+      isTrialing:         subscription ? subscription.is_trialing           : false,
+      trialDaysRemaining: subscription ? subscription.trial_days_remaining  : 0,
+      isInGracePeriod:    subscription ? subscription.is_in_grace_period    : false,
+      graceDaysRemaining: subscription ? subscription.grace_days_remaining  : 0,
+      status:             subscription ? subscription.status                : null
+    };
+
+    await saveToRedis(cacheKey, JSON.stringify(ctx), SUBSCRIPTION_CACHE_TTL).catch(() => null);
+    return ctx;
   }
 
   private static async createStripeCustomer(tenant: Tenant): Promise<string> {
