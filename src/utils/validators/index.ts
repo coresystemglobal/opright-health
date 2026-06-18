@@ -12,3 +12,4 @@ export * from './files.validator';
 export * from './tenant.validator';
 export * from './audit.validator';
 export * from './generic.validator';
+export * from './visitor.validator';

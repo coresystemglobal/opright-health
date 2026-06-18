@@ -58,6 +58,7 @@ import faqRouter from '@modules/faq/faq.route';
 import mobileRouter from '@modules/mobile/mobile.route';
 import healthRouter from '@modules/health/health.route';
 import docsRouter from '@modules/health/docs.route';
+import visitorRouter from '@modules/visitors/visitor-log.route';
 
 const router = Router();
 
@@ -119,6 +120,9 @@ router.use('/api/fhir', fhirRouter);
 router.use('/api/audit', auditRouter);
 router.use('/api/faqs', faqRouter);
 router.use('/api/mobile', mobileRouter);
+
+// Visitor Logs (check-in/check-out public, list staff-only)
+router.use('/api/visitors', visitorRouter);
 
 // Health & Docs (no /api prefix)
 router.use('/', healthRouter);
