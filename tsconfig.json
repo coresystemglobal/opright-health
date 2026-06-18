@@ -26,7 +26,17 @@
     "noImplicitOverride": true,
     "useUnknownInCatchVariables": true,
     "noPropertyAccessFromIndexSignature": false,
-    "typeRoots": ["node_modules/@types"]
+    "typeRoots": ["node_modules/@types"],
+    "baseUrl": "./src",
+    "paths": {
+      "@appTypes/*": ["types/*"],
+      "@config/*": ["config/*"],
+      "@core/*": ["core/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@modules/*": ["modules/*"],
+      "@utils/*": ["utils/*"],
+      "@shared/*": ["shared/*"]
+    }
   },
   "include": [
     "src/**/*"

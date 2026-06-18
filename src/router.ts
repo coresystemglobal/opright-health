@@ -29,12 +29,17 @@ const router = Router();
 
 // Apply rate limiting to auth routes
 import { authRateLimit, apiRateLimit } from './middlewares/rate-limit.middleware';
+import { requireActiveSubscription } from './middlewares/billing.middleware';
 
 // Mount routes
 router.use('/auth', authRateLimit, authRouter);
 
 // Apply general rate limiting to all API routes
 router.use('/api', apiRateLimit);
+
+// Subscription gate — all /api/* routes require an active subscription.
+// Auth routes (/auth) are intentionally excluded so login/register always works.
+router.use('/api', requireActiveSubscription);
 // router.use('/users', userRouter); // Commented out - module may not exist
 // router.use('/login', loginRouter); // Commented out - module may not exist
 router.use('/api/roles', roleRouter);

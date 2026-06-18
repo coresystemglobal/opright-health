@@ -10,12 +10,19 @@ import {
   authRateLimit, 
   paymentRateLimit,
   apiRateLimit
-} from '../middlewares/rate-limiter.middleware';
+} from '../middleware/rate-limiter.middleware';
 const server = express();
 
 const port = process.env.LOCAL_PORT || 3000;
 
-server.use(express.json({ limit: '10mb' }));
+// Capture the raw request body for webhook signature verification
+// (Paystack/Stripe/Flutterwave sign the exact bytes they send)
+server.use(express.json({
+  limit: '10mb',
+  verify: (req, _res, buf) => {
+    (req as any).rawBody = buf;
+  }
+}));
 server.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Apply security middleware
@@ -109,10 +116,39 @@ server.use((err: any, req: any, res: any, next: any) => {
   });
 });
 
+function scheduleDunning() {
+  const runCycle = async () => {
+    const { markOverdueInvoices, runDunningCycle } = await import('../services/dunning.service');
+    const marked = await markOverdueInvoices();
+    if (marked > 0) console.log(`Dunning: marked ${marked} invoice(s) overdue.`);
+    const results = await runDunningCycle();
+    const sent = results.filter(r => r.sent).length;
+    if (sent > 0) console.log(`Dunning: sent ${sent} email(s).`);
+  };
+
+  // Run once 5 minutes after startup (give DB time to settle), then daily at 08:00
+  setTimeout(() => {
+    runCycle().catch(e => console.error('Dunning cycle error:', e));
+
+    const now = new Date();
+    const next8am = new Date(now);
+    next8am.setHours(8, 0, 0, 0);
+    if (next8am <= now) next8am.setDate(next8am.getDate() + 1);
+    const msUntil8am = next8am.getTime() - now.getTime();
+
+    setTimeout(() => {
+      runCycle().catch(e => console.error('Dunning cycle error:', e));
+      setInterval(() => runCycle().catch(e => console.error('Dunning cycle error:', e)), 24 * 60 * 60 * 1000);
+    }, msUntil8am);
+  }, 5 * 60 * 1000);
+}
+
 const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connected.');
+
+    scheduleDunning();
 
     server.listen(port, () => {
       console.log(`Server running on port ${port}`);
