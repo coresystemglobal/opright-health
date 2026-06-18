@@ -151,6 +151,25 @@ export class User extends Model {
   })
   reset_token_expires?: Date;
 
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true
+  })
+  totp_secret?: string;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  })
+  totp_enabled!: boolean;
+
+  @Column({
+    type: DataType.JSON,
+    allowNull: true
+  })
+  totp_backup_codes?: string[];
+
   declare createdAt: Date;
   declare updatedAt: Date;
   declare deletedAt?: Date;

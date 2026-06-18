@@ -40,9 +40,12 @@ export class AuthController {
     try {
       try {
         const result = await authService.login(req.body);
+        if ((result as any).requiresTwoFactor) {
+          return ResponseUtil.success(res, result, '2FA verification required');
+        }
         return ResponseUtil.success(res, result, 'Login successful');
       } catch (serviceError: any) {
-        if (serviceError.message === 'Email and password are required' || 
+        if (serviceError.message === 'Email and password are required' ||
             serviceError.message === 'Invalid email format') {
           return ResponseUtil.validationError(res, [serviceError.message]);
         } else if (serviceError.message === 'Invalid credentials') {

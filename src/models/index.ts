@@ -94,6 +94,8 @@ export { TriageAuditLog } from '@modules/triage/triage-audit-log.model';
 
 export { TokenBlacklist } from '@modules/auth/token-blacklist.model';
 
+export { VisitorLog, VisitorStatus, VisitPurpose, VisitorIdType } from '@modules/visitors/visitor-log.model';
+
 
 
 // Re-export model instances for database setup
@@ -192,6 +194,7 @@ import { TriageAuditLog } from '@modules/triage/triage-audit-log.model';
 
 import { TokenBlacklist } from '@modules/auth/token-blacklist.model';
 
+import { VisitorLog } from '@modules/visitors/visitor-log.model';
 
 export const models = [
   User,
@@ -242,6 +245,7 @@ export const models = [
   TriageResult,
   TriageAuditLog,
   TokenBlacklist,
+  VisitorLog,
 ];
 
 export default models;

@@ -1,10 +1,12 @@
 import { User, TokenBlacklist } from '../../models';
+import { Role } from '@modules/rbac/role.model';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt, { SignOptions } from "jsonwebtoken";
 import { Op } from 'sequelize';
 import { ValidationUtil } from '@utils/validation.util';
 import { sendVerificationEmail, sendPasswordResetEmail } from '@shared/email/email.service';
+import { isTotpRequiredRole } from './twofa.service';
 
 interface LoginData {
   email: string;
@@ -75,8 +77,9 @@ export const authService = {
         throw new Error('Invalid email format');
       }
 
-      const user = await User.findOne({ 
+      const user = await User.findOne({
         where: { email: email.toLowerCase() },
+        include: [{ model: Role, as: 'role' }],
         paranoid: true
       });
 
@@ -105,6 +108,17 @@ export const authService = {
         throw new Error('Invalid credentials');
       }
 
+      // If this role requires 2FA and the user has it enabled, return a challenge token
+      const roleName = (user.role as any)?.role as string | undefined;
+      if (roleName && isTotpRequiredRole(roleName) && user.totp_enabled) {
+        const tempToken = signToken(
+          { userId: user.id, purpose: 'totp_challenge' },
+          jwtSecret(),
+          { expiresIn: '5m' }
+        );
+        return { requiresTwoFactor: true, tempToken };
+      }
+
       user.failed_login_attempts = 0;
       user.locked_until = undefined;
       user.last_login_at = new Date();
@@ -114,7 +128,7 @@ export const authService = {
         userId: user.id,
         email: user.email
       };
-      
+
       const accessToken = signToken(tokenPayload, jwtSecret(), { expiresIn: jwtExpiry });
       const refreshJti = crypto.randomUUID();
       const refreshToken = signToken(

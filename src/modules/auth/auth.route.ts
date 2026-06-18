@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { AuthController } from './auth.controller';
 import authentication from '@middlewares/authentication';
+import twofaRouter from './twofa.route';
 
 const authRouter = Router();
+
+authRouter.use('/2fa', twofaRouter);
 
 /**
  * @swagger
