@@ -1,3 +1,4 @@
+import http from 'http';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -6,12 +7,14 @@ import helmet from 'helmet';
 import sequelize from './database';
 import router from '../router';
 import { specs, swaggerUi, swaggerUiOptions } from '../config/swagger.config';
-import { 
-  generalRateLimit, 
-  authRateLimit, 
+import {
+  generalRateLimit,
+  authRateLimit,
   paymentRateLimit,
   apiRateLimit
 } from '../middlewares/rate-limiter.middleware';
+import { idempotencyMiddleware, cleanupOldSyncLogs } from '../middlewares/idempotency.middleware';
+import { NotificationService } from '../modules/notifications/notification.service';
 
 /**
  * Validate that all critical environment variables are present at startup.
@@ -75,7 +78,7 @@ server.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Tenant-ID', 'X-Client-Sync-Id'],
   exposedHeaders: ['X-Total-Count', 'X-Page-Count']
 }));
 
@@ -92,6 +95,12 @@ server.use('/api/v1/auth', authRateLimit);
 server.use('/api/v1/payments', paymentRateLimit);
 server.use('/api/v1', apiRateLimit);
 server.use(generalRateLimit);
+
+// Idempotency for offline-sync replay (skip auth routes)
+server.use('/api/v1', (req, res, next) => {
+  if (req.path.startsWith('/auth/')) return next();
+  return idempotencyMiddleware(req, res, next);
+});
 
 server.get("/", (req, res) => {
   res.json({ 
@@ -150,9 +159,16 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Database connected.');
 
-    server.listen(port, () => {
+    // Wrap Express with HTTP server so Socket.IO can share the port
+    const httpServer = http.createServer(server);
+    NotificationService.initialize(httpServer);
+
+    httpServer.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });
+
+    // Purge stale idempotency records on startup
+    cleanupOldSyncLogs().catch(() => {});
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }
