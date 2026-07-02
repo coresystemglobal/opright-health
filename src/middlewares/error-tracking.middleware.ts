@@ -2,13 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { ErrorTrackingService } from '@shared/error-tracking/error-tracking.service';
 
 export const errorTrackingMiddleware = (err: Error, req: Request, res: Response, next: NextFunction) => {
-  // Determine severity based on status code
   const statusCode = (err as any).statusCode || 500;
-  let severity: 'low' | 'medium' | 'high' | 'critical' = 'medium';
+  let severity: 'low' | 'medium' | 'high' | 'critical';
 
-  if (statusCode >= 500) severity = 'critical';
-  else if (statusCode >= 400) severity = 'high';
-  else if (statusCode >= 300) severity = 'medium';
+  if (statusCode >= 500) severity = 'critical';          // server errors → Slack
+  else if (statusCode === 400 || statusCode === 404) severity = 'medium'; // bad input / not found → no Slack
+  else if (statusCode >= 400) severity = 'high';         // 401, 403, 429, etc. → Slack
   else severity = 'low';
 
   // Log the error

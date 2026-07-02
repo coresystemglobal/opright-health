@@ -14,6 +14,7 @@ import {
   apiRateLimit
 } from '../middlewares/rate-limiter.middleware';
 import { idempotencyMiddleware, cleanupOldSyncLogs } from '../middlewares/idempotency.middleware';
+import { errorTrackingMiddleware } from '../middlewares/error-tracking.middleware';
 import { NotificationService } from '../modules/notifications/notification.service';
 
 /**
@@ -127,6 +128,9 @@ server.get("/health", (req, res) => {
 });
 
 server.use('/api/v1', router);
+
+// Log errors and fire Slack alerts for high/critical severity
+server.use(errorTrackingMiddleware);
 
 // Error handling for security violations
 server.use((err: any, req: any, res: any, next: any) => {
