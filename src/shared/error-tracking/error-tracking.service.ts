@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { SlackService } from '@shared/slack/slack.service';
 
 interface ErrorLog {
   id: string;
@@ -46,8 +47,8 @@ export class ErrorTrackingService {
       url: errorLog.url
     });
 
-    // In production, send to external service like Sentry
-    if (process.env.NODE_ENV === 'production') {
+    // Send high/critical errors to Slack in all environments
+    if (severity === 'high' || severity === 'critical') {
       this.sendToExternalService(errorLog);
     }
   }
@@ -68,7 +69,6 @@ export class ErrorTrackingService {
   }
 
   private static sendToExternalService(errorLog: ErrorLog) {
-    // Implement external error tracking service integration
-    // e.g., Sentry, Rollbar, Bugsnag
+    SlackService.sendErrorAlert(errorLog);
   }
 }

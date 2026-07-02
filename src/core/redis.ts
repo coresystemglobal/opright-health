@@ -8,10 +8,10 @@ let redisClient: Redis | null = null;
 async function initializeRedisConnection(): Promise<Redis> {
   if (!redisClient) {
     redisClient = new Redis({
-      host: 'localhost',
-      port: 6379,
-      // password: process.env.REDIS_PASSWORD || 'password',
-      db: 0,
+      host: process.env.REDIS_HOST || '127.0.0.1',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD || undefined,
+      db: parseInt(process.env.REDIS_DB || '0'),
       maxRetriesPerRequest: MAX_RETRIES,
       retryStrategy(times: number) {
         if (times > MAX_RETRIES) {

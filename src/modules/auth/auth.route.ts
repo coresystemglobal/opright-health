@@ -71,6 +71,7 @@ authRouter.use('/2fa', twofaRouter);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+authRouter.post('/register', AuthController.register);
 authRouter.post('/login', AuthController.login);
 
 /**
