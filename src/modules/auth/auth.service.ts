@@ -163,7 +163,7 @@ export const authService = {
 
   register: async (registerData: RegisterData) => {
     try {
-      const { first_name, last_name, email, password, phone, role } = registerData;
+      const { first_name, last_name, email, password, phone } = registerData;
 
       const requiredFields = ['first_name', 'last_name', 'email', 'password'];
       const missingFields = ValidationUtil.validateRequiredFields(registerData, requiredFields);
@@ -252,23 +252,20 @@ export const authService = {
       }
 
       const decoded: any = jwt.verify(refreshToken, jwtRefreshSecret());
-      
-      if (!decoded || !decoded.userId) {
-        throw new Error('Invalid refresh token');
-      }
 
-      // Check if the refresh token has been blacklisted (revoked)
-      if (decoded.jti) {
-        const blacklisted = await TokenBlacklist.findOne({ where: { jti: decoded.jti } });
-        if (blacklisted) {
-          throw new Error('Refresh token has been revoked');
-        }
-      }
+      const [blacklisted, user] = await Promise.all([
+        decoded.jti
+          ? TokenBlacklist.findOne({ where: { jti: decoded.jti } })
+          : Promise.resolve(null),
+        User.findByPk(decoded.userId, {
+          attributes: { exclude: ['password'] },
+          include: [{ model: Role, as: 'role' }]
+        })
+      ]);
 
-      const user = await User.findByPk(decoded.userId, {
-        attributes: { exclude: ['password'] },
-        include: [{ model: Role, as: 'role' }]
-      });
+      if (blacklisted) {
+        throw new Error('Refresh token has been revoked');
+      }
 
       if (!user) {
         throw new Error('User not found');
@@ -453,8 +450,16 @@ export const authService = {
   logout: async (refreshToken?: string) => {
     if (refreshToken) {
       try {
-        // Decode without verification to extract jti/exp even if token is expired
-        const decoded: any = jwt.decode(refreshToken);
+        let decoded: any;
+        try {
+          decoded = jwt.verify(refreshToken, jwtRefreshSecret());
+        } catch (err: any) {
+          // Only fall back to decode for expired tokens — signature was valid, token just aged out
+          if (err.name === 'TokenExpiredError') {
+            decoded = jwt.decode(refreshToken);
+          }
+          // Invalid signature or malformed: leave decoded undefined, skip blacklisting
+        }
         if (decoded?.jti && decoded?.userId) {
           const expiresAt = decoded.exp
             ? new Date(decoded.exp * 1000)

@@ -2,10 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { QueryTypes } from 'sequelize';
 import sequelize from '../core/database';
 
+const SYNC_ID_RE = /^[\w-]{1,128}$/;
+
 export async function idempotencyMiddleware(req: Request, res: Response, next: NextFunction) {
   const syncId = req.headers['x-client-sync-id'] as string | undefined;
 
-  if (!syncId || !['POST', 'PUT', 'PATCH'].includes(req.method)) {
+  if (!syncId || !SYNC_ID_RE.test(syncId) || !['POST', 'PUT', 'PATCH'].includes(req.method)) {
     return next();
   }
 

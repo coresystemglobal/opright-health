@@ -62,9 +62,9 @@ server.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://your-frontend-domain.com'
+      ...(process.env.NODE_ENV !== 'production'
+        ? ['http://localhost:3000', 'http://localhost:3001']
+        : []),
     ].filter(Boolean);
     
     // Allow requests with no origin (mobile apps, etc.)
@@ -90,11 +90,14 @@ if (process.env.NODE_ENV !== 'test') {
 // Setup Swagger documentation
 server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerUiOptions));
 
-// Apply rate limiting - specific routes first
+// Apply rate limiting - most specific first, general only on non-API paths
 server.use('/api/v1/auth', authRateLimit);
 server.use('/api/v1/payments', paymentRateLimit);
 server.use('/api/v1', apiRateLimit);
-server.use(generalRateLimit);
+server.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  return generalRateLimit(req, res, next);
+});
 
 // Idempotency for offline-sync replay (skip auth routes)
 server.use('/api/v1', (req, res, next) => {

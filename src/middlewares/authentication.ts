@@ -26,10 +26,6 @@ const authentication = (req: AuthenticatedRequest, res: Response, next: NextFunc
 		}
 	try {
 		const decoded = jwt.verify(token, getJwtSecret()) as JwtPayload;
-		if (!decoded) {
-			return res.status(401).json({ message: 'Unauthorized' });
-		}
-		
 		req.user = {
 			userId: decoded.userId,
 			email: decoded.email,

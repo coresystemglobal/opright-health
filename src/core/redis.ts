@@ -37,10 +37,6 @@ async function initializeRedisConnection(): Promise<Redis> {
       console.log('Redis connected successfully');
     });
 
-    // redisClient.on('ready', () => {
-      
-    // });
-
     redisClient.on('error', (err) => {
       console.error('Redis client error:', err);
     });
@@ -72,7 +68,6 @@ async function saveToRedis(key: string, value: string, expirationInSeconds: numb
 
   try {
     await redisClient.set(key, value, 'EX', expirationInSeconds);
-    console.log(`Successfully saved ${key} to Redis`);
   } catch (err) {
     console.error('Error saving to Redis:', err);
     throw err;
@@ -86,9 +81,6 @@ async function getFromRedis(key: string): Promise<string | null> {
 
   try {
     const value = await redisClient.get(key);
-    if (value) {
-      console.log(`Successfully retrieved ${key} from Redis`);
-    }
     return value;
   } catch (err) {
     console.error('Error retrieving from Redis:', err);
@@ -107,7 +99,6 @@ async function gracefulShutdown(): Promise<void> {
       await redisClient.disconnect();
     } finally {
       redisClient = null;
-      process.exit(0);
     }
   }
 }
