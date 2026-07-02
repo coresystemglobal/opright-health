@@ -126,7 +126,8 @@ export const authService = {
 
       const tokenPayload = {
         userId: user.id,
-        email: user.email
+        email: user.email,
+        role: roleName
       };
 
       const accessToken = signToken(tokenPayload, jwtSecret(), { expiresIn: jwtExpiry });
@@ -236,8 +237,7 @@ export const authService = {
       }
 
       return {
-        user: userResponse,
-        verificationToken
+        user: userResponse
       };
     } catch (error) {
       console.error('Registration error:', error);
@@ -266,7 +266,8 @@ export const authService = {
       }
 
       const user = await User.findByPk(decoded.userId, {
-        attributes: { exclude: ['password'] }
+        attributes: { exclude: ['password'] },
+        include: [{ model: Role, as: 'role' }]
       });
 
       if (!user) {
@@ -279,7 +280,8 @@ export const authService = {
 
       const tokenPayload = {
         userId: user.id,
-        email: user.email
+        email: user.email,
+        role: (user.role as any)?.role as string | undefined
       };
       
       const newAccessToken = signToken(tokenPayload, jwtSecret(), { expiresIn: jwtExpiry });
