@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authRateLimit, apiRateLimit } from './middlewares/rate-limiter.middleware';
+import { requireActiveSubscription } from './middlewares/billing.middleware';
 
 // Auth & Users
 import authRouter from '@modules/auth/auth.route';
@@ -67,6 +68,10 @@ router.use('/auth', authRateLimit, authRouter);
 
 // Apply general rate limiting to all API routes
 router.use('/api', apiRateLimit);
+
+// Subscription gate — enforced for any /api request that identifies a
+// tenant (x-tenant-id). Auth routes are excluded so login always works.
+router.use('/api', requireActiveSubscription);
 
 // Users & RBAC
 router.use('/api/users', userRouter);

@@ -69,6 +69,12 @@ const patientController = {
       }
 
       const patient = await patientService.createPatient({ ...req.body, tenant_id: tenantId });
+
+      // Increment plan usage counter (set by checkResourceLimit middleware)
+      if ((req as any).__trackUsage) {
+        await (req as any).__trackUsage();
+      }
+
       return ResponseUtil.success(res, patient, 'Patient created successfully', 201);
     } catch (error) {
       if (error instanceof Error && error.message.includes('already exists')) {

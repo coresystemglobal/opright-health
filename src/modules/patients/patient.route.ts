@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import patientController from './patient.controller';
 import authentication from '@middlewares/authentication';
 import { checkPermission } from '@middlewares/permission.middleware';
+import { tenantMiddleware } from '@middlewares/tenant.middleware';
+import { checkResourceLimit } from '@middlewares/billing.middleware';
 import { PERMISSIONS } from '@config/rbac.config';
 import { validate, validateParams, validateQuery, patientValidation, genericValidation } from '@utils/validator';
 
@@ -29,9 +31,12 @@ patientRouter.get('/:id',
   }
 );
 
+// Plan capacity check: blocks creation when the tenant's patient limit is reached
 patientRouter.post('/',
   authentication,
   checkPermission(PERMISSIONS.PATIENT_CREATE),
+  tenantMiddleware,
+  checkResourceLimit('patients_count', 'maxPatients', 'Patient'),
   validate(patientValidation.create),
   async (req: Request, res: Response) => {
     await patientController.createPatient(req, res);
