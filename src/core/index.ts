@@ -64,7 +64,7 @@ server.use(cors({
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       ...(process.env.NODE_ENV !== 'production'
-        ? ['http://localhost:3000', 'http://localhost:3001']
+        ? ['http://localhost:3000', 'http://localhost:3001','https://hms-api.fly.dev']
         : []),
     ].filter(Boolean);
     
