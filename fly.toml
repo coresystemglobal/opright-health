@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for hospital-management-system-faithful-smoke-2949 on 2026-07-05T16:53:01+01:00
+# fly.toml app configuration file generated for hms-api on 2026-07-05T16:53:01+01:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'hospital-management-system-faithful-smoke-2949'
+app = 'hms-api'
 primary_region = 'lhr'
 
 [build]

@@ -50,7 +50,7 @@ function validateRequiredEnvVars(): void {
 
 const server = express();
 
-const port = process.env.LOCAL_PORT || 3000;
+const port = parseInt(process.env.PORT || process.env.LOCAL_PORT || '3000', 10);
 
 server.use(express.json({ limit: '10mb' }));
 server.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -170,7 +170,7 @@ const startServer = async () => {
     const httpServer = http.createServer(server);
     NotificationService.initialize(httpServer);
 
-    httpServer.listen(port, () => {
+    httpServer.listen(port, '0.0.0.0', () => {
       console.log(`Server running on port ${port}`);
     });
 

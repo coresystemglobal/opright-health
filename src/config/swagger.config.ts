@@ -15,7 +15,7 @@ const options = {
     },
     servers: [
       {
-        url: 'https://hospital-management-system-faithful-smoke-2949.fly.dev/api/v1',
+        url: 'https://hms-api.fly.dev/api/v1',
         description: 'Production server'
       },
       {
