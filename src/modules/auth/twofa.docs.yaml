@@ -1,0 +1,205 @@
+paths:
+  /auth/2fa/status:
+    get:
+      summary: Get 2FA status for the current user
+      tags: [Two-Factor Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 2FA status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      is_enabled:
+                        type: boolean
+                        example: false
+                      has_backup_codes:
+                        type: boolean
+
+  /auth/2fa/setup:
+    post:
+      summary: Initiate 2FA setup
+      description: Generates a TOTP secret and QR code URI to scan with an authenticator app.
+      tags: [Two-Factor Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 2FA setup initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      secret:
+                        type: string
+                        example: JBSWY3DPEHPK3PXP
+                      qr_code_url:
+                        type: string
+                        example: 'otpauth://totp/HMS:user@example.com?secret=...'
+
+  /auth/2fa/enable:
+    post:
+      summary: Enable 2FA after scanning QR code
+      description: Verifies the TOTP code from the authenticator app and activates 2FA.
+      tags: [Two-Factor Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  example: '123456'
+                  description: 6-digit TOTP code from authenticator app
+      responses:
+        '200':
+          description: 2FA enabled. Returns backup codes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      backup_codes:
+                        type: array
+                        items:
+                          type: string
+        '400':
+          description: Invalid TOTP code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/2fa/disable:
+    post:
+      summary: Disable 2FA
+      tags: [Two-Factor Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  example: '123456'
+                  description: Current TOTP code to confirm identity
+      responses:
+        '200':
+          description: 2FA disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Invalid TOTP code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/2fa/backup-codes/regenerate:
+    post:
+      summary: Regenerate 2FA backup codes
+      description: Invalidates existing backup codes and generates a new set.
+      tags: [Two-Factor Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: New backup codes generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      backup_codes:
+                        type: array
+                        items:
+                          type: string
+
+  /auth/2fa/verify:
+    post:
+      summary: Verify 2FA code during login
+      description: Called after initial login when 2FA is required. Uses a temporary token from the login response.
+      tags: [Two-Factor Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - temp_token
+                - token
+              properties:
+                temp_token:
+                  type: string
+                  description: Temporary token received from the login endpoint when 2FA is required
+                token:
+                  type: string
+                  example: '123456'
+                  description: 6-digit TOTP code or 8-character backup code
+      responses:
+        '200':
+          description: 2FA verified — returns full access and refresh tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+        '401':
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

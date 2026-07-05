@@ -7,16 +7,6 @@ import authentication from '@middlewares/authentication';
 
 const mobileRouter = express.Router();
 
-/**
- * @swagger
- * /api/mobile/profile:
- *   get:
- *     summary: Get mobile patient profile
- *     tags: [Mobile]
- *     responses:
- *       200:
- *         description: Patient profile for mobile app
- */
 mobileRouter.get('/profile', tenantMiddleware, authentication, async (req: any, res) => {
   try {
     const profile = await MobileAPIService.getPatientProfile(req.user.userId, req.tenant.id);
@@ -27,16 +17,6 @@ mobileRouter.get('/profile', tenantMiddleware, authentication, async (req: any, 
   }
 });
 
-/**
- * @swagger
- * /api/mobile/appointments:
- *   get:
- *     summary: Get upcoming appointments for mobile
- *     tags: [Mobile]
- *     responses:
- *       200:
- *         description: Upcoming appointments
- */
 mobileRouter.get('/appointments', tenantMiddleware, authentication, async (req: any, res) => {
   try {
     const appointments = await MobileAPIService.getUpcomingAppointments(req.user.userId, req.tenant.id);
@@ -47,22 +27,6 @@ mobileRouter.get('/appointments', tenantMiddleware, authentication, async (req: 
   }
 });
 
-/**
- * @swagger
- * /api/mobile/appointments/{id}/cancel:
- *   post:
- *     summary: Cancel appointment from mobile
- *     tags: [Mobile]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Appointment cancelled successfully
- */
 mobileRouter.post('/appointments/:id/cancel', tenantMiddleware, authentication, async (req: any, res) => {
   try {
     await MobileAPIService.cancelAppointment(req.params.id, req.user.userId, req.body.reason);

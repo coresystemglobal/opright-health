@@ -1,0 +1,223 @@
+paths:
+  /medications:
+    post:
+      summary: Prescribe a medication
+      description: Creates a medication prescription for a patient. Requires authentication (doctor/staff).
+      tags: [Medications]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patient_id
+                - name
+                - dosage
+                - frequency
+                - start_date
+              properties:
+                patient_id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                  example: Amoxicillin
+                dosage:
+                  type: string
+                  example: 500mg
+                frequency:
+                  type: string
+                  example: Three times daily
+                route:
+                  type: string
+                  enum: [oral, intravenous, intramuscular, topical, inhaled]
+                  example: oral
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Medication prescribed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Medication'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /medications/patient/{patientId}/active:
+    get:
+      summary: Get active medications for a patient
+      tags: [Medications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Active medications retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Medication'
+
+  /medications/patient/{patientId}:
+    get:
+      summary: Get all medications for a patient
+      tags: [Medications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: is_active
+          schema:
+            type: boolean
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Medications retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /medications/{id}:
+    get:
+      summary: Get single medication by ID
+      tags: [Medications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Medication retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Medication'
+        '404':
+          description: Medication not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a medication prescription
+      tags: [Medications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dosage:
+                  type: string
+                frequency:
+                  type: string
+                end_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Medication updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Medication'
+    delete:
+      summary: Soft delete a medication record
+      tags: [Medications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Medication deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'

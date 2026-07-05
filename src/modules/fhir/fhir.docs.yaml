@@ -1,0 +1,97 @@
+paths:
+  /fhir/Patient:
+    post:
+      summary: Create FHIR Patient resource
+      description: Creates a patient in HL7 FHIR R4 format. Requires X-Tenant-ID header.
+      tags: [FHIR]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema:
+              type: object
+              description: HL7 FHIR R4 Patient resource
+      responses:
+        '201':
+          description: FHIR Patient resource created
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+
+  /fhir/Patient/{id}:
+    get:
+      summary: Get FHIR Patient resource
+      description: Returns a patient in HL7 FHIR R4 format. Requires X-Tenant-ID header.
+      tags: [FHIR]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: FHIR Patient resource
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /fhir/Appointment/{id}:
+    get:
+      summary: Get FHIR Appointment resource
+      description: Returns an appointment in HL7 FHIR R4 format. Requires X-Tenant-ID header.
+      tags: [FHIR]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: FHIR Appointment resource
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+        '404':
+          description: Appointment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

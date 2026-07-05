@@ -4,14 +4,16 @@ import authentication from '@middlewares/authentication';
 
 const twofaRouter = Router();
 
-// All setup/management routes require authentication
 twofaRouter.get('/status', authentication, TwoFAController.getStatus);
+
 twofaRouter.post('/setup', authentication, TwoFAController.setup);
+
 twofaRouter.post('/enable', authentication, TwoFAController.enable);
+
 twofaRouter.post('/disable', authentication, TwoFAController.disable);
+
 twofaRouter.post('/backup-codes/regenerate', authentication, TwoFAController.regenerateBackupCodes);
 
-// Login verification — no auth header yet, uses tempToken in body
 twofaRouter.post('/verify', TwoFAController.verifyLogin);
 
 export default twofaRouter;

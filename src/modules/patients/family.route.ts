@@ -23,7 +23,6 @@ const familyUpdateSchema = familyCreateSchema.fork(
   (schema) => schema.optional()
 );
 
-// GET /api/family — list own family members
 familyRouter.get('/',
   authentication,
   async (req: Request, res: Response) => {
@@ -31,7 +30,6 @@ familyRouter.get('/',
   }
 );
 
-// GET /api/family/:id — get single family member
 familyRouter.get('/:id',
   authentication,
   validateParams(genericValidation.id),
@@ -40,7 +38,6 @@ familyRouter.get('/:id',
   }
 );
 
-// POST /api/family — add family member
 familyRouter.post('/',
   authentication,
   validate(familyCreateSchema),
@@ -49,7 +46,6 @@ familyRouter.post('/',
   }
 );
 
-// PUT /api/family/:id — update family member
 familyRouter.put('/:id',
   authentication,
   validateParams(genericValidation.id),
@@ -59,7 +55,6 @@ familyRouter.put('/:id',
   }
 );
 
-// DELETE /api/family/:id — remove family member (soft delete)
 familyRouter.delete('/:id',
   authentication,
   validateParams(genericValidation.id),

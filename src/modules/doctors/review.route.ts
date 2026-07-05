@@ -12,7 +12,6 @@ const reviewCreateSchema = Joi.object({
   comment: Joi.string().max(1000).trim().optional()
 });
 
-// POST /api/reviews — submit or update a review (authenticated patients)
 reviewRouter.post('/',
   authentication,
   validate(reviewCreateSchema),
@@ -21,7 +20,6 @@ reviewRouter.post('/',
   }
 );
 
-// GET /api/reviews/doctor/:doctorId — get all reviews for a doctor + avg rating
 reviewRouter.get('/doctor/:doctorId',
   authentication,
   async (req: Request, res: Response) => {
@@ -29,7 +27,6 @@ reviewRouter.get('/doctor/:doctorId',
   }
 );
 
-// DELETE /api/reviews/:id — delete own review
 reviewRouter.delete('/:id',
   authentication,
   validateParams(genericValidation.id),

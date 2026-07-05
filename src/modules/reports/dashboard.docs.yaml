@@ -1,0 +1,189 @@
+paths:
+  /dashboard:
+    get:
+      summary: Get comprehensive dashboard statistics
+      description: Returns aggregate stats across patients, appointments, revenue, and staff.
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Dashboard data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      total_patients:
+                        type: integer
+                      total_doctors:
+                        type: integer
+                      appointments_today:
+                        type: integer
+                      revenue_this_month:
+                        type: number
+
+  /dashboard/health:
+    get:
+      summary: Get system health metrics
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: System health metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      db_status:
+                        type: string
+                        example: healthy
+                      uptime:
+                        type: integer
+                        example: 86400
+                      memory:
+                        type: object
+
+  /dashboard/analytics/revenue:
+    get:
+      summary: Get revenue analytics for charts
+      tags: [Dashboard]
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, yearly]
+            default: monthly
+      responses:
+        '200':
+          description: Revenue analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        period:
+                          type: string
+                        revenue:
+                          type: number
+
+  /dashboard/summary/patients:
+    get:
+      summary: Get patient summary statistics
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Patient summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      new_this_month:
+                        type: integer
+                      active:
+                        type: integer
+
+  /dashboard/summary/appointments:
+    get:
+      summary: Get appointment summary statistics
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Appointment summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      today:
+                        type: integer
+                      this_week:
+                        type: integer
+                      pending:
+                        type: integer
+                      completed:
+                        type: integer
+
+  /dashboard/summary/revenue:
+    get:
+      summary: Get revenue summary statistics
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Revenue summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      today:
+                        type: number
+                      this_month:
+                        type: number
+                      outstanding:
+                        type: number
+
+  /dashboard/summary/doctors:
+    get:
+      summary: Get doctor summary statistics
+      tags: [Dashboard]
+      responses:
+        '200':
+          description: Doctor summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      available:
+                        type: integer
+                      on_leave:
+                        type: integer

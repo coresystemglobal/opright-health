@@ -1,0 +1,85 @@
+paths:
+  /notifications:
+    get:
+      summary: Get notifications
+      description: Returns notifications for the authenticated user. Requires X-Tenant-ID header.
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: is_read
+          schema:
+            type: boolean
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+    post:
+      summary: Send a notification
+      description: Sends a notification to a user. Requires X-Tenant-ID header.
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - title
+                - message
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                type:
+                  type: string
+                  example: appointment_reminder
+                title:
+                  type: string
+                  example: Appointment Reminder
+                message:
+                  type: string
+                  example: Your appointment is tomorrow at 9 AM
+      responses:
+        '201':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Notification'

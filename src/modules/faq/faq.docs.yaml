@@ -1,0 +1,302 @@
+paths:
+  /faqs/public:
+    get:
+      summary: Get all published FAQs (public)
+      tags: [FAQs]
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: FAQs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /faqs/public/search:
+    get:
+      summary: Search published FAQs (public)
+      tags: [FAQs]
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Search term
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /faqs/public/categories:
+    get:
+      summary: Get FAQ categories (public)
+      tags: [FAQs]
+      responses:
+        '200':
+          description: FAQ categories retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: string
+                      example: General
+
+  /faqs/public/{id}:
+    get:
+      summary: Get a single FAQ by ID (public)
+      tags: [FAQs]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: FAQ retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/FAQ'
+        '404':
+          description: FAQ not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /faqs:
+    get:
+      summary: List all FAQs (authenticated)
+      description: Returns all FAQs including unpublished ones. Requires X-Tenant-ID header.
+      tags: [FAQs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: is_published
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: FAQs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+    post:
+      summary: Create a FAQ
+      tags: [FAQs]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+                - answer
+              properties:
+                question:
+                  type: string
+                  example: What are the visiting hours?
+                answer:
+                  type: string
+                  example: Visiting hours are 8am–8pm daily.
+                category:
+                  type: string
+                  example: General
+                is_published:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: FAQ created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/FAQ'
+
+  /faqs/search:
+    get:
+      summary: Search FAQs (authenticated)
+      tags: [FAQs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: FAQ search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /faqs/categories:
+    get:
+      summary: Get FAQ categories (authenticated)
+      tags: [FAQs]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Categories retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: string
+
+  /faqs/{id}:
+    get:
+      summary: Get a FAQ by ID (authenticated)
+      tags: [FAQs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: FAQ retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/FAQ'
+        '404':
+          description: FAQ not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a FAQ
+      tags: [FAQs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                answer:
+                  type: string
+                category:
+                  type: string
+                is_published:
+                  type: boolean
+      responses:
+        '200':
+          description: FAQ updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/FAQ'
+    delete:
+      summary: Delete a FAQ
+      tags: [FAQs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: FAQ deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'

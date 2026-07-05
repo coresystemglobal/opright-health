@@ -1,0 +1,163 @@
+paths:
+  /mobile/profile:
+    get:
+      summary: Get mobile patient profile
+      description: Returns the authenticated patient's profile formatted for mobile clients.
+      tags: [Mobile]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient profile for mobile app
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Patient'
+
+  /mobile/appointments:
+    get:
+      summary: Get upcoming appointments for mobile
+      tags: [Mobile]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upcoming appointments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Appointment'
+
+  /mobile/appointments/request:
+    post:
+      summary: Request an appointment from mobile
+      tags: [Mobile]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - doctor_id
+                - scheduled_at
+              properties:
+                doctor_id:
+                  type: string
+                  format: uuid
+                scheduled_at:
+                  type: string
+                  format: date-time
+                appointment_type:
+                  type: string
+                  enum: [consultation, follow_up, checkup]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Appointment request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /mobile/appointments/{id}/cancel:
+    post:
+      summary: Cancel appointment from mobile
+      tags: [Mobile]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Appointment cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /mobile/lab-results:
+    get:
+      summary: Get lab results for mobile
+      tags: [Mobile]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lab results retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LabOrder'

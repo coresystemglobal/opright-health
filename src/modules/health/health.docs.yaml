@@ -1,0 +1,62 @@
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Basic health check. Returns 200 when the server is running.
+      tags: [Health]
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /ready:
+    get:
+      summary: Readiness probe
+      description: Kubernetes readiness probe. Returns 200 when the app is ready to accept traffic (DB connected, etc).
+      tags: [Health]
+      responses:
+        '200':
+          description: Application is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ready
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: ok
+        '503':
+          description: Application not ready
+
+  /live:
+    get:
+      summary: Liveness probe
+      description: Kubernetes liveness probe. Returns 200 when the process is alive.
+      tags: [Health]
+      responses:
+        '200':
+          description: Application is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: alive

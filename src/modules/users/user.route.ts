@@ -7,7 +7,6 @@ import { validateParams, genericValidation } from '@utils/validator';
 
 const userRouter = express.Router();
 
-// GET /api/users/search — search users (admin)
 userRouter.get('/search',
   authentication,
   checkPermission(PERMISSIONS.USER_VIEW),
@@ -16,7 +15,6 @@ userRouter.get('/search',
   }
 );
 
-// GET /api/users — list all users (admin)
 userRouter.get('/',
   authentication,
   checkPermission(PERMISSIONS.USER_VIEW),
@@ -25,7 +23,6 @@ userRouter.get('/',
   }
 );
 
-// GET /api/users/:id — get user by ID
 userRouter.get('/:id',
   authentication,
   checkPermission(PERMISSIONS.USER_VIEW),
@@ -35,7 +32,6 @@ userRouter.get('/:id',
   }
 );
 
-// PUT /api/users/:id — update user profile
 userRouter.put('/:id',
   authentication,
   checkPermission(PERMISSIONS.USER_UPDATE),
@@ -45,7 +41,6 @@ userRouter.put('/:id',
   }
 );
 
-// PATCH /api/users/:id/password — change password (own account)
 userRouter.patch('/:id/password',
   authentication,
   async (req: Request, res: Response) => {
@@ -53,7 +48,6 @@ userRouter.patch('/:id/password',
   }
 );
 
-// PATCH /api/users/:id/status — toggle active/inactive (admin)
 userRouter.patch('/:id/status',
   authentication,
   checkPermission(PERMISSIONS.USER_MANAGE),
@@ -63,7 +57,6 @@ userRouter.patch('/:id/status',
   }
 );
 
-// DELETE /api/users/:id — delete user (admin)
 userRouter.delete('/:id',
   authentication,
   checkPermission(PERMISSIONS.USER_DELETE),

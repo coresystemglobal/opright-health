@@ -1,0 +1,195 @@
+paths:
+  /visitors/check-in:
+    post:
+      summary: Visitor self-service check-in
+      description: Public kiosk-facing endpoint. No authentication required.
+      tags: [Visitors]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - visitor_name
+                - phone
+                - patient_id
+                - purpose_of_visit
+              properties:
+                visitor_name:
+                  type: string
+                  example: Samuel Johnson
+                phone:
+                  type: string
+                  example: '+2348012345678'
+                patient_id:
+                  type: string
+                  format: uuid
+                purpose_of_visit:
+                  type: string
+                  example: Family visit
+                relationship_to_patient:
+                  type: string
+                  example: Brother
+      responses:
+        '201':
+          description: Check-in successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Visitor'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /visitors/check-out/{id}:
+    post:
+      summary: Visitor self-service check-out
+      description: Public endpoint. Visitor checks out using their visitor log ID.
+      tags: [Visitors]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Visitor log ID
+      responses:
+        '200':
+          description: Check-out successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '404':
+          description: Visitor log not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /visitors/lookup:
+    get:
+      summary: Lookup active check-ins by phone number
+      description: Public endpoint. Used to find visitor ID for self-checkout.
+      tags: [Visitors]
+      parameters:
+        - in: query
+          name: phone
+          required: true
+          schema:
+            type: string
+          description: Visitor phone number
+          example: '+2348012345678'
+      responses:
+        '200':
+          description: Active check-ins found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Visitor'
+
+  /visitors/active:
+    get:
+      summary: Get all currently checked-in visitors
+      description: Staff only. Requires QUEUE_VIEW permission.
+      tags: [Visitors]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active visitors retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Visitor'
+
+  /visitors:
+    get:
+      summary: List all visitor logs
+      description: Paginated visitor log history with optional filters. Requires QUEUE_VIEW permission.
+      tags: [Visitors]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Visitor logs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /visitors/{id}:
+    get:
+      summary: Get a single visitor log entry
+      tags: [Visitors]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Visitor log retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Visitor'
+        '404':
+          description: Visitor log not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

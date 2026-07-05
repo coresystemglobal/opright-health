@@ -1,0 +1,133 @@
+paths:
+  /triage/start:
+    post:
+      summary: Begin a new triage session
+      description: Starts an AI-guided triage session. Returns the first question.
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patient_id
+                - chief_complaint
+              properties:
+                patient_id:
+                  type: string
+                  format: uuid
+                chief_complaint:
+                  type: string
+                  example: Chest pain and shortness of breath
+      responses:
+        '201':
+          description: Triage session started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      session_id:
+                        type: string
+                        format: uuid
+                      question:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          text:
+                            type: string
+                            example: How severe is the chest pain on a scale of 1-10?
+                          type:
+                            type: string
+                            enum: [scale, yes_no, multiple_choice, text]
+
+  /triage/answer:
+    post:
+      summary: Submit an answer and get the next triage question
+      description: Submits the user's answer to the current question. Returns the next question or the final triage result.
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - session_id
+                - question_id
+                - answer
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+                question_id:
+                  type: string
+                answer:
+                  description: Answer value (string, number, or boolean depending on question type)
+                  example: '8'
+      responses:
+        '200':
+          description: Answer recorded. Returns next question or final result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      is_complete:
+                        type: boolean
+                      question:
+                        type: object
+                        description: Next question (null if session is complete)
+                      result:
+                        $ref: '#/components/schemas/Triage'
+
+  /triage/result/{sessionId}:
+    get:
+      summary: Get completed triage session result
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Triage result retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Triage'
+        '404':
+          description: Session not found or not yet complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

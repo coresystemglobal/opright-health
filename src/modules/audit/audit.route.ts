@@ -6,8 +6,7 @@ import { authorizePermission } from '@middlewares/authorization';
 
 const auditRouter = express.Router();
 
-// Get audit logs
-auditRouter.get('/', 
+auditRouter.get('/',
   tenantMiddleware,
   authentication,
   authorizePermission('reports', 'view'),

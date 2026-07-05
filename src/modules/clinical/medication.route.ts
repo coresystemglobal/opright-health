@@ -5,7 +5,6 @@ import { validate, validateParams, validateQuery, medicationValidation, genericV
 
 const medicationRouter = express.Router();
 
-// POST /api/medications — prescribe medication (doctor/staff)
 medicationRouter.post('/',
   authentication,
   validate(medicationValidation.create),
@@ -14,7 +13,6 @@ medicationRouter.post('/',
   }
 );
 
-// GET /api/medications/patient/:patientId/active — active medications only
 medicationRouter.get('/patient/:patientId/active',
   authentication,
   async (req: Request, res: Response) => {
@@ -22,7 +20,6 @@ medicationRouter.get('/patient/:patientId/active',
   }
 );
 
-// GET /api/medications/patient/:patientId — all medications for a patient
 medicationRouter.get('/patient/:patientId',
   authentication,
   validateQuery(medicationValidation.search),
@@ -31,7 +28,6 @@ medicationRouter.get('/patient/:patientId',
   }
 );
 
-// GET /api/medications/:id — get single medication
 medicationRouter.get('/:id',
   authentication,
   validateParams(genericValidation.id),
@@ -40,7 +36,6 @@ medicationRouter.get('/:id',
   }
 );
 
-// PUT /api/medications/:id — update medication
 medicationRouter.put('/:id',
   authentication,
   validateParams(genericValidation.id),
@@ -50,7 +45,6 @@ medicationRouter.put('/:id',
   }
 );
 
-// DELETE /api/medications/:id — soft delete
 medicationRouter.delete('/:id',
   authentication,
   validateParams(genericValidation.id),

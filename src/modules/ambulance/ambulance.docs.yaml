@@ -1,0 +1,175 @@
+paths:
+  /ambulance/request:
+    post:
+      summary: Request an ambulance
+      description: Public endpoint — no authentication required for emergency requests.
+      tags: [Ambulance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patient_name
+                - pickup_address
+                - contact_phone
+                - emergency_type
+              properties:
+                patient_name:
+                  type: string
+                  example: John Doe
+                pickup_address:
+                  type: string
+                  example: '5 Main Street, Lagos'
+                contact_phone:
+                  type: string
+                  example: '+2348012345678'
+                emergency_type:
+                  type: string
+                  example: cardiac_arrest
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Ambulance request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/AmbulanceRequest'
+
+  /ambulance/dispatch:
+    post:
+      summary: Dispatch an ambulance to a request
+      description: Requires QUEUE_UPDATE_PRIORITY permission
+      tags: [Ambulance]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request_id
+                - ambulance_id
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                ambulance_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Ambulance dispatched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/AmbulanceRequest'
+
+  /ambulance/active:
+    get:
+      summary: Get active ambulance requests
+      description: Requires QUEUE_VIEW permission
+      tags: [Ambulance]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active requests retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AmbulanceRequest'
+
+  /ambulance/available:
+    get:
+      summary: Get available (unassigned) ambulances
+      description: Requires QUEUE_VIEW permission
+      tags: [Ambulance]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Available ambulances retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        registration:
+                          type: string
+                          example: LAG-123-AM
+                        driver_name:
+                          type: string
+
+  /ambulance/{requestId}/status:
+    patch:
+      summary: Update ambulance request status
+      tags: [Ambulance]
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [pending, dispatched, en_route, arrived, completed, cancelled]
+                  example: en_route
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/AmbulanceRequest'

@@ -1,0 +1,833 @@
+paths:
+  /laboratory/tests:
+    get:
+      summary: List all lab tests
+      description: Returns lab tests with optional filtering by category, status, or search term.
+      tags: [Laboratory]
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+            example: Hematology
+        - in: query
+          name: is_active
+          schema:
+            type: boolean
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Lab tests retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+    post:
+      summary: Create a new lab test (Admin only)
+      tags: [Laboratory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - test_code
+                - name
+                - category
+                - price
+              properties:
+                test_code:
+                  type: string
+                  example: CBC-001
+                name:
+                  type: string
+                  example: Complete Blood Count
+                category:
+                  type: string
+                  example: Hematology
+                description:
+                  type: string
+                normal_range:
+                  type: string
+                  example: '4.5-5.5 million/mcL'
+                unit:
+                  type: string
+                  example: million/mcL
+                price:
+                  type: number
+                  example: 5000
+                turnaround_hours:
+                  type: integer
+                  example: 24
+      responses:
+        '201':
+          description: Lab test created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabTest'
+
+  /laboratory/tests/code/{testCode}:
+    get:
+      summary: Get lab test by test code
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: testCode
+          required: true
+          schema:
+            type: string
+            example: CBC-001
+      responses:
+        '200':
+          description: Lab test retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabTest'
+
+  /laboratory/tests/category/{category}:
+    get:
+      summary: Get lab tests by category
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: category
+          required: true
+          schema:
+            type: string
+            example: Hematology
+      responses:
+        '200':
+          description: Tests in category retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /laboratory/tests/{testId}:
+    get:
+      summary: Get lab test by ID
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: testId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lab test retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabTest'
+        '404':
+          description: Lab test not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a lab test (Admin only)
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: testId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                price:
+                  type: number
+                normal_range:
+                  type: string
+                turnaround_hours:
+                  type: integer
+      responses:
+        '200':
+          description: Lab test updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabTest'
+
+  /laboratory/tests/{testId}/deactivate:
+    patch:
+      summary: Deactivate a lab test (Admin only)
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: testId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lab test deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /laboratory/orders:
+    post:
+      summary: Create a lab test order
+      tags: [Laboratory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patient_id
+                - doctor_id
+                - test_ids
+              properties:
+                patient_id:
+                  type: string
+                  format: uuid
+                doctor_id:
+                  type: string
+                  format: uuid
+                test_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                specimen_type:
+                  type: string
+                  example: blood
+                priority:
+                  type: string
+                  enum: [routine, urgent, stat]
+                  default: routine
+                clinical_notes:
+                  type: string
+      responses:
+        '201':
+          description: Lab order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabOrder'
+
+  /laboratory/orders/bulk:
+    post:
+      summary: Bulk test order creation (health screening packages)
+      tags: [Laboratory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patient_id
+                - doctor_id
+                - test_ids
+              properties:
+                patient_id:
+                  type: string
+                  format: uuid
+                doctor_id:
+                  type: string
+                  format: uuid
+                test_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                package_name:
+                  type: string
+                  example: Annual Health Screening
+      responses:
+        '201':
+          description: Bulk orders created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabOrder'
+
+  /laboratory/orders/status/pending:
+    get:
+      summary: Get all pending test orders
+      tags: [Laboratory]
+      responses:
+        '200':
+          description: Pending orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /laboratory/orders/status/overdue:
+    get:
+      summary: Get overdue test orders
+      description: Orders that have passed their expected completion time.
+      tags: [Laboratory]
+      responses:
+        '200':
+          description: Overdue orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /laboratory/orders/patient/{patientId}:
+    get:
+      summary: Get test orders for a patient
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, collected, processing, completed, cancelled]
+      responses:
+        '200':
+          description: Patient lab orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /laboratory/orders/doctor/{doctorId}:
+    get:
+      summary: Get test orders created by a doctor
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: doctorId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Doctor lab orders retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /laboratory/orders/{orderId}:
+    get:
+      summary: Get test order by ID
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lab order retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabOrder'
+        '404':
+          description: Lab order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /laboratory/orders/{orderId}/cancel:
+    patch:
+      summary: Cancel a test order
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  example: Patient discharged before specimen collection
+      responses:
+        '200':
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /laboratory/orders/{orderId}/collect:
+    patch:
+      summary: Record specimen collection
+      description: Marks the specimen as collected and records collection metadata.
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - specimen_type
+                - collected_by
+              properties:
+                specimen_type:
+                  type: string
+                  example: venous_blood
+                collected_by:
+                  type: string
+                  format: uuid
+                collection_notes:
+                  type: string
+      responses:
+        '200':
+          description: Specimen collected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabOrder'
+
+  /laboratory/orders/{orderId}/process:
+    patch:
+      summary: Start processing a test order
+      description: Marks the order as in-processing. Specimen must already be collected.
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order marked as processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/LabOrder'
+
+  /laboratory/orders/{orderId}/results:
+    post:
+      summary: Add test results to an order
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      test_id:
+                        type: string
+                        format: uuid
+                      value:
+                        type: string
+                        example: '4.8'
+                      unit:
+                        type: string
+                        example: million/mcL
+                      is_critical:
+                        type: boolean
+                      notes:
+                        type: string
+      responses:
+        '201':
+          description: Results added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+    get:
+      summary: Get test results for an order
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Test results retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        test_id:
+                          type: string
+                          format: uuid
+                        test_name:
+                          type: string
+                        value:
+                          type: string
+                        unit:
+                          type: string
+                        normal_range:
+                          type: string
+                        is_critical:
+                          type: boolean
+
+  /laboratory/orders/{orderId}/review:
+    patch:
+      summary: Review and approve test results
+      description: Senior lab staff review and sign off on results before release to patient/doctor.
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - approved
+              properties:
+                approved:
+                  type: boolean
+                reviewer_notes:
+                  type: string
+      responses:
+        '200':
+          description: Results reviewed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /laboratory/results/critical:
+    get:
+      summary: Get critical test results requiring immediate attention
+      description: Returns results flagged as critical (values outside safe range). Used for alert systems.
+      tags: [Laboratory]
+      responses:
+        '200':
+          description: Critical results retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        order_id:
+                          type: string
+                          format: uuid
+                        patient_name:
+                          type: string
+                        test_name:
+                          type: string
+                        value:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+
+  /laboratory/reports/patient/{patientId}:
+    post:
+      summary: Generate a lab report for a patient
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                format:
+                  type: string
+                  enum: [json, pdf]
+                  default: json
+      responses:
+        '200':
+          description: Lab report generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+
+  /laboratory/statistics:
+    get:
+      summary: Get laboratory statistics
+      tags: [Laboratory]
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: monthly
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Lab statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      total_orders:
+                        type: integer
+                      completed:
+                        type: integer
+                      pending:
+                        type: integer
+                      average_turnaround_hours:
+                        type: number
+
+  /laboratory/workload:
+    get:
+      summary: Get laboratory workload information
+      description: Returns current and projected workload for scheduling purposes.
+      tags: [Laboratory]
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Workload information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      pending_orders:
+                        type: integer
+                      in_progress:
+                        type: integer
+                      estimated_completion_hours:
+                        type: number
+
+  /laboratory/catalog/department/{department}:
+    get:
+      summary: Get test catalog for a specific department
+      tags: [Laboratory]
+      parameters:
+        - in: path
+          name: department
+          required: true
+          schema:
+            type: string
+            example: Cardiology
+      responses:
+        '200':
+          description: Department test catalog retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /laboratory/quality-control/summary:
+    get:
+      summary: Quality control summary (Phase 2 — placeholder)
+      tags: [Laboratory]
+      responses:
+        '200':
+          description: Quality control summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Quality control endpoint - to be implemented in Phase 2
+
+  /laboratory/equipment/status:
+    get:
+      summary: Equipment status (Phase 2 — placeholder)
+      tags: [Laboratory]
+      responses:
+        '200':
+          description: Equipment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Equipment status endpoint - to be implemented in Phase 2

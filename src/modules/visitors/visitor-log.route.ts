@@ -8,7 +8,6 @@ import { visitorValidation } from '@utils/validators/visitor.validator';
 
 const visitorRouter = express.Router();
 
-// PUBLIC: Self-service check-in (kiosk/tablet facing)
 visitorRouter.post('/check-in',
   validate(visitorValidation.checkIn),
   async (req: Request, res: Response) => {
@@ -16,7 +15,6 @@ visitorRouter.post('/check-in',
   }
 );
 
-// PUBLIC: Self-service check-out by visitor ID
 visitorRouter.post('/check-out/:id',
   validateParams(genericValidation.id),
   async (req: Request, res: Response) => {
@@ -24,7 +22,6 @@ visitorRouter.post('/check-out/:id',
   }
 );
 
-// PUBLIC: Lookup active check-ins by phone (to find ID for self-checkout)
 visitorRouter.get('/lookup',
   validateQuery(visitorValidation.lookup),
   async (req: Request, res: Response) => {
@@ -32,7 +29,6 @@ visitorRouter.get('/lookup',
   }
 );
 
-// STAFF: View all currently checked-in visitors
 visitorRouter.get('/active',
   authentication,
   checkPermission(PERMISSIONS.QUEUE_VIEW),
@@ -41,7 +37,6 @@ visitorRouter.get('/active',
   }
 );
 
-// STAFF: List all visitor logs with pagination + filters
 visitorRouter.get('/',
   authentication,
   checkPermission(PERMISSIONS.QUEUE_VIEW),
@@ -51,7 +46,6 @@ visitorRouter.get('/',
   }
 );
 
-// STAFF: Get a single visitor log entry
 visitorRouter.get('/:id',
   authentication,
   checkPermission(PERMISSIONS.QUEUE_VIEW),

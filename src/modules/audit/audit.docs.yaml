@@ -1,0 +1,65 @@
+paths:
+  /audit:
+    get:
+      summary: Get audit logs
+      description: Returns a paginated audit trail of all system actions. Requires reports:view authorization and X-Tenant-ID header.
+      tags: [Audit]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: action
+          schema:
+            type: string
+            example: patient.create
+          description: Filter by action type
+        - in: query
+          name: user_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter by user who performed the action
+        - in: query
+          name: resource
+          schema:
+            type: string
+            example: patient
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Audit logs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '403':
+          description: Forbidden – insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

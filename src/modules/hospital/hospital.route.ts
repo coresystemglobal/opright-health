@@ -7,7 +7,6 @@ import { validateParams, genericValidation } from '@utils/validator';
 
 const hospitalRouter = express.Router();
 
-// GET /api/hospitals — list all hospitals
 hospitalRouter.get('/',
   authentication,
   checkPermission(PERMISSIONS.HOSPITAL_VIEW),
@@ -16,7 +15,6 @@ hospitalRouter.get('/',
   }
 );
 
-// GET /api/hospitals/:id — get hospital by ID
 hospitalRouter.get('/:id',
   authentication,
   checkPermission(PERMISSIONS.HOSPITAL_VIEW),
@@ -26,7 +24,6 @@ hospitalRouter.get('/:id',
   }
 );
 
-// POST /api/hospitals — create hospital (super_admin only)
 hospitalRouter.post('/',
   authentication,
   checkPermission(PERMISSIONS.HOSPITAL_CREATE),
@@ -35,7 +32,6 @@ hospitalRouter.post('/',
   }
 );
 
-// PUT /api/hospitals/:id — update hospital
 hospitalRouter.put('/:id',
   authentication,
   checkPermission(PERMISSIONS.HOSPITAL_UPDATE),
@@ -45,7 +41,6 @@ hospitalRouter.put('/:id',
   }
 );
 
-// PATCH /api/hospitals/:id/status — toggle active/inactive
 hospitalRouter.patch('/:id/status',
   authentication,
   checkPermission(PERMISSIONS.HOSPITAL_UPDATE),
@@ -55,7 +50,6 @@ hospitalRouter.patch('/:id/status',
   }
 );
 
-// DELETE /api/hospitals/:id — soft delete (super_admin only)
 hospitalRouter.delete('/:id',
   authentication,
   checkPermission(PERMISSIONS.HOSPITAL_DELETE),

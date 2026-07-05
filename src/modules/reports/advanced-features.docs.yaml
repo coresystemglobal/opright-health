@@ -1,0 +1,349 @@
+paths:
+  /advanced/analytics:
+    get:
+      summary: Get advanced analytics
+      description: Requires advanced_analytics feature on subscription plan and X-Tenant-ID header.
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Analytics data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+        '403':
+          description: Feature not available on current plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /advanced/metrics/realtime:
+    get:
+      summary: Get real-time metrics
+      description: Requires authentication and X-Tenant-ID header.
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Real-time metrics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      active_sessions:
+                        type: integer
+                      queue_length:
+                        type: integer
+                      beds_occupied:
+                        type: integer
+
+  /advanced/predictions/patient-risk/{patientId}:
+    get:
+      summary: Predict patient risk score (ML)
+      description: Requires ml_predictions feature on subscription plan.
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Risk prediction returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      risk_score:
+                        type: number
+                        example: 0.72
+                      risk_level:
+                        type: string
+                        enum: [low, medium, high, critical]
+                      factors:
+                        type: array
+                        items:
+                          type: string
+
+  /advanced/predictions/no-show/{appointmentId}:
+    get:
+      summary: Predict appointment no-show probability (ML)
+      description: Requires ml_predictions feature on subscription plan.
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: No-show prediction returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      no_show_probability:
+                        type: number
+                        example: 0.35
+                      recommendation:
+                        type: string
+                        example: Send reminder SMS 24h before
+
+  /advanced/iot/devices/{deviceId}/readings:
+    get:
+      summary: Get IoT device readings
+      description: Requires iot_integration feature on subscription plan.
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Device readings retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /advanced/iot/patients/{patientId}/vitals:
+    get:
+      summary: Get patient vitals from IoT devices
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient vitals retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /advanced/workflows/rules:
+    get:
+      summary: Get workflow automation rules
+      description: Requires workflow_automation feature on subscription plan.
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow rules retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /advanced/telemedicine/sessions:
+    post:
+      summary: Create a telemedicine video session
+      description: Requires telemedicine feature on subscription plan.
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - appointment_id
+              properties:
+                appointment_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Video session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      session_id:
+                        type: string
+                      join_url:
+                        type: string
+
+  /advanced/telemedicine/sessions/{sessionId}/start:
+    post:
+      summary: Start a telemedicine session
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /advanced/telemedicine/sessions/{sessionId}/chat:
+    post:
+      summary: Send a chat message in a telemedicine session
+      tags: [Advanced Features]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'

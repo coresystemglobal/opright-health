@@ -1,0 +1,198 @@
+paths:
+  /billing/plans:
+    get:
+      summary: Get available subscription plans
+      description: Returns all available subscription plans with pricing and feature limits.
+      tags: [Billing]
+      responses:
+        '200':
+          description: Available plans with pricing and limits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                          example: pro
+                        price_monthly:
+                          type: number
+                        price_yearly:
+                          type: number
+                        features:
+                          type: array
+                          items:
+                            type: string
+
+  /billing/subscription:
+    get:
+      summary: Get current subscription details
+      description: Returns the active subscription and usage metrics for the authenticated tenant.
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current subscription and usage details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      plan:
+                        type: string
+                        example: pro
+                      status:
+                        type: string
+                        example: active
+                      expires_at:
+                        type: string
+                        format: date-time
+    post:
+      summary: Create new subscription
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - planType
+                - billingCycle
+              properties:
+                planType:
+                  type: string
+                  enum: [basic, standard, pro]
+                billingCycle:
+                  type: string
+                  enum: [monthly, yearly]
+      responses:
+        '201':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /billing/upgrade:
+    post:
+      summary: Upgrade subscription plan
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - planType
+              properties:
+                planType:
+                  type: string
+                  enum: [basic, standard, pro]
+      responses:
+        '200':
+          description: Plan upgraded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /billing/usage:
+    get:
+      summary: Get usage details for current subscription
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Usage details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      patients:
+                        type: object
+                        properties:
+                          used:
+                            type: integer
+                          limit:
+                            type: integer
+                      storage_gb:
+                        type: object
+                        properties:
+                          used:
+                            type: number
+                          limit:
+                            type: number
+
+  /billing/webhook:
+    post:
+      summary: Billing webhook receiver
+      description: Public endpoint. Receives billing events from payment providers.
+      tags: [Billing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook received
