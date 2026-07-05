@@ -15,8 +15,12 @@ const options = {
     },
     servers: [
       {
-        url: process.env.API_URL || 'http://localhost:3000',
-        description: 'Development server'
+        url: 'https://hospital-management-system-faithful-smoke-2949.fly.dev/api/v1',
+        description: 'Production server'
+      },
+      {
+        url: 'http://localhost:3000/api/v1',
+        description: 'Local development server'
       }
     ],
     components: {
@@ -49,7 +53,7 @@ const options = {
     },
     security: [{ bearerAuth: [] }]
   },
-  apis: ['./src/routes/*.ts', './src/controllers/*.ts']
+  apis: ['./src/docs/swagger.yaml', './src/modules/**/*.route.ts', './src/modules/**/*.controller.ts']
 };
 
 export const specs = swaggerJsdoc(options);

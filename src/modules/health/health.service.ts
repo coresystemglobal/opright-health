@@ -13,12 +13,14 @@ interface HealthStatus {
 }
 
 export class HealthService {
-  private static redis = new Redis({
-    host: process.env.REDIS_HOST || "localhost",
-    port: parseInt(process.env.REDIS_PORT || "6379"),
-    password: process.env.REDIS_PASSWORD,
-    maxRetriesPerRequest: 1,
-  });
+  private static redis = process.env.REDIS_URL
+    ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 1 })
+    : new Redis({
+        host: process.env.REDIS_HOST || "localhost",
+        port: parseInt(process.env.REDIS_PORT || "6379"),
+        password: process.env.REDIS_PASSWORD,
+        maxRetriesPerRequest: 1,
+      });
 
   static async checkHealth(): Promise<HealthStatus> {
     const startTime = Date.now();
