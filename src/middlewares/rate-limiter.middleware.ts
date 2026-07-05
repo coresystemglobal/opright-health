@@ -16,7 +16,7 @@ async function getRedisClient(): Promise<Redis | null> {
 }
 
 class RedisRateLimitStore implements Store {
-  private prefix: string;
+  prefix: string;
   private windowMs: number;
 
   constructor(windowMs: number, prefix: string) {
