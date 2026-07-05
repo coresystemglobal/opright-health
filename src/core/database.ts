@@ -13,10 +13,10 @@ const sequelize = new Sequelize({
   database: process.env.DB_NAME || 'your_database',
   models,
   dialectOptions: {
-    ssl: process.env.SSL === 'true' ? {
+    ssl: {
       require: true,
       rejectUnauthorized: false
-    } : false,
+    },
     connectionTimeout: 30000
   },
   pool: {
