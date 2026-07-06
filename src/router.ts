@@ -62,6 +62,7 @@ import mobileRouter from '@modules/mobile/mobile.route';
 import healthRouter from '@modules/health/health.route';
 import docsRouter from '@modules/health/docs.route';
 import visitorRouter from '@modules/visitors/visitor-log.route';
+import tenantSettingsRouter from '@modules/tenancy/tenant-settings.route';
 
 const router = Router();
 
@@ -129,6 +130,7 @@ router.use('/api/fhir', fhirRouter);
 router.use('/api/audit', auditRouter);
 router.use('/api/faqs', faqRouter);
 router.use('/api/mobile', mobileRouter);
+router.use('/api/tenant', tenantSettingsRouter);
 
 // Visitor Logs (check-in/check-out public, list staff-only)
 router.use('/api/visitors', visitorRouter);

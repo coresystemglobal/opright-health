@@ -136,6 +136,14 @@ export class Patient extends Model {
   @BelongsTo(() => Tenant)
   tenant?: Tenant;
 
+  // Patient has opted out of SMS notifications (reminders, etc.)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  })
+  sms_opt_out!: boolean;
+
   @HasMany(() => Appointment)
   appointments?: Appointment[];
 
