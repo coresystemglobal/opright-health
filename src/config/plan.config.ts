@@ -47,6 +47,12 @@ const getPlanPricing = (): Record<PlanType, PlanPricing> => {
 /**
  * Get plan limits from environment variables or use defaults
  */
+// Flat all-inclusive model (recorded decision): every tier gets EVERY feature.
+// Tiers differ only by capacity (patients / users / storage / API volume).
+// `all_features` is the wildcard requireFeature() honours, so no tenant is
+// ever denied a feature on plan grounds — only on capacity limits.
+const ALL_FEATURES = ['all_features'];
+
 const getPlanLimits = (): Record<PlanType, PlanLimits> => {
   return {
     [PlanType.INDIVIDUAL]: {
@@ -54,28 +60,28 @@ const getPlanLimits = (): Record<PlanType, PlanLimits> => {
       maxUsers: parseInt(process.env.INDIVIDUAL_PLAN_MAX_USERS || '1'),
       maxStorageMB: parseInt(process.env.INDIVIDUAL_PLAN_MAX_STORAGE_MB || '512'),
       maxAPICallsPerMonth: parseInt(process.env.INDIVIDUAL_PLAN_MAX_API_CALLS || '5000'),
-      features: ['emr', 'scheduler', 'visit_management', 'patient_management', 'invoice_generation', 'lab_management', 'icd10_integration']
+      features: ALL_FEATURES
     },
     [PlanType.BASIC]: {
       maxPatients: parseInt(process.env.BASIC_PLAN_MAX_PATIENTS || '100'),
       maxUsers: parseInt(process.env.BASIC_PLAN_MAX_USERS || '5'),
       maxStorageMB: parseInt(process.env.BASIC_PLAN_MAX_STORAGE_MB || '1024'),
       maxAPICallsPerMonth: parseInt(process.env.BASIC_PLAN_MAX_API_CALLS || '10000'),
-      features: ['basic_reporting', 'patient_management', 'appointments']
+      features: ALL_FEATURES
     },
     [PlanType.STANDARD]: {
       maxPatients: parseInt(process.env.STANDARD_PLAN_MAX_PATIENTS || '500'),
       maxUsers: parseInt(process.env.STANDARD_PLAN_MAX_USERS || '20'),
       maxStorageMB: parseInt(process.env.STANDARD_PLAN_MAX_STORAGE_MB || '5120'),
       maxAPICallsPerMonth: parseInt(process.env.STANDARD_PLAN_MAX_API_CALLS || '50000'),
-      features: ['basic_reporting', 'advanced_reporting', 'patient_management', 'appointments', 'lab_integration', 'mobile_api']
+      features: ALL_FEATURES
     },
     [PlanType.PRO]: {
       maxPatients: parseInt(process.env.PRO_PLAN_MAX_PATIENTS || '-1'),
       maxUsers: parseInt(process.env.PRO_PLAN_MAX_USERS || '-1'),
       maxStorageMB: parseInt(process.env.PRO_PLAN_MAX_STORAGE_MB || '20480'),
       maxAPICallsPerMonth: parseInt(process.env.PRO_PLAN_MAX_API_CALLS || '200000'),
-      features: ['all_features', 'fhir_compliance', 'insurance_verification', 'advanced_analytics', 'ml_predictions', 'iot_integration', 'workflow_automation', 'telemedicine', 'priority_support']
+      features: ALL_FEATURES
     }
   };
 };

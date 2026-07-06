@@ -29,7 +29,7 @@
 - [x] 🟢 Plan limits per tier (patients/users/storage/API) in `plan.config.ts`; subscription model has grace-period + Paystack columns
 - [x] 🟢 Enforcement middleware — `requireActiveSubscription` gates all `/api/*` routes for any request carrying x-tenant-id
 - [x] 🟢 `checkResourceLimit` wired onto POST /api/patients (patient cap); user seats tracked on /auth/register with tenant header
-- [ ] 🟡 Note: `plan.config.ts` now feature-gates tiers (only PRO has `all_features`) — revisit against the flat all-inclusive decision (#1)
+- [x] 🟢 Flat all-inclusive enforced — every tier carries `all_features` in `plan.config.ts`; tiers differ only by capacity (patients/users/storage/API), per decision #1
 - [ ] 🔴 Plan management admin API (create, edit, deactivate plans)
 - [ ] 🔴 Self-service plan upgrade / downgrade (with proration)
 - [x] 🟢 Free trial logic — TRIALING passes with `X-Trial-Days-Remaining` header; PAST_DUE honours grace period, then 402
@@ -195,7 +195,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 - [ ] 🟡 In-app notifications (service exists)
 - [ ] 🟡 Email notifications (service exists, updated to Clinical Blue)
-- [ ] 🔴 SMS notifications — VTpass (primary, Nigeria) + Twilio (global) — *decided*
+- [x] 🟢 SMS notifications — `sendSms()` in `modules/notifications/sms` with VTpass (primary, Nigeria) + Twilio (global) providers behind a factory; automatic primary→fallback, E.164 normalization, bulk send; env-configurable
 - [ ] 🔴 WhatsApp notifications (Twilio WhatsApp API or 360dialog)
 - [ ] 🔴 Push notifications for mobile (FCM / APNs)
 - [ ] 🔴 Appointment reminders (24h and 2h before, configurable per tenant)
