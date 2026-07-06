@@ -307,6 +307,20 @@ export class Appointment extends Model {
   })
   resource_id?: string;
 
+  // Reminder tracking — set once the corresponding SMS reminder is sent,
+  // so the reminder cron is idempotent and never double-texts a patient.
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  reminder_24h_sent_at?: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  reminder_2h_sent_at?: Date;
+
   // Virtual fields
   get appointment_datetime(): Date {
     const dateStr = this.appointment_date.toISOString().split('T')[0];

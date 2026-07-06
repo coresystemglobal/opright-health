@@ -192,6 +192,23 @@ function scheduleDunning() {
   }, 5 * 60 * 1000);
 }
 
+function scheduleAppointmentReminders() {
+  const runCycle = async () => {
+    const { runReminderCycle } = await import('../modules/appointments/appointment-reminder.service');
+    const results = await runReminderCycle();
+    const sent = results.filter(r => r.sent).length;
+    if (sent > 0) console.log(`Appointment reminders: sent ${sent} SMS.`);
+  };
+
+  // First run 2 minutes after startup, then every 30 minutes.
+  // The 24h/2h sentinel columns keep each reminder single-fire regardless
+  // of cadence, so a 30-minute tick is safe and responsive.
+  setTimeout(() => {
+    runCycle().catch(e => console.error('Appointment reminder cycle error:', e));
+    setInterval(() => runCycle().catch(e => console.error('Appointment reminder cycle error:', e)), 30 * 60 * 1000);
+  }, 2 * 60 * 1000);
+}
+
 const startServer = async () => {
   // Fail fast if required secrets are missing
   validateRequiredEnvVars();
@@ -213,6 +230,9 @@ const startServer = async () => {
 
     // Overdue-invoice dunning emails (daily cycle)
     scheduleDunning();
+
+    // Appointment SMS reminders (24h / 2h before, every 30 min)
+    scheduleAppointmentReminders();
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }
