@@ -110,7 +110,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 5. Patient Management
 
-- [ ] 🟡 Patient registration and profile (model exists)
+- [x] 🟢 Patient registration and profile — full CRUD module (`modules/patients`) with validation, permissions, and plan-capacity check on create
 - [ ] 🔴 Patient portal — self-service login, view appointments, lab results, invoices
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
@@ -128,10 +128,10 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Appointment waitlist (model exists — implement waitlist promotion)
 - [ ] 🟡 Telemedicine / video consultation via Daily.co (`telemedicine.service.ts` — review depth) — *decided*
 - [ ] 🔴 Electronic prescriptions (generate, send to pharmacy, track fulfilment)
-- [ ] 🔴 Clinical notes (SOAP format: Subjective, Objective, Assessment, Plan)
+- [ ] 🟡 Clinical notes (SOAP) — `clinical-note.model.ts` exists; API endpoints still needed
 - [ ] 🔴 Referral management (internal department-to-department, external)
 - [ ] 🔴 Discharge planning and summary generation
-- [ ] 🔴 Vital signs recording and trend display
+- [ ] 🟡 Vital signs recording — `vital-sign.model.ts` exists; recording API and trend endpoint still needed
 - [ ] 🔴 Allergy and medication interaction alerts
 - [ ] 🟡 Lab test ordering and results (`lab-integration.service.ts`, `laboratory.service.ts`)
 - [ ] 🔴 Radiology / imaging order management (DICOM-lite, at minimum order tracking)
@@ -210,7 +210,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 12. Compliance & Security
 
 - [ ] 🟡 Audit logging (`audit.middleware.ts` exists — review coverage)
-- [ ] 🟡 Error tracking (`error-tracking.service.ts` — `sendToExternalService` is a stub)
+- [x] 🟢 Error tracking — middleware wired; Slack alerts fire for high/critical severity
 - [ ] 🟡 Rate limiting (middleware exists)
 - [ ] 🔴 **NDPR compliance** (Nigeria Data Protection Regulation) — *priority 1, decided*
 - [ ] 🔴 **GDPR compliance** (EU deployments) — *priority 1, decided*
@@ -220,7 +220,8 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Patient data export (right to access / right to portability)
 - [ ] 🔴 Patient data deletion (right to erasure)
 - [ ] 🔴 Penetration testing and security audit before go-live
-- [ ] 🔴 2FA / MFA for all staff accounts
+- [x] 🟢 2FA / MFA — TOTP setup/enable/disable/verify endpoints (`modules/auth/twofa.*`)
+- [x] 🟢 Token revocation — `token_blacklist` table + logout invalidation
 - [ ] 🟡 Backup (`backup.service.ts` complete including restore)
 - [ ] 🔴 Disaster recovery runbook and tested restore procedure
 
@@ -242,9 +243,9 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 14. Infrastructure & DevOps
 
-- [ ] 🔴 CI/CD pipeline (GitHub Actions — lint, test, build, deploy)
+- [ ] 🟡 CI/CD pipeline — GitHub Actions Fly.io deploy workflow exists; add lint/test/build gates before deploy
 - [ ] 🔴 Staging environment setup
-- [ ] 🔴 Environment-specific config management (dev / staging / prod)
+- [ ] 🟡 Environment-specific config — `DATABASE_URL`/`REDIS_URL` support + env validation at boot; per-env files still needed
 - [ ] 🔴 Database migration strategy and rollback plan
 - [ ] 🔴 Health check endpoint (already exists — ensure it covers DB, Redis, RabbitMQ)
 - [ ] 🔴 Horizontal scaling plan (stateless API, shared Redis session)
@@ -259,7 +260,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 15. Go-to-Market / Onboarding
 
 - [ ] 🔴 Tenant onboarding wizard (hospital name, logo, departments, first admin user)
-- [ ] 🔴 Demo / sandbox environment with seed data
+- [ ] 🟡 Demo / sandbox — comprehensive test-data seeder exists (`seeders/test-data.seeder.ts`); hosted sandbox env still needed
 - [ ] 🔴 In-app help documentation and tooltips
 - [ ] 🔴 Admin super-panel (manage all tenants, view subscription status, impersonate)
 - [ ] 🔴 System health dashboard for ops team
