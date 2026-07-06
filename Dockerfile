@@ -10,7 +10,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/docs ./src/docs
+COPY --from=builder /app/src/modules ./src/modules
 EXPOSE 8080
 ENV NODE_ENV=production
-ENV LOCAL_PORT=8080
 CMD ["node", "dist/main.js"]
