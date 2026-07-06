@@ -128,10 +128,10 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Appointment waitlist (model exists — implement waitlist promotion)
 - [ ] 🟡 Telemedicine / video consultation via Daily.co (`telemedicine.service.ts` — review depth) — *decided*
 - [ ] 🔴 Electronic prescriptions (generate, send to pharmacy, track fulfilment)
-- [ ] 🟡 Clinical notes (SOAP) — `clinical-note.model.ts` exists; API endpoints still needed
+- [x] 🟢 Clinical notes (SOAP) — full CRUD at `/api/clinical-notes` (create/list-by-patient/get/update/delete) plus lock-to-sign; enforces is_locked immutability and 24h edit window
 - [ ] 🔴 Referral management (internal department-to-department, external)
 - [ ] 🔴 Discharge planning and summary generation
-- [ ] 🟡 Vital signs recording — `vital-sign.model.ts` exists; recording API and trend endpoint still needed
+- [x] 🟢 Vital signs recording — full CRUD at `/api/vital-signs` with auto-BMI; `/patient/:id/latest` and `/patient/:id/trends` (time-series per metric, date-range filtered) for trend display
 - [ ] 🔴 Allergy and medication interaction alerts
 - [ ] 🟡 Lab test ordering and results (`lab-integration.service.ts`, `laboratory.service.ts`)
 - [ ] 🔴 Radiology / imaging order management (DICOM-lite, at minimum order tracking)

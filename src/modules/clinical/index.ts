@@ -6,3 +6,7 @@ export { MedicalRecord, RecordType } from './medical-record.model';
 export { EMRService } from './emr.service';
 export { medicationService } from './medication.service';
 export { default as medicationRouter } from './medication.route';
+export { clinicalNoteService } from './clinical-note.service';
+export { default as clinicalNoteRouter } from './clinical-note.route';
+export { vitalSignService } from './vital-sign.service';
+export { default as vitalSignRouter } from './vital-sign.route';
