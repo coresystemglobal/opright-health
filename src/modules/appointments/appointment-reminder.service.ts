@@ -1,11 +1,14 @@
 import { Op } from 'sequelize';
 import { Appointment, Patient, Doctor, User } from '../../models';
 import { AppointmentStatus } from '@modules/appointments/appointment.model';
+import { Tenant, DEFAULT_REMINDER_SETTINGS } from '@modules/tenancy/tenant.model';
+import type { ReminderSettings } from '@modules/tenancy/tenant.model';
 import { sendSms } from '@modules/notifications/sms/sms.service';
 
 export interface ReminderResult {
   appointmentId: string;
-  stage: '24h' | '2h';
+  /** 'long' = first reminder (default 24h), 'short' = second reminder (default 2h). */
+  stage: 'long' | 'short';
   to: string;
   sent: boolean;
   error?: string;
@@ -36,8 +39,8 @@ function formatWhen(dt: Date): string {
   });
 }
 
-function buildMessage(patientName: string, doctorName: string | null, when: string, stage: '24h' | '2h'): string {
-  const lead = stage === '24h' ? 'Reminder: you have an appointment tomorrow' : 'Reminder: your appointment is in about 2 hours';
+function buildMessage(patientName: string, doctorName: string | null, when: string, stage: 'long' | 'short'): string {
+  const lead = stage === 'long' ? 'Reminder: you have an upcoming appointment' : 'Reminder: your appointment is coming up soon';
   const withDoctor = doctorName ? ` with Dr. ${doctorName}` : '';
   return `Hi ${patientName}, ${lead}${withDoctor} on ${when}. Please arrive 10 minutes early. Reply to reschedule.`;
 }
@@ -49,18 +52,30 @@ function doctorDisplayName(doctor: any): string | null {
 }
 
 /**
- * Send appointment reminders for pending appointments entering the 24h and
- * 2h windows. Idempotent via reminder_24h_sent_at / reminder_2h_sent_at:
- * each stage fires at most once per appointment regardless of cron cadence
- * or restarts.
+ * Send appointment reminders for pending appointments entering the long and
+ * short reminder windows.
  *
- * Threshold model (robust to cron timing):
- *   - 24h reminder: appointment is between 2h and 24h away, not yet sent
- *   - 2h reminder:  appointment is between now and 2h away, not yet sent
+ * Per-tenant configurable (Tenant.reminder_settings): reminders can be
+ * disabled, and the long/short lead hours adjusted. Patients who set
+ * sms_opt_out are skipped entirely.
+ *
+ * Idempotent via reminder_24h_sent_at (long) / reminder_2h_sent_at (short):
+ * each stage fires at most once per appointment regardless of cron cadence,
+ * lead-time config, or restarts.
  */
 export async function runReminderCycle(): Promise<ReminderResult[]> {
   const now = new Date();
   const results: ReminderResult[] = [];
+
+  // Effective reminder settings resolved once per tenant per cycle
+  const settingsCache = new Map<string, Required<ReminderSettings>>();
+  const resolveSettings = async (tenantId: string): Promise<Required<ReminderSettings>> => {
+    if (settingsCache.has(tenantId)) return settingsCache.get(tenantId)!;
+    const tenant = await Tenant.findByPk(tenantId).catch(() => null);
+    const effective = tenant ? tenant.effective_reminder_settings : { ...DEFAULT_REMINDER_SETTINGS };
+    settingsCache.set(tenantId, effective);
+    return effective;
+  };
 
   // Bound the candidate set to appointments dated today..+2 days that still
   // need at least one reminder.
@@ -77,7 +92,7 @@ export async function runReminderCycle(): Promise<ReminderResult[]> {
       ]
     },
     include: [
-      { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name', 'phone'] },
+      { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name', 'phone', 'tenant_id', 'sms_opt_out'] },
       { model: Doctor, as: 'doctor', include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name'] }] }
     ]
   });
@@ -86,24 +101,37 @@ export async function runReminderCycle(): Promise<ReminderResult[]> {
     const dt = toDateTime(appt.appointment_date as any, appt.appointment_time);
     if (!dt || dt <= now) continue; // past or unparseable — skip
 
-    const msUntil = dt.getTime() - now.getTime();
     const patient: any = (appt as any).patient;
-    const phone = patient?.phone;
-    const patientName = patient ? `${patient.first_name || ''}`.trim() || 'there' : 'there';
-    const doctorName = doctorDisplayName((appt as any).doctor);
+    if (!patient) continue;
+
+    // Respect patient opt-out
+    if (patient.sms_opt_out) continue;
+
+    // Respect per-tenant config
+    const settings = await resolveSettings(patient.tenant_id);
+    if (!settings.enabled) continue;
+
+    const longMs = settings.long_lead_hours * HOUR_MS;
+    const shortMs = settings.short_lead_hours * HOUR_MS;
+    const msUntil = dt.getTime() - now.getTime();
 
     // Determine which stage (if any) is due now
-    let stage: '24h' | '2h' | null = null;
-    if (msUntil <= 2 * HOUR_MS && !appt.reminder_2h_sent_at) {
-      stage = '2h';
-    } else if (msUntil <= 24 * HOUR_MS && msUntil > 2 * HOUR_MS && !appt.reminder_24h_sent_at) {
-      stage = '24h';
+    let stage: 'long' | 'short' | null = null;
+    if (msUntil <= shortMs && !appt.reminder_2h_sent_at) {
+      stage = 'short';
+    } else if (msUntil <= longMs && msUntil > shortMs && !appt.reminder_24h_sent_at) {
+      stage = 'long';
     }
     if (!stage) continue;
 
+    const phone = patient.phone;
+    const patientName = `${patient.first_name || ''}`.trim() || 'there';
+    const doctorName = doctorDisplayName((appt as any).doctor);
+    const sentColumn = stage === 'short' ? { reminder_2h_sent_at: now } : { reminder_24h_sent_at: now };
+
     // No phone on file — mark the stage handled so we don't re-scan forever
     if (!phone) {
-      await appt.update(stage === '2h' ? { reminder_2h_sent_at: now } : { reminder_24h_sent_at: now });
+      await appt.update(sentColumn);
       results.push({ appointmentId: appt.id, stage, to: '', sent: false, error: 'No patient phone on file' });
       continue;
     }
@@ -114,7 +142,7 @@ export async function runReminderCycle(): Promise<ReminderResult[]> {
     // Stamp the sentinel on success OR permanent no-provider failure, so a
     // misconfigured gateway doesn't cause infinite retries every cycle.
     if (smsResult.success || smsResult.error === 'No SMS provider is configured') {
-      await appt.update(stage === '2h' ? { reminder_2h_sent_at: now } : { reminder_24h_sent_at: now });
+      await appt.update(sentColumn);
     }
 
     results.push({
