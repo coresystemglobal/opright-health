@@ -71,6 +71,13 @@ export class UsageTracking extends Model {
   })
   api_calls_count!: number;
 
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  })
+  users_count!: number;
+
   declare createdAt: Date;
   declare updatedAt: Date;
 }

@@ -71,6 +71,14 @@ export class AuthController {
     try {
       try {
         const result = await authService.register(req.body);
+
+        // Track user seat usage when the registration carries tenant context
+        const tenantId = req.headers['x-tenant-id'] as string;
+        if (tenantId) {
+          const { BillingService } = await import('@modules/billing/billing.service');
+          await BillingService.trackUsage(tenantId, 'users_count').catch(() => null);
+        }
+
         return ResponseUtil.success(res, result, 'Registration successful. Please verify your email.', 201);
       } catch (serviceError: any) {
         if (serviceError.message.includes('Missing required fields') ||

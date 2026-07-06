@@ -15,6 +15,7 @@ router.get('/system-health', reportsController.getSystemHealthReport);
 
 router.post('/custom', reportsController.getCustomReport);
 
+// ?reportType=patient-demographics|doctor-performance|financial|appointment-analytics&format=json|csv|xlsx|pdf&startDate=&endDate=
 router.get('/export', reportsController.exportReport);
 
 export default router;

@@ -12,6 +12,12 @@ dashboardRouter.get("/health", async (req: ExpressRequest, res: Response) => {
   await dashboardController.getSystemHealth(req, res);
 });
 
+// Aggregated analytics dashboard — all KPIs in one call (overview + trends + realtime)
+// Query: startDate/endDate (default last 30 days); tenant via x-tenant-id header
+dashboardRouter.get("/analytics", async (req: ExpressRequest, res: Response) => {
+  await dashboardController.getAnalyticsDashboard(req, res);
+});
+
 dashboardRouter.get("/analytics/revenue", async (req: ExpressRequest, res: Response) => {
   await dashboardController.getRevenueAnalytics(req, res);
 });

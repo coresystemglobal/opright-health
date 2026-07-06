@@ -93,6 +93,58 @@ export class Subscription extends Model {
   })
   stripe_subscription_id?: string;
 
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true
+  })
+  paystack_subscription_code?: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  cancelled_at?: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  grace_period_ends_at?: Date;
+
   declare createdAt: Date;
   declare updatedAt: Date;
+
+  get is_trialing(): boolean {
+    return (
+      this.status === SubscriptionStatus.TRIALING &&
+      !!this.trial_end &&
+      new Date(this.trial_end) > new Date()
+    );
+  }
+
+  get trial_days_remaining(): number {
+    if (!this.is_trialing || !this.trial_end) return 0;
+    return Math.max(0, Math.ceil((new Date(this.trial_end).getTime() - Date.now()) / 86_400_000));
+  }
+
+  get is_in_grace_period(): boolean {
+    return (
+      this.status === SubscriptionStatus.PAST_DUE &&
+      !!this.grace_period_ends_at &&
+      new Date(this.grace_period_ends_at) > new Date()
+    );
+  }
+
+  get grace_days_remaining(): number {
+    if (!this.is_in_grace_period || !this.grace_period_ends_at) return 0;
+    return Math.max(0, Math.ceil((new Date(this.grace_period_ends_at).getTime() - Date.now()) / 86_400_000));
+  }
+
+  get is_access_allowed(): boolean {
+    return (
+      this.status === SubscriptionStatus.ACTIVE ||
+      this.is_trialing ||
+      this.is_in_grace_period
+    );
+  }
 }

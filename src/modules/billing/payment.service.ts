@@ -154,6 +154,22 @@ export const paymentService = {
           verificationResult.data
         );
 
+        // Create a paper-trail invoice if payment had none — non-fatal
+        try {
+          const { autoCreateInvoiceForPayment } = await import('./invoice-auto.service');
+          await autoCreateInvoiceForPayment(payment);
+        } catch (invoiceError) {
+          console.error('Auto-invoice creation failed (non-fatal):', invoiceError);
+        }
+
+        // Send branded receipt email — non-fatal
+        try {
+          const { sendPaymentReceiptEmail } = await import('./payment-email.service');
+          await sendPaymentReceiptEmail(payment);
+        } catch (emailError) {
+          console.error('Receipt email failed (non-fatal):', emailError);
+        }
+
         // Cache result for 1 hour
         await saveToRedis(`payment:verify:${reference}`, JSON.stringify(verificationResult), 3600);
 

@@ -1,5 +1,14 @@
 import { Request as ExpressRequest, Response } from 'express';
 import { reportsService } from '@modules/reports/reports.service';
+import {
+  flattenPatientDemographics,
+  flattenDoctorPerformance,
+  flattenFinancial,
+  flattenAppointmentAnalytics,
+  renderCsv,
+  renderExcel,
+  renderPdf
+} from '@modules/reports/report-export.service';
 
 import { PaginationQuery } from '@appTypes/common.types';
 
@@ -233,7 +242,7 @@ export const reportsController = {
 
   exportReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
-      const { reportType, format = 'json' } = req.query;
+      const { reportType, format = 'json', startDate, endDate } = req.query as Record<string, string>;
 
       if (!reportType) {
         return res.status(400).json({
@@ -242,26 +251,83 @@ export const reportsController = {
         });
       }
 
-      // Validate format
-      const supportedFormats = ['json', 'csv', 'pdf'];
-      if (!supportedFormats.includes(format as string)) {
+      const supportedFormats = ['json', 'csv', 'pdf', 'xlsx'];
+      if (!supportedFormats.includes(format)) {
         return res.status(400).json({
           success: false,
           message: `Unsupported format. Supported formats: ${supportedFormats.join(', ')}`
         });
       }
 
-      // This endpoint allows for future report export implementations
-      // For now, return a placeholder response
-      return res.status(200).json({
-        success: true,
-        message: 'Report export endpoint - not implemented yet',
-        data: {
-          reportType,
-          format,
-          note: 'Report export functionality will be implemented based on specific requirements'
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = { startDate: new Date(startDate), endDate: new Date(endDate) };
+        if (dateRange.startDate > dateRange.endDate) {
+          return res.status(400).json({
+            success: false,
+            message: 'Start date must be before end date'
+          });
         }
-      });
+      }
+
+      // Fetch the raw report and flatten it into export-ready tables
+      let flat;
+      switch (reportType) {
+        case 'patient-demographics':
+          flat = flattenPatientDemographics(await reportsService.getPatientDemographicsReport(dateRange));
+          break;
+        case 'doctor-performance':
+          flat = flattenDoctorPerformance(await reportsService.getDoctorPerformanceReport(dateRange));
+          break;
+        case 'financial':
+          flat = flattenFinancial(await reportsService.getFinancialReport(dateRange));
+          break;
+        case 'appointment-analytics':
+          flat = flattenAppointmentAnalytics(await reportsService.getAppointmentAnalyticsReport(dateRange));
+          break;
+        default:
+          return res.status(400).json({
+            success: false,
+            message: `Unknown report type '${reportType}'. Supported: patient-demographics, doctor-performance, financial, appointment-analytics`
+          });
+      }
+
+      const filename = `${reportType}-${new Date().toISOString().split('T')[0]}`;
+
+      switch (format) {
+        case 'csv': {
+          const csv = renderCsv(flat);
+          res.set({
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': `attachment; filename="${filename}.csv"`
+          });
+          return res.send(csv);
+        }
+        case 'xlsx': {
+          const xlsx = await renderExcel(flat);
+          res.set({
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="${filename}.xlsx"`,
+            'Content-Length': xlsx.length.toString()
+          });
+          return res.end(xlsx);
+        }
+        case 'pdf': {
+          const pdf = await renderPdf(flat);
+          res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${filename}.pdf"`,
+            'Content-Length': pdf.length.toString()
+          });
+          return res.end(pdf);
+        }
+        default: // json
+          return res.status(200).json({
+            success: true,
+            message: 'Report exported successfully',
+            data: flat
+          });
+      }
     } catch (error) {
       console.error('Export report error:', error);
       return res.status(500).json({
