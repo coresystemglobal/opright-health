@@ -15,8 +15,6 @@ import paymentProcessorFactory from '@modules/billing/providers/payment-processo
 
 import { ValidationUtil } from '@utils/validation.util';
 import { Op } from 'sequelize';
-import { sendPaymentReceiptEmail } from '../../services/payment-email.service';
-import { autoCreateInvoiceForPayment } from '../../services/invoice-auto.service';
 
 // Paystack charges 1.5% + ₦100 (capped at ₦2,000). We store the rate only.
 const PAYSTACK_FEE_RATE = 0.015;
@@ -156,25 +154,20 @@ export const paymentService = {
           verificationResult.data
         );
 
-        // Auto-generate invoice if payment wasn't linked to one
-        if (!payment.invoice_id) {
-          try {
-            const newInvoice = await autoCreateInvoiceForPayment(payment);
-            if (newInvoice) {
-              await payment.update({ invoice_id: newInvoice.id });
-              await payment.reload({ include: [{ model: Invoice, as: 'invoice' }] });
-            }
-          } catch (invoiceErr) {
-            // Non-fatal — log but don't block the payment confirmation
-            console.error('Auto-invoice creation failed:', invoiceErr);
-          }
+        // Create a paper-trail invoice if payment had none — non-fatal
+        try {
+          const { autoCreateInvoiceForPayment } = await import('./invoice-auto.service');
+          await autoCreateInvoiceForPayment(payment);
+        } catch (invoiceError) {
+          console.error('Auto-invoice creation failed (non-fatal):', invoiceError);
         }
 
-        // Send payment receipt email (non-fatal on failure)
+        // Send branded receipt email — non-fatal
         try {
+          const { sendPaymentReceiptEmail } = await import('./payment-email.service');
           await sendPaymentReceiptEmail(payment);
-        } catch (emailErr) {
-          console.error('Payment receipt email failed:', emailErr);
+        } catch (emailError) {
+          console.error('Receipt email failed (non-fatal):', emailError);
         }
 
         // Cache result for 1 hour

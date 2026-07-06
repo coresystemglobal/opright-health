@@ -7,39 +7,36 @@ let redisClient: Redis | null = null;
 
 async function initializeRedisConnection(): Promise<Redis> {
   if (!redisClient) {
-    redisClient = new Redis({
-      host: 'localhost',
-      port: 6379,
-      // password: process.env.REDIS_PASSWORD || 'password',
-      db: 0,
+    const redisOptions = {
       maxRetriesPerRequest: MAX_RETRIES,
       retryStrategy(times: number) {
         if (times > MAX_RETRIES) {
           console.error('Max redis connection retries reached. Giving up.');
           return null;
         }
-        
         const delay = Math.min(times * RETRY_BASE_DELAY, 3000);
         console.log(`Retrying redis connection in ${delay}ms... (Attempt ${times}/${MAX_RETRIES})`);
         return delay;
       },
       reconnectOnError(err: { message: string | string[]; }) {
-        const targetError = 'READONLY';
-        if (err.message.includes(targetError)) {
-          return true;
-        }
-        return false;
+        return err.message.includes('READONLY');
       }
-    });
+    };
+
+    redisClient = process.env.REDIS_URL
+      ? new Redis(process.env.REDIS_URL, redisOptions)
+      : new Redis({
+          host: process.env.REDIS_HOST || '127.0.0.1',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD || undefined,
+          db: parseInt(process.env.REDIS_DB || '0'),
+          ...redisOptions
+        });
 
     // Connection event handlers
     redisClient.on('connect', () => {
       console.log('Redis connected successfully');
     });
-
-    // redisClient.on('ready', () => {
-      
-    // });
 
     redisClient.on('error', (err) => {
       console.error('Redis client error:', err);
@@ -72,7 +69,6 @@ async function saveToRedis(key: string, value: string, expirationInSeconds: numb
 
   try {
     await redisClient.set(key, value, 'EX', expirationInSeconds);
-    console.log(`Successfully saved ${key} to Redis`);
   } catch (err) {
     console.error('Error saving to Redis:', err);
     throw err;
@@ -86,9 +82,6 @@ async function getFromRedis(key: string): Promise<string | null> {
 
   try {
     const value = await redisClient.get(key);
-    if (value) {
-      console.log(`Successfully retrieved ${key} from Redis`);
-    }
     return value;
   } catch (err) {
     console.error('Error retrieving from Redis:', err);
@@ -107,7 +100,6 @@ async function gracefulShutdown(): Promise<void> {
       await redisClient.disconnect();
     } finally {
       redisClient = null;
-      process.exit(0);
     }
   }
 }

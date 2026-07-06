@@ -25,12 +25,14 @@
 
 ### Tasks
 
-- [ ] 🔴 Define final tier names, limits, and pricing
-- [ ] 🟡 Subscription model exists (`subscription.model.ts`) — add `seat_limit`, `patient_limit`, `storage_limit_gb` columns
-- [ ] 🔴 Enforcement middleware: block operations when tenant exceeds plan limits
+- [x] 🟢 Define final tier names, limits, and pricing — `plan.config.ts` (env-configurable; INDIVIDUAL/BASIC/STANDARD/PRO)
+- [x] 🟢 Plan limits per tier (patients/users/storage/API) in `plan.config.ts`; subscription model has grace-period + Paystack columns
+- [x] 🟢 Enforcement middleware — `requireActiveSubscription` gates all `/api/*` routes for any request carrying x-tenant-id
+- [x] 🟢 `checkResourceLimit` wired onto POST /api/patients (patient cap); user seats tracked on /auth/register with tenant header
+- [ ] 🟡 Note: `plan.config.ts` now feature-gates tiers (only PRO has `all_features`) — revisit against the flat all-inclusive decision (#1)
 - [ ] 🔴 Plan management admin API (create, edit, deactivate plans)
 - [ ] 🔴 Self-service plan upgrade / downgrade (with proration)
-- [ ] 🔴 Free trial logic (14-day trial, auto-expire, grace period)
+- [x] 🟢 Free trial logic — TRIALING passes with `X-Trial-Days-Remaining` header; PAST_DUE honours grace period, then 402
 - [ ] 🔴 Trial-to-paid conversion flow and notifications
 - [ ] 🔴 Plan comparison page (for frontend)
 - [ ] 🔴 Usage dashboard for tenants (seats used, patient count, storage consumed)
@@ -47,7 +49,6 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Flutterwave alternative gateway — initialize, verify, webhooks, refunds
 - [x] 🟢 Webhook handlers for success / failure / refund events (raw-body signature verification)
 - [ ] 🔴 Dispute/chargeback webhook events
-- [ ] 🔴 Automatic invoice generation on payment
 - [x] 🟢 PDF invoice export — `pdf-invoice.service.ts` using PDFKit; Clinical Blue design; `GET /invoices/:id/pdf` download endpoint
 - [ ] 🔴 Payment retry logic for failed recurring charges
 - [x] 🟢 Dunning flow — `dunning.service.ts`: marks overdue, sends day-1/3/7/14 branded emails; idempotent per stage; cron fires at 08:00 daily
@@ -56,7 +57,6 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Payment receipt emails — `payment-email.service.ts` sends branded receipt after every verified payment
 - [ ] 🟡 Multi-currency support — NGN via Paystack, USD/GBP/EUR via Stripe; needs per-invoice currency handling
 - [ ] 🔴 VAT / tax calculation per region
-- [ ] 🔴 Payment receipt emails (update `email.service.ts`)
 - [ ] 🔴 Bulk payment collection for patient fees (outpatient, inpatient, lab, pharmacy)
 - [ ] 🔴 Insurance co-pay collection flow
 - [ ] 🔴 Payment history and statement download for tenants
@@ -67,10 +67,10 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 `reports.service.ts` has the data layer for demographics, doctor performance, and financials. What's missing:
 
-- [ ] 🟡 Patient demographics report — complete and expose via API
-- [ ] 🟡 Doctor performance report — complete and expose via API
-- [ ] 🟡 Financial summary report — complete and expose via API
-- [ ] 🔴 **Export formats:** PDF, CSV, and Excel for every report
+- [x] 🟢 Patient demographics report — exposed at `GET /api/reports/patient-demographics`
+- [x] 🟢 Doctor performance report — exposed at `GET /api/reports/doctor-performance`
+- [x] 🟢 Financial summary report — exposed at `GET /api/reports/financial`
+- [x] 🟢 **Export formats** — `GET /api/reports/export?reportType=…&format=csv|xlsx|pdf|json` via `report-export.service.ts` (PDFKit + ExcelJS, Clinical Blue PDF styling); covers all four report types with date-range filtering
 - [ ] 🔴 Appointment volume report (daily / weekly / monthly, by department)
 - [ ] 🔴 Lab turnaround time report (order → result)
 - [ ] 🔴 Bed occupancy report (ward-level, hospital-level)
@@ -81,7 +81,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Inventory consumption report
 - [ ] 🔴 Scheduled / automated reports (cron-based, emailed to admins)
 - [ ] 🔴 Report access control (which roles can view which reports)
-- [ ] 🔴 Custom date-range filtering on all reports
+- [x] 🟢 Custom date-range filtering on all reports (`startDate`/`endDate` query params, validated)
 - [ ] 🔴 Report audit log (who ran what report and when)
 
 ---
@@ -94,7 +94,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Revenue trend analytics (MRR, ARR, churn)
 - [ ] 🟡 Appointment metrics (completion rate, cancellation rate, peak hours)
 - [ ] 🟡 Performance KPIs (per doctor, per department)
-- [ ] 🔴 **Analytics dashboard API** — aggregate all KPIs into a single endpoint for the frontend dashboard
+- [x] 🟢 **Analytics dashboard API** — `GET /api/dashboard/analytics`: overview stats + trend series + performance KPIs + realtime metrics in one call; date-range params; 60s Redis cache; raw data for frontend-rendered charts
 - [ ] 🔴 Real-time occupancy tracker (beds, wards, emergency)
 - [ ] 🔴 Wait time analytics (average, by department, by doctor)
 - [ ] 🔴 Readmission rate tracking (30-day, 60-day, 90-day)
@@ -110,7 +110,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 5. Patient Management
 
-- [ ] 🟡 Patient registration and profile (model exists)
+- [x] 🟢 Patient registration and profile — full CRUD module (`modules/patients`) with validation, permissions, and plan-capacity check on create
 - [ ] 🔴 Patient portal — self-service login, view appointments, lab results, invoices
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
@@ -128,10 +128,10 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Appointment waitlist (model exists — implement waitlist promotion)
 - [ ] 🟡 Telemedicine / video consultation via Daily.co (`telemedicine.service.ts` — review depth) — *decided*
 - [ ] 🔴 Electronic prescriptions (generate, send to pharmacy, track fulfilment)
-- [ ] 🔴 Clinical notes (SOAP format: Subjective, Objective, Assessment, Plan)
+- [ ] 🟡 Clinical notes (SOAP) — `clinical-note.model.ts` exists; API endpoints still needed
 - [ ] 🔴 Referral management (internal department-to-department, external)
 - [ ] 🔴 Discharge planning and summary generation
-- [ ] 🔴 Vital signs recording and trend display
+- [ ] 🟡 Vital signs recording — `vital-sign.model.ts` exists; recording API and trend endpoint still needed
 - [ ] 🔴 Allergy and medication interaction alerts
 - [ ] 🟡 Lab test ordering and results (`lab-integration.service.ts`, `laboratory.service.ts`)
 - [ ] 🔴 Radiology / imaging order management (DICOM-lite, at minimum order tracking)
@@ -210,7 +210,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 12. Compliance & Security
 
 - [ ] 🟡 Audit logging (`audit.middleware.ts` exists — review coverage)
-- [ ] 🟡 Error tracking (`error-tracking.service.ts` — `sendToExternalService` is a stub)
+- [x] 🟢 Error tracking — middleware wired; Slack alerts fire for high/critical severity
 - [ ] 🟡 Rate limiting (middleware exists)
 - [ ] 🔴 **NDPR compliance** (Nigeria Data Protection Regulation) — *priority 1, decided*
 - [ ] 🔴 **GDPR compliance** (EU deployments) — *priority 1, decided*
@@ -220,7 +220,8 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Patient data export (right to access / right to portability)
 - [ ] 🔴 Patient data deletion (right to erasure)
 - [ ] 🔴 Penetration testing and security audit before go-live
-- [ ] 🔴 2FA / MFA for all staff accounts
+- [x] 🟢 2FA / MFA — TOTP setup/enable/disable/verify endpoints (`modules/auth/twofa.*`)
+- [x] 🟢 Token revocation — `token_blacklist` table + logout invalidation
 - [ ] 🟡 Backup (`backup.service.ts` complete including restore)
 - [ ] 🔴 Disaster recovery runbook and tested restore procedure
 
@@ -242,9 +243,9 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 14. Infrastructure & DevOps
 
-- [ ] 🔴 CI/CD pipeline (GitHub Actions — lint, test, build, deploy)
+- [ ] 🟡 CI/CD pipeline — GitHub Actions Fly.io deploy workflow exists; add lint/test/build gates before deploy
 - [ ] 🔴 Staging environment setup
-- [ ] 🔴 Environment-specific config management (dev / staging / prod)
+- [ ] 🟡 Environment-specific config — `DATABASE_URL`/`REDIS_URL` support + env validation at boot; per-env files still needed
 - [ ] 🔴 Database migration strategy and rollback plan
 - [ ] 🔴 Health check endpoint (already exists — ensure it covers DB, Redis, RabbitMQ)
 - [ ] 🔴 Horizontal scaling plan (stateless API, shared Redis session)
@@ -259,7 +260,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 15. Go-to-Market / Onboarding
 
 - [ ] 🔴 Tenant onboarding wizard (hospital name, logo, departments, first admin user)
-- [ ] 🔴 Demo / sandbox environment with seed data
+- [ ] 🟡 Demo / sandbox — comprehensive test-data seeder exists (`seeders/test-data.seeder.ts`); hosted sandbox env still needed
 - [ ] 🔴 In-app help documentation and tooltips
 - [ ] 🔴 Admin super-panel (manage all tenants, view subscription status, impersonate)
 - [ ] 🔴 System health dashboard for ops team

@@ -18,23 +18,24 @@ describe('EncryptionUtil', () => {
       
       expect(encrypted1).not.toBe(encrypted2);
     });
-  });
 
-  describe('password hashing', () => {
-    it('should hash password', () => {
-      const password = 'testPassword123';
-      const hash = EncryptionUtil.hashPassword(password);
+    it('should detect tampered ciphertext via GCM auth tag', () => {
+      const originalText = 'patient SSN: 123-45-6789';
+      const encrypted = EncryptionUtil.encrypt(originalText);
       
-      expect(hash).not.toBe(password);
-      expect(hash.length).toBeGreaterThan(0);
+      // Tamper with the ciphertext (modify last hex char)
+      const parts = encrypted.split(':');
+      const lastChar = parts[2].slice(-1);
+      parts[2] = parts[2].slice(0, -1) + (lastChar === '0' ? '1' : '0');
+      const tampered = parts.join(':');
+      
+      expect(() => EncryptionUtil.decrypt(tampered)).toThrow();
     });
 
-    it('should verify password correctly', () => {
-      const password = 'testPassword123';
-      const hash = EncryptionUtil.hashPassword(password);
-      
-      expect(EncryptionUtil.verifyPassword(password, hash)).toBe(true);
-      expect(EncryptionUtil.verifyPassword('wrongPassword', hash)).toBe(false);
+    it('should reject invalid encrypted text format', () => {
+      expect(() => EncryptionUtil.decrypt('not-valid-format')).toThrow(
+        'Invalid encrypted text format'
+      );
     });
   });
 });

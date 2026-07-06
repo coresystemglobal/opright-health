@@ -40,9 +40,12 @@ export class AuthController {
     try {
       try {
         const result = await authService.login(req.body);
+        if ((result as any).requiresTwoFactor) {
+          return ResponseUtil.success(res, result, '2FA verification required');
+        }
         return ResponseUtil.success(res, result, 'Login successful');
       } catch (serviceError: any) {
-        if (serviceError.message === 'Email and password are required' || 
+        if (serviceError.message === 'Email and password are required' ||
             serviceError.message === 'Invalid email format') {
           return ResponseUtil.validationError(res, [serviceError.message]);
         } else if (serviceError.message === 'Invalid credentials') {
@@ -68,6 +71,14 @@ export class AuthController {
     try {
       try {
         const result = await authService.register(req.body);
+
+        // Track user seat usage when the registration carries tenant context
+        const tenantId = req.headers['x-tenant-id'] as string;
+        if (tenantId) {
+          const { BillingService } = await import('@modules/billing/billing.service');
+          await BillingService.trackUsage(tenantId, 'users_count').catch(() => null);
+        }
+
         return ResponseUtil.success(res, result, 'Registration successful. Please verify your email.', 201);
       } catch (serviceError: any) {
         if (serviceError.message.includes('Missing required fields') ||
@@ -100,6 +111,7 @@ export class AuthController {
       } catch (serviceError: any) {
         if (serviceError.message === 'Refresh token is required' ||
             serviceError.message === 'Invalid refresh token' ||
+            serviceError.message === 'Refresh token has been revoked' ||
             serviceError.message === 'User not found' ||
             serviceError.message === 'Account is deactivated') {
           return ResponseUtil.unauthorized(res, 'Invalid refresh token');
@@ -139,11 +151,12 @@ export class AuthController {
   }
 
   /**
-   * Logout (client-side token invalidation)
+   * Logout (server-side token revocation)
    */
   static async logout(req: AuthenticatedRequest, res: Response) {
     try {
-      const result = await authService.logout();
+      const refreshToken = req.body?.refresh_token as string | undefined;
+      const result = await authService.logout(refreshToken);
       return ResponseUtil.success(res, null, result.message);
     } catch (error) {
       console.error('Logout error:', error);

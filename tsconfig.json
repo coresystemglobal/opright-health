@@ -27,15 +27,16 @@
     "useUnknownInCatchVariables": true,
     "noPropertyAccessFromIndexSignature": false,
     "typeRoots": ["node_modules/@types"],
+    "ignoreDeprecations": "5.0",
     "baseUrl": "./src",
     "paths": {
-      "@appTypes/*": ["types/*"],
-      "@config/*": ["config/*"],
-      "@core/*": ["core/*"],
+      "@modules/*":     ["modules/*"],
+      "@core/*":        ["core/*"],
+      "@shared/*":      ["shared/*"],
       "@middlewares/*": ["middlewares/*"],
-      "@modules/*": ["modules/*"],
-      "@utils/*": ["utils/*"],
-      "@shared/*": ["shared/*"]
+      "@config/*":      ["config/*"],
+      "@utils/*":       ["utils/*"],
+      "@appTypes/*":    ["types/*"]
     }
   },
   "include": [
@@ -49,6 +50,7 @@
   ],
   "ts-node": {
     "esm": false,
-    "experimentalSpecifierResolution": "node"
+    "experimentalSpecifierResolution": "node",
+    "require": ["tsconfig-paths/register"]
   }
 }

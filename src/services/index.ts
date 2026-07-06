@@ -1,19 +1,28 @@
-import { userService } from './user.service';
-import { authService } from '../modules/auth/auth.service';
-import { doctorService } from '../modules/doctors/doctor.service';
-import { patientService } from './patient.service';
-import { appointmentService } from '../modules/appointments/appointment.service';
-import { hospitalService } from './hospital.service';
-import { invoiceService } from './invoice.service';
-import { paymentService } from '../modules/billing/payment.service';
-
-export {
-  userService,
-  authService,
-  doctorService,
-  patientService,
-  appointmentService,
-  hospitalService,
-  invoiceService,
-  paymentService
-};
+export { userService } from '@modules/users/user.service';
+export { authService } from '@modules/auth/auth.service';
+export { doctorService } from '@modules/doctors/doctor.service';
+export { patientService } from '@modules/patients/patient.service';
+export { familyService } from '@modules/patients/family.service';
+export { appointmentService } from '@modules/appointments/appointment.service';
+export { hospitalService } from '@modules/hospital/hospital.service';
+export { DepartmentService } from '@modules/hospital/department.service';
+export { invoiceService } from '@modules/billing/invoice.service';
+export { paymentService } from '@modules/billing/payment.service';
+export { BillingService } from '@modules/billing/billing.service';
+export { LaboratoryService } from '@modules/laboratory/laboratory.service';
+export { QueueService } from '@modules/queue/queue.service';
+export { QueueManagementService } from '@modules/queue/queue-management.service';
+export { AmbulanceService } from '@modules/ambulance/ambulance.service';
+export { default as triageService } from '@modules/triage/triage.service';
+export { EMRService } from '@modules/clinical/emr.service';
+export { medicationService } from '@modules/clinical/medication.service';
+export { NotificationService } from '@modules/notifications/notification.service';
+export { fileUploadService } from '@modules/files/file-upload.service';
+export { auditService } from '@modules/audit/audit.service';
+export { FAQService } from '@modules/faq/faq.service';
+export { dashboardService } from '@modules/reports/dashboard.service';
+export { reportsService } from '@modules/reports/reports.service';
+export { HealthService } from '@modules/health/health.service';
+export { roleService } from '@modules/rbac/role.service';
+export { permissionService } from '@modules/rbac/permission.service';
+export { reviewService } from '@modules/doctors/review.service';

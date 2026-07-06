@@ -1,182 +1,310 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { PaymentRequestData, PaymentResponse } from '@appTypes/payment.types';
+import { PaymentRequestData } from '@appTypes/payment.types';
 
-const FLUTTERWAVE_BASE_URL = 'https://api.flutterwave.com/v3';
-
-const flutterwaveClient = axios.create({
-  baseURL: FLUTTERWAVE_BASE_URL,
-  headers: {
-    Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-    'Content-Type': 'application/json'
-  },
-  timeout: 30_000
-});
+// Define types for Flutterwave responses
+interface FlutterwaveSuccessResponse {
+  status: string;
+  message: string;
+  data: {
+    link?: string;
+    id?: string;
+    tx_ref?: string;
+    amount?: number;
+    currency?: string;
+    status?: string;
+    payment_type?: string;
+    customer?: any;
+  };
+}
 
 /**
- * Flutterwave — alternative gateway for broader African coverage.
- * Amounts are sent in major units (not kobo).
+ * Flutterwave Payment Processor Service
  */
-const flutterwaveService = {
-  async initiatePayment(paymentData: PaymentRequestData & { metadata?: Record<string, unknown> }): Promise<PaymentResponse> {
-    try {
-      const txRef = `HMS-FLW-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
-      const redirectUrl = process.env.FLUTTERWAVE_REDIRECT_URL
-        || `${process.env.API_BASE_URL || 'http://localhost:3000'}/api/payments/flutterwave/callback`;
+class FlutterwavePaymentProcessor {
+  private secretKey: string;
+  private publicKey: string;
+  private baseUrl: string = 'https://api.flutterwave.com/v3';
 
-      const response = await flutterwaveClient.post('/payments', {
-        tx_ref: txRef,
-        amount: paymentData.amount,
-        currency: paymentData.currency || 'NGN',
-        redirect_url: redirectUrl,
-        customer: { email: paymentData.email },
-        meta: paymentData.metadata || {}
-      });
-
-      const { status, message, data } = response.data;
-
-      if (status !== 'success') {
-        return { statusCode: 400, status: 'error', message: message || 'Flutterwave initialization failed', data: null };
-      }
-
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Payment initialized',
-        data: {
-          authorization_url: data.link,
-          reference: txRef
-        }
-      };
-    } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || error.message
-        : 'Flutterwave initialization failed';
-      console.error('Flutterwave initiation error:', message);
-      return { statusCode: 502, status: 'error', message, data: null };
-    }
-  },
-
-  async verifyPayment(reference: string): Promise<PaymentResponse> {
-    try {
-      const response = await flutterwaveClient.get('/transactions/verify_by_reference', {
-        params: { tx_ref: reference }
-      });
-
-      const { status, message, data } = response.data;
-
-      if (status !== 'success' || !data) {
-        return { statusCode: 400, status: 'error', message: message || 'Verification failed', data: null };
-      }
-
-      if (data.status === 'successful') {
-        return {
-          statusCode: 200,
-          status: 'success',
-          message: 'Payment verified',
-          data: {
-            reference: data.tx_ref,
-            flw_transaction_id: data.id,
-            amount: data.amount,
-            currency: data.currency,
-            paid_at: data.created_at,
-            channel: data.payment_type,
-            customer_email: data.customer?.email
-          }
-        };
-      }
-
-      if (data.status === 'failed') {
-        return { statusCode: 200, status: 'failed', message: data.processor_response || 'Payment failed', data: { reference: data.tx_ref } };
-      }
-
-      return { statusCode: 200, status: 'pending', message: `Payment status: ${data.status}`, data: { reference: data.tx_ref } };
-    } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || error.message
-        : 'Flutterwave verification failed';
-      console.error('Flutterwave verification error:', message);
-      return { statusCode: 502, status: 'error', message, data: null };
-    }
-  },
+  constructor() {
+    this.secretKey = process.env.FLUTTERWAVE_SECRET_KEY as string;
+    this.publicKey = process.env.FLUTTERWAVE_PUBLIC_KEY as string;
+  }
 
   /**
-   * Flutterwave sends a verif-hash header that must equal the configured
-   * secret hash (not an HMAC — direct comparison per their docs).
+   * Initialize a payment with Flutterwave
    */
-  async handleWebhookEvent(signature: string, rawBody: string | Buffer): Promise<PaymentResponse> {
-    const secretHash = process.env.FLUTTERWAVE_WEBHOOK_HASH;
-    if (!secretHash) {
-      return { statusCode: 500, status: 'error', message: 'Flutterwave webhook hash not configured', data: null };
-    }
-
-    if (signature !== secretHash) {
-      return { statusCode: 401, status: 'error', message: 'Invalid webhook signature', data: null };
-    }
-
-    let event: any;
+  async initiatePayment(paymentData: PaymentRequestData) {
     try {
-      const bodyString = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : rawBody;
-      event = typeof bodyString === 'string' ? JSON.parse(bodyString) : bodyString;
-    } catch {
-      return { statusCode: 400, status: 'error', message: 'Invalid webhook payload', data: null };
-    }
+      const { amount, email, currency } = paymentData;
 
-    if (event.event === 'charge.completed') {
-      const data = event.data;
-      if (data.status === 'successful') {
+      // Generate a unique transaction reference
+      const txRef = `FLW-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const requestBody = {
+        tx_ref: txRef,
+        amount,
+        currency: currency || 'NGN',
+        redirect_url: process.env.FLUTTERWAVE_REDIRECT_URL,
+        customer: {
+          email
+        },
+        customizations: {
+          title: 'Hospital Management Payment',
+          logo: process.env.LOGO_URL,
+          description: 'Payment for medical services'
+        },
+        meta: {
+          payment_provider: 'flutterwave'
+        }
+      };
+
+      const response = await axios.post(`${this.baseUrl}/payments`, requestBody, config);
+
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success') {
         return {
           statusCode: 200,
           status: 'success',
-          message: 'Charge successful',
+          message: 'Flutterwave payment initiated successfully',
           data: {
-            reference: data.tx_ref,
-            flw_transaction_id: data.id,
-            amount: data.amount,
-            currency: data.currency,
-            customer_email: data.customer?.email
+            authorization_url: responseData.data.link,
+            reference: txRef
           }
         };
+      } else {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Failed to initiate Flutterwave payment',
+          data: responseData
+        };
       }
-      return { statusCode: 200, status: 'failed', message: data.processor_response || 'Charge failed', data: { reference: data.tx_ref } };
-    }
-
-    return { statusCode: 200, status: 'ignored', message: `Unhandled event: ${event.event}`, data: null };
-  },
-
-  async createRefund(reference: string, amount?: number): Promise<PaymentResponse> {
-    try {
-      // Flutterwave refunds require the numeric transaction id — resolve from reference
-      const verification = await flutterwaveClient.get('/transactions/verify_by_reference', {
-        params: { tx_ref: reference }
-      });
-
-      const transactionId = verification.data?.data?.id;
-      if (!transactionId) {
-        return { statusCode: 404, status: 'error', message: 'Transaction not found for refund', data: null };
-      }
-
-      const response = await flutterwaveClient.post(`/transactions/${transactionId}/refund`, amount ? { amount } : {});
-      const { status, message, data } = response.data;
-
-      if (status !== 'success') {
-        return { statusCode: 400, status: 'error', message: message || 'Refund failed', data: null };
-      }
-
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Refund initiated',
-        data: { reference, refund_status: data?.status, refund_amount: data?.amount_refunded ?? amount }
-      };
     } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || error.message
-        : 'Flutterwave refund failed';
-      console.error('Flutterwave refund error:', message);
-      return { statusCode: 502, status: 'error', message, data: null };
+      console.error('Flutterwave payment initiation error:', error);
+      return {
+        statusCode: 500,
+        status: 'error',
+        message: 'Failed to initiate Flutterwave payment',
+        data: null
+      };
     }
   }
-};
 
-export default flutterwaveService;
+  /**
+   * Verify a Flutterwave payment
+   */
+  async verifyPayment(transactionId: string) {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const response = await axios.get(`${this.baseUrl}/transactions/${transactionId}/verify`, config);
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success' && responseData.data.status === 'successful') {
+        return {
+          statusCode: 200,
+          status: 'success',
+          message: 'Payment verified successfully',
+          data: {
+            transaction_id: responseData.data.id,
+            tx_ref: responseData.data.tx_ref,
+            amount: responseData.data.amount,
+            currency: responseData.data.currency,
+            status: responseData.data.status,
+            payment_type: responseData.data.payment_type,
+            customer: responseData.data.customer
+          }
+        };
+      } else {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Payment verification failed',
+          data: responseData
+        };
+      }
+    } catch (error) {
+      console.error('Flutterwave payment verification error:', error);
+      return {
+        statusCode: 500,
+        status: 'error',
+        message: 'Failed to verify Flutterwave payment',
+        data: null
+      };
+    }
+  }
+
+  /**
+   * Verify a Flutterwave transaction by reference
+   */
+  async verifyTransactionByReference(txRef: string) {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const response = await axios.get(`${this.baseUrl}/transactions/verify_by_reference?tx_ref=${txRef}`, config);
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success' && responseData.data.status === 'successful') {
+        return {
+          statusCode: 200,
+          status: 'success',
+          message: 'Payment verified successfully',
+          data: {
+            transaction_id: responseData.data.id,
+            tx_ref: responseData.data.tx_ref,
+            amount: responseData.data.amount,
+            currency: responseData.data.currency,
+            status: responseData.data.status,
+            payment_type: responseData.data.payment_type,
+            customer: responseData.data.customer
+          }
+        };
+      } else {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Payment verification failed',
+          data: responseData
+        };
+      }
+    } catch (error) {
+      console.error('Flutterwave reference verification error:', error);
+      return {
+        statusCode: 500,
+        status: 'error',
+        message: 'Failed to verify Flutterwave transaction',
+        data: null
+      };
+    }
+  }
+
+  /**
+   * Handle Flutterwave webhook events
+   */
+  async handleWebhookEvent(signature: string, rawBody: string) {
+    try {
+      const secretHash = process.env.FLUTTERWAVE_WEBHOOK_HASH;
+      
+      if (signature !== secretHash) {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Invalid signature',
+          data: null
+        };
+      }
+
+      const event = JSON.parse(rawBody);
+      
+      if (event.event === 'charge.completed') {
+        // Check if transaction was successful
+        const isSuccessful = event.data.status === 'successful';
+        
+        return {
+          statusCode: 200,
+          status: isSuccessful ? 'success' : 'failed',
+          message: isSuccessful ? 'Payment succeeded' : 'Payment failed',
+          data: {
+            transaction_id: event.data.id,
+            tx_ref: event.data.tx_ref,
+            amount: event.data.amount,
+            currency: event.data.currency,
+            status: event.data.status,
+            payment_type: event.data.payment_type
+          }
+        };
+      } else {
+        return {
+          statusCode: 200,
+          status: 'ignored',
+          message: `Unhandled event type: ${event.event}`,
+          data: null
+        };
+      }
+    } catch (error) {
+      console.error('Flutterwave webhook handling error:', error);
+      return {
+        statusCode: 400,
+        status: 'error',
+        message: 'Webhook error',
+        data: null
+      };
+    }
+  }
+
+  /**
+   * Create a refund for a transaction
+   */
+  async createRefund(transactionId: string, amount?: number) {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const requestBody: any = {
+        id: transactionId
+      };
+
+      // If amount specified, include it in the refund
+      if (amount) {
+        requestBody.amount = amount;
+      }
+
+      const response = await axios.post(`${this.baseUrl}/transactions/${transactionId}/refund`, requestBody, config);
+      const responseData = response.data as FlutterwaveSuccessResponse;
+      
+      if (responseData.status === 'success') {
+        return {
+          statusCode: 200,
+          status: 'success',
+          message: 'Refund initiated successfully',
+          data: {
+            refund_id: responseData.data.id,
+            amount: responseData.data.amount,
+            status: responseData.data.status,
+            transaction_id: transactionId
+          }
+        };
+      } else {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Failed to initiate refund',
+          data: responseData
+        };
+      }
+    } catch (error) {
+      console.error('Flutterwave refund error:', error);
+      return {
+        statusCode: 500,
+        status: 'error',
+        message: 'Failed to process refund',
+        data: null
+      };
+    }
+  }
+}
+
+export default new FlutterwavePaymentProcessor();

@@ -16,6 +16,12 @@ type UsageMetric = 'patients_count' | 'users_count' | 'api_calls_count' | 'stora
  *  CANCELLED        → 402
  *  none             → 402
  *
+ * The tenant is resolved from req.tenant (when tenantMiddleware ran
+ * earlier) or the x-tenant-id header/query directly. Requests that
+ * carry no tenant identity pass through — tenant-scoped routes still
+ * enforce the header via tenantMiddleware, and the gate bites on any
+ * request that does identify a tenant.
+ *
  * Errors in the check (DB down, etc.) fall through gracefully so the
  * API stays available while billing infra recovers.
  */
@@ -24,12 +30,17 @@ export const requireActiveSubscription = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.tenant) {
-    return res.status(400).json({ status: 'error', message: 'Tenant context required' });
+  const tenantId =
+    req.tenant?.id ||
+    (req.headers['x-tenant-id'] as string) ||
+    (req.query.tenant_id as string);
+
+  if (!tenantId) {
+    return next();
   }
 
   try {
-    const ctx = await BillingService.getSubscriptionContext(req.tenant.id);
+    const ctx = await BillingService.getSubscriptionContext(tenantId);
 
     if (!ctx.subscription) {
       return res.status(402).json({
@@ -80,8 +91,8 @@ export const requireActiveSubscription = async (
  * allowing a creation operation. Use on POST routes that create
  * patients or users.
  *
- * Also increments the usage metric on success so the count stays
- * accurate without a separate tracking call at the service layer.
+ * Attaches `req.__trackUsage` — call it after a successful DB insert
+ * to increment the usage counter without a separate service-layer call.
  *
  * @param metric   The UsageTracking column to check and increment.
  * @param limitKey The PlanLimits field that caps this resource.
@@ -127,8 +138,6 @@ export const checkResourceLimit = (
         }
       }
 
-      // Attach a post-creation hook so the controller can increment
-      // after a successful DB insert without re-fetching the tenant.
       (req as any).__trackUsage = async () => {
         await BillingService.trackUsage(req.tenant!.id, metric).catch(() => null);
       };

@@ -5,18 +5,10 @@ import { validate, validateParams, validateQuery, paymentValidation, genericVali
 
 const paymentRouter = express.Router();
 
-// ---------------------------------------------------------------------------
-// Paystack callback — Paystack redirects here after user completes payment.
-// Must be public (no auth) because Paystack calls it before the user returns.
-// ---------------------------------------------------------------------------
 paymentRouter.get('/paystack/callback', async (req: Request, res: Response) => {
   await paymentController.paystackCallback(req, res);
 });
 
-// ---------------------------------------------------------------------------
-// Initiate payment — defaults to Paystack + NGN (primary gateway)
-// Body: { amount, email, currency?, payment_provider?, invoice_id?, appointment_id? }
-// ---------------------------------------------------------------------------
 paymentRouter.post('/initiate',
   authentication,
   validate(paymentValidation.initiate),
@@ -25,9 +17,6 @@ paymentRouter.post('/initiate',
   }
 );
 
-// ---------------------------------------------------------------------------
-// Verify payment by Paystack reference
-// ---------------------------------------------------------------------------
 paymentRouter.get('/verify/:reference',
   authentication,
   async (req: Request, res: Response) => {
@@ -35,9 +24,6 @@ paymentRouter.get('/verify/:reference',
   }
 );
 
-// ---------------------------------------------------------------------------
-// Payment records
-// ---------------------------------------------------------------------------
 paymentRouter.get('/all',
   authentication,
   validateQuery(genericValidation.pagination),
@@ -61,9 +47,6 @@ paymentRouter.get('/ref/:reference',
   }
 );
 
-// ---------------------------------------------------------------------------
-// Refund (admin / billing staff only)
-// ---------------------------------------------------------------------------
 paymentRouter.post('/refund/:paymentId',
   authentication,
   validateParams(genericValidation.id),
@@ -73,9 +56,6 @@ paymentRouter.post('/refund/:paymentId',
   }
 );
 
-// ---------------------------------------------------------------------------
-// Webhooks — raw body required for Stripe signature; public endpoints
-// ---------------------------------------------------------------------------
 paymentRouter.post('/webhook/stripe',
   express.raw({ type: 'application/json' }),
   async (req: Request, res: Response) => {

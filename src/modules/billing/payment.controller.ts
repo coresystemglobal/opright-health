@@ -107,10 +107,9 @@ const paymentController = {
   paystackWebhook: async (req: Request, res: Response): Promise<Response> => {
     try {
       const signature = req.headers['x-paystack-signature'] as string;
-      // rawBody is captured by the json parser's verify hook — signature
-      // verification must run on the exact bytes Paystack signed
-      const rawBody: Buffer | string = (req as any).rawBody || JSON.stringify(req.body);
-      await paymentService.handleWebhookEvent(signature, rawBody, 'paystack');
+      // Use the exact bytes Paystack signed — JSON.stringify(req.body) may differ
+      const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+      const result = await paymentService.handleWebhookEvent(signature, rawBody, 'paystack');
       // Paystack expects a 200 OK immediately — always return 200
       return res.status(200).json({ received: true });
     } catch (error) {
@@ -121,8 +120,7 @@ const paymentController = {
   stripeWebhook: async (req: Request, res: Response): Promise<Response> => {
     try {
       const signature = req.headers['stripe-signature'] as string;
-      const rawBody: Buffer | string = (req as any).rawBody || req.body;
-      const result = await paymentService.handleWebhookEvent(signature, rawBody, 'stripe');
+      const result = await paymentService.handleWebhookEvent(signature, (req as any).rawBody || req.body, 'stripe');
       return res.status(result.statusCode).json(result);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -133,8 +131,8 @@ const paymentController = {
   flutterwaveWebhook: async (req: Request, res: Response): Promise<Response> => {
     try {
       const signature = req.headers['verif-hash'] as string;
-      const rawBody: Buffer | string = (req as any).rawBody || JSON.stringify(req.body);
-      await paymentService.handleWebhookEvent(signature, rawBody, 'flutterwave');
+      const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+      const result = await paymentService.handleWebhookEvent(signature, rawBody, 'flutterwave');
       return res.status(200).json({ received: true });
     } catch (error) {
       return res.status(200).json({ received: true });

@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuditService } from '../services/audit.service';
-import { AuditAction } from '../models/audit-log.model';
+import { AuditService } from '@modules/audit/audit.service';
+
+import { AuditAction } from '@modules/audit/audit-log.model';
+
 
 const getResourceFromPath = (path: string): string => {
   const segments = path.split('/').filter(Boolean);

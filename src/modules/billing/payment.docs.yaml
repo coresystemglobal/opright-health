@@ -1,0 +1,291 @@
+paths:
+  /payments/paystack/callback:
+    get:
+      summary: Paystack payment callback
+      description: Public redirect endpoint Paystack calls after the user completes payment on their checkout page.
+      tags: [Payments]
+      parameters:
+        - in: query
+          name: reference
+          required: true
+          schema:
+            type: string
+          description: Paystack transaction reference
+      responses:
+        '302':
+          description: Redirect to frontend success/failure page
+
+  /payments/initiate:
+    post:
+      summary: Initiate a payment
+      description: Creates a payment session. Defaults to Paystack + NGN. Returns an authorization URL to redirect the user.
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - email
+              properties:
+                amount:
+                  type: number
+                  example: 15000
+                  description: Amount in smallest currency unit (kobo for NGN)
+                email:
+                  type: string
+                  format: email
+                  example: patient@example.com
+                currency:
+                  type: string
+                  example: NGN
+                  default: NGN
+                payment_provider:
+                  type: string
+                  enum: [paystack, stripe, flutterwave]
+                  default: paystack
+                invoice_id:
+                  type: string
+                  format: uuid
+                appointment_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Payment initiated — redirect user to authorization_url
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      authorization_url:
+                        type: string
+                        example: 'https://checkout.paystack.com/xyz'
+                      reference:
+                        type: string
+                        example: PAY-20260705-abc123
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /payments/verify/{reference}:
+    get:
+      summary: Verify payment by reference
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+          example: PAY-20260705-abc123
+      responses:
+        '200':
+          description: Payment status verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /payments/all:
+    get:
+      summary: List all payments
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Payments retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /payments/id/{paymentId}:
+    get:
+      summary: Get payment by ID
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /payments/ref/{reference}:
+    get:
+      summary: Get payment by reference
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+          example: PAY-20260705-abc123
+      responses:
+        '200':
+          description: Payment retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Payment'
+
+  /payments/refund/{paymentId}:
+    post:
+      summary: Process a refund
+      description: Requires admin or billing staff role
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                amount:
+                  type: number
+                  description: Partial refund amount. Omit for full refund.
+                reason:
+                  type: string
+                  example: Patient requested cancellation
+      responses:
+        '200':
+          description: Refund processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '400':
+          description: Refund not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /payments/webhook/stripe:
+    post:
+      summary: Stripe webhook receiver
+      description: Public endpoint. Stripe sends payment event notifications here. Raw body required for signature verification.
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe event payload
+      responses:
+        '200':
+          description: Webhook received
+
+  /payments/webhook/paystack:
+    post:
+      summary: Paystack webhook receiver
+      description: Public endpoint. Paystack sends payment event notifications here.
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Paystack event payload
+      responses:
+        '200':
+          description: Webhook received
+
+  /payments/webhook/flutterwave:
+    post:
+      summary: Flutterwave webhook receiver
+      description: Public endpoint. Flutterwave sends payment event notifications here.
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Flutterwave event payload
+      responses:
+        '200':
+          description: Webhook received

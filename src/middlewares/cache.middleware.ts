@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { CacheService } from '../services/cache.service';
+import { CacheService } from '@shared/cache/cache.service';
 import { TenantRequest } from './tenant.middleware';
 
 export const cacheMiddleware = (resource: string, ttl: number = 300) => {

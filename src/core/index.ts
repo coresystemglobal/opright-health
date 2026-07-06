@@ -1,19 +1,56 @@
+import http from 'http';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import helmet from 'helmet';
 
 import sequelize from './database';
 import router from '../router';
 import { specs, swaggerUi, swaggerUiOptions } from '../config/swagger.config';
-import { 
-  generalRateLimit, 
-  authRateLimit, 
+import {
+  generalRateLimit,
+  authRateLimit,
   paymentRateLimit,
   apiRateLimit
-} from '../middleware/rate-limiter.middleware';
+} from '../middlewares/rate-limiter.middleware';
+import { idempotencyMiddleware, cleanupOldSyncLogs } from '../middlewares/idempotency.middleware';
+import { errorTrackingMiddleware } from '../middlewares/error-tracking.middleware';
+import { NotificationService } from '../modules/notifications/notification.service';
+
+/**
+ * Validate that all critical environment variables are present at startup.
+ * Prevents the server from running with insecure default secrets.
+ */
+function validateRequiredEnvVars(): void {
+  const required: Record<string, { minLen?: number; hint: string }> = {
+    JWT_SECRET: { minLen: 16, hint: 'Set a strong random string (min 16 chars)' },
+    JWT_REFRESH_SECRET: { minLen: 16, hint: 'Set a strong random string different from JWT_SECRET' },
+    ENCRYPTION_KEY: { minLen: 32, hint: 'Set a random string of at least 32 characters' },
+  };
+
+  const missing: string[] = [];
+  for (const [key, opts] of Object.entries(required)) {
+    const value = process.env[key];
+    if (!value) {
+      missing.push(`  ${key} — ${opts.hint}`);
+    } else if (opts.minLen && value.length < opts.minLen) {
+      missing.push(`  ${key} — must be at least ${opts.minLen} characters (currently ${value.length})`);
+    }
+  }
+
+  if (missing.length > 0) {
+    console.error(
+      'FATAL: Missing or invalid required environment variables:\n' +
+      missing.join('\n') +
+      '\n\nServer will not start without these. See .env.example for reference.'
+    );
+    process.exit(1);
+  }
+}
+
 const server = express();
 
-const port = process.env.LOCAL_PORT || 3000;
+const port = parseInt(process.env.PORT || process.env.LOCAL_PORT || '3000', 10);
 
 // Capture the raw request body for webhook signature verification
 // (Paystack/Stripe/Flutterwave sign the exact bytes they send)
@@ -25,17 +62,17 @@ server.use(express.json({
 }));
 server.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Apply security middleware
-// server.use(applySecurity);
+// HTTP security headers (helmet)
+server.use(helmet());
 
 // CORS configuration
 server.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://your-frontend-domain.com'
+      ...(process.env.NODE_ENV !== 'production'
+        ? ['http://localhost:3000', 'http://localhost:3001','https://hms-api.fly.dev']
+        : []),
     ].filter(Boolean);
     
     // Allow requests with no origin (mobile apps, etc.)
@@ -49,7 +86,7 @@ server.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Tenant-ID', 'X-Client-Sync-Id'],
   exposedHeaders: ['X-Total-Count', 'X-Page-Count']
 }));
 
@@ -61,11 +98,20 @@ if (process.env.NODE_ENV !== 'test') {
 // Setup Swagger documentation
 server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerUiOptions));
 
-// Apply rate limiting - specific routes first
+// Apply rate limiting - most specific first, general only on non-API paths
 server.use('/api/v1/auth', authRateLimit);
 server.use('/api/v1/payments', paymentRateLimit);
 server.use('/api/v1', apiRateLimit);
-server.use(generalRateLimit);
+server.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  return generalRateLimit(req, res, next);
+});
+
+// Idempotency for offline-sync replay (skip auth routes)
+server.use('/api/v1', (req, res, next) => {
+  if (req.path.startsWith('/auth/')) return next();
+  return idempotencyMiddleware(req, res, next);
+});
 
 server.get("/", (req, res) => {
   res.json({ 
@@ -89,6 +135,9 @@ server.get("/health", (req, res) => {
 });
 
 server.use('/api/v1', router);
+
+// Log errors and fire Slack alerts for high/critical severity
+server.use(errorTrackingMiddleware);
 
 // Error handling for security violations
 server.use((err: any, req: any, res: any, next: any) => {
@@ -118,7 +167,7 @@ server.use((err: any, req: any, res: any, next: any) => {
 
 function scheduleDunning() {
   const runCycle = async () => {
-    const { markOverdueInvoices, runDunningCycle } = await import('../services/dunning.service');
+    const { markOverdueInvoices, runDunningCycle } = await import('../modules/billing/dunning.service');
     const marked = await markOverdueInvoices();
     if (marked > 0) console.log(`Dunning: marked ${marked} invoice(s) overdue.`);
     const results = await runDunningCycle();
@@ -144,15 +193,26 @@ function scheduleDunning() {
 }
 
 const startServer = async () => {
+  // Fail fast if required secrets are missing
+  validateRequiredEnvVars();
+
   try {
     await sequelize.authenticate();
     console.log('Database connected.');
 
-    scheduleDunning();
+    // Wrap Express with HTTP server so Socket.IO can share the port
+    const httpServer = http.createServer(server);
+    NotificationService.initialize(httpServer);
 
-    server.listen(port, () => {
+    httpServer.listen(port, '0.0.0.0', () => {
       console.log(`Server running on port ${port}`);
     });
+
+    // Purge stale idempotency records on startup
+    cleanupOldSyncLogs().catch(() => {});
+
+    // Overdue-invoice dunning emails (daily cycle)
+    scheduleDunning();
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }

@@ -1,194 +1,281 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { PaymentRequestData, PaymentResponse } from '@appTypes/payment.types';
+import { PaymentRequestData } from '@appTypes/payment.types';
 
-const PAYSTACK_BASE_URL = 'https://api.paystack.co';
-
-const paystackClient = axios.create({
-  baseURL: PAYSTACK_BASE_URL,
-  headers: {
-    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-    'Content-Type': 'application/json'
-  },
-  timeout: 30_000
-});
+// Define types for Paystack responses
+interface PaystackSuccessResponse {
+  status: boolean;
+  message: string;
+  data: {
+    authorization_url?: string;
+    access_code?: string;
+    reference?: string;
+    status?: string;
+    amount?: number;
+    paid_at?: string;
+    channel?: string;
+    currency?: string;
+    customer?: any;
+    transaction?: {
+      reference: string;
+    };
+    id?: string;
+  };
+}
 
 /**
- * Paystack — primary payment gateway (NGN: cards, bank transfer, USSD).
- * Amounts are sent to Paystack in kobo (amount * 100).
+ * Paystack Payment Processor Service
  */
-const paystackService = {
-  async initiatePayment(paymentData: PaymentRequestData & { metadata?: Record<string, unknown> }): Promise<PaymentResponse> {
-    try {
-      const callbackUrl = process.env.PAYSTACK_CALLBACK_URL
-        || `${process.env.API_BASE_URL || 'http://localhost:3000'}/api/payments/paystack/callback`;
+class PaystackPaymentProcessor {
+  private secretKey: string;
+  private baseUrl: string = 'https://api.paystack.co';
 
-      const response = await paystackClient.post('/transaction/initialize', {
-        email: paymentData.email,
-        amount: Math.round(paymentData.amount * 100),
-        currency: paymentData.currency || 'NGN',
-        callback_url: callbackUrl,
-        metadata: paymentData.metadata || {}
-      });
-
-      const { status, message, data } = response.data;
-
-      if (!status) {
-        return { statusCode: 400, status: 'error', message: message || 'Paystack initialization failed', data: null };
-      }
-
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Payment initialized',
-        data: {
-          authorization_url: data.authorization_url,
-          access_code: data.access_code,
-          reference: data.reference
-        }
-      };
-    } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || error.message
-        : 'Paystack initialization failed';
-      console.error('Paystack initiation error:', message);
-      return { statusCode: 502, status: 'error', message, data: null };
-    }
-  },
-
-  async verifyPayment(reference: string): Promise<PaymentResponse> {
-    try {
-      const response = await paystackClient.get(`/transaction/verify/${encodeURIComponent(reference)}`);
-      const { status, message, data } = response.data;
-
-      if (!status) {
-        return { statusCode: 400, status: 'error', message: message || 'Verification failed', data: null };
-      }
-
-      if (data.status === 'success') {
-        return {
-          statusCode: 200,
-          status: 'success',
-          message: 'Payment verified',
-          data: {
-            reference: data.reference,
-            amount: data.amount / 100,
-            currency: data.currency,
-            paid_at: data.paid_at,
-            channel: data.channel,
-            customer_email: data.customer?.email,
-            card_last_four: data.authorization?.last4,
-            card_brand: data.authorization?.brand,
-            bank: data.authorization?.bank
-          }
-        };
-      }
-
-      if (data.status === 'failed') {
-        return { statusCode: 200, status: 'failed', message: data.gateway_response || 'Payment failed', data: { reference: data.reference } };
-      }
-
-      return { statusCode: 200, status: 'pending', message: `Payment status: ${data.status}`, data: { reference: data.reference } };
-    } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || error.message
-        : 'Paystack verification failed';
-      console.error('Paystack verification error:', message);
-      return { statusCode: 502, status: 'error', message, data: null };
-    }
-  },
+  constructor() {
+    this.secretKey = process.env.PAYSTACK_SECRET_KEY as string;
+  }
 
   /**
-   * Validates x-paystack-signature (HMAC SHA512 of raw body with secret key)
-   * and normalizes charge events.
+   * Initialize a payment with Paystack
    */
-  async handleWebhookEvent(signature: string, rawBody: string | Buffer): Promise<PaymentResponse> {
-    const secret = process.env.PAYSTACK_SECRET_KEY;
-    if (!secret) {
-      return { statusCode: 500, status: 'error', message: 'Paystack secret key not configured', data: null };
-    }
-
-    const bodyString = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : rawBody;
-    const expectedSignature = crypto.createHmac('sha512', secret).update(bodyString).digest('hex');
-
-    // timingSafeEqual throws on length mismatch, so compare lengths first
-    const expected = Buffer.from(expectedSignature);
-    const received = Buffer.from(signature);
-    if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) {
-      return { statusCode: 401, status: 'error', message: 'Invalid webhook signature', data: null };
-    }
-
-    let event: any;
+  async initiatePayment(paymentData: PaymentRequestData) {
     try {
-      event = JSON.parse(bodyString);
-    } catch {
-      return { statusCode: 400, status: 'error', message: 'Invalid webhook payload', data: null };
-    }
+      const { amount, email, currency } = paymentData;
 
-    switch (event.event) {
-      case 'charge.success':
+      // Generate a unique reference
+      const reference = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const requestBody = {
+        email,
+        amount: Math.round(amount * 100), // Convert to kobo
+        currency: currency || 'NGN',
+        reference,
+        callback_url: process.env.PAYSTACK_CALLBACK_URL || `${process.env.API_BASE_URL}/api/payments/paystack/callback`,
+        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
+        metadata: {
+          payment_provider: 'paystack',
+          custom_fields: [
+            { display_name: 'Platform', variable_name: 'platform', value: 'MediCore HMS' }
+          ],
+          ...(paymentData as any).metadata
+        }
+      };
+
+      const response = await axios.post(`${this.baseUrl}/transaction/initialize`, requestBody, config);
+
+      const responseData = response.data as PaystackSuccessResponse;
+      
+      if (responseData.status) {
         return {
           statusCode: 200,
           status: 'success',
-          message: 'Charge successful',
+          message: 'Paystack payment initiated successfully',
           data: {
-            reference: event.data.reference,
-            amount: event.data.amount / 100,
-            currency: event.data.currency,
-            paid_at: event.data.paid_at,
-            channel: event.data.channel,
-            customer_email: event.data.customer?.email
+            authorization_url: responseData.data.authorization_url,
+            access_code: responseData.data.access_code,
+            reference: responseData.data.reference
           }
         };
-
-      case 'charge.failed':
+      } else {
         return {
-          statusCode: 200,
-          status: 'failed',
-          message: event.data.gateway_response || 'Charge failed',
-          data: { reference: event.data.reference }
+          statusCode: 400,
+          status: 'error',
+          message: 'Failed to initiate Paystack payment',
+          data: responseData
         };
-
-      case 'refund.processed':
-        return {
-          statusCode: 200,
-          status: 'refunded',
-          message: 'Refund processed',
-          data: { reference: event.data.transaction_reference, refund_amount: event.data.amount / 100 }
-        };
-
-      default:
-        // Acknowledge unhandled events so Paystack stops retrying
-        return { statusCode: 200, status: 'ignored', message: `Unhandled event: ${event.event}`, data: null };
-    }
-  },
-
-  async createRefund(reference: string, amount?: number): Promise<PaymentResponse> {
-    try {
-      const payload: Record<string, unknown> = { transaction: reference };
-      if (amount) payload.amount = Math.round(amount * 100);
-
-      const response = await paystackClient.post('/refund', payload);
-      const { status, message, data } = response.data;
-
-      if (!status) {
-        return { statusCode: 400, status: 'error', message: message || 'Refund failed', data: null };
       }
-
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Refund initiated',
-        data: { reference, refund_status: data.status, refund_amount: data.amount ? data.amount / 100 : amount }
-      };
     } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || error.message
-        : 'Paystack refund failed';
-      console.error('Paystack refund error:', message);
-      return { statusCode: 502, status: 'error', message, data: null };
+      console.error('Paystack payment initiation error:', error);
+      return {
+        statusCode: 500,
+        status: 'error',
+        message: 'Failed to initiate Paystack payment',
+        data: null
+      };
     }
   }
-};
 
-export default paystackService;
+  /**
+   * Verify a Paystack payment
+   */
+  async verifyPayment(reference: string) {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const response = await axios.get(`${this.baseUrl}/transaction/verify/${reference}`, config);
+
+      const responseData = response.data as PaystackSuccessResponse;
+      
+      if (responseData.status && responseData.data.status === 'success') {
+        return {
+          statusCode: 200,
+          status: 'success',
+          message: 'Payment verified successfully',
+          data: {
+            reference: responseData.data.reference,
+            amount: (responseData.data.amount || 0) / 100,
+            status: responseData.data.status,
+            payment_date: responseData.data.paid_at,
+            channel: responseData.data.channel,
+            currency: responseData.data.currency,
+            customer: responseData.data.customer
+          }
+        };
+      } else {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Payment verification failed',
+          data: responseData
+        };
+      }
+    } catch (error) {
+      console.error('Paystack payment verification error:', error);
+      return {
+        statusCode: 500,
+        status: 'error',
+        message: 'Failed to verify Paystack payment',
+        data: null
+      };
+    }
+  }
+
+  /**
+   * Handle Paystack webhook events
+   */
+  async handleWebhookEvent(signature: string, rawBody: string) {
+    try {
+      const hash = crypto
+        .createHmac('sha512', this.secretKey)
+        .update(rawBody)
+        .digest('hex');
+
+      if (hash !== signature) {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Invalid signature',
+          data: null
+        };
+      }
+
+      const event = JSON.parse(rawBody);
+      
+      switch (event.event) {
+        case 'charge.success':
+          // Handle successful payment
+          return {
+            statusCode: 200,
+            status: 'success',
+            message: 'Payment succeeded',
+            data: {
+              reference: event.data.reference,
+              amount: event.data.amount / 100,
+              status: event.data.status,
+              channel: event.data.channel,
+              metadata: event.data.metadata
+            }
+          };
+
+        case 'charge.failed':
+          // Handle failed payment
+          return {
+            statusCode: 400,
+            status: 'failed',
+            message: 'Payment failed',
+            data: {
+              reference: event.data.reference,
+              amount: event.data.amount / 100,
+              status: event.data.status,
+              channel: event.data.channel
+            }
+          };
+
+        default:
+          return {
+            statusCode: 200,
+            status: 'ignored',
+            message: `Unhandled event type: ${event.event}`,
+            data: null
+          };
+      }
+    } catch (error) {
+      console.error('Paystack webhook handling error:', error);
+      return {
+        statusCode: 400,
+        status: 'error',
+        message: 'Webhook error',
+        data: null
+      };
+    }
+  }
+
+  /**
+   * Create a refund for a transaction
+   */
+  async createRefund(reference: string, amount?: number) {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const requestBody: any = {
+        transaction: reference
+      };
+
+      // If amount specified, include it in the refund
+      if (amount) {
+        requestBody.amount = Math.round(amount * 100); // Convert to kobo
+      }
+
+      const response = await axios.post(`${this.baseUrl}/refund`, requestBody, config);
+
+      const responseData = response.data as PaystackSuccessResponse;
+      
+      if (responseData.status) {
+        return {
+          statusCode: 200,
+          status: 'success',
+          message: 'Refund initiated successfully',
+          data: {
+            refund_id: responseData.data.id,
+            amount: (responseData.data.amount || 0) / 100,
+            status: responseData.data.status,
+            transaction_reference: responseData.data.transaction?.reference
+          }
+        };
+      } else {
+        return {
+          statusCode: 400,
+          status: 'error',
+          message: 'Failed to initiate refund',
+          data: responseData
+        };
+      }
+    } catch (error) {
+      console.error('Paystack refund error:', error);
+      return {
+        statusCode: 500,
+        status: 'error',
+        message: 'Failed to process refund',
+        data: null
+      };
+    }
+  }
+}
+
+export default new PaystackPaymentProcessor();

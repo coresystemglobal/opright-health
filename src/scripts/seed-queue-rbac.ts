@@ -1,6 +1,6 @@
-import { Role } from '../models/role.model';
-import { Permission } from '../models/permission.model';
-import { RolePermission } from '../models/role-permission.model';
+import { Role } from '@modules/rbac/role.model';
+import { Permission } from '@modules/rbac/permission.model';
+import { RolePermission } from '@modules/rbac/role-permission.model';
 import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from '../config/rbac.config';
 import sequelize from '../core/database';
 

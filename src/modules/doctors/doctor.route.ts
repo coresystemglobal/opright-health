@@ -7,12 +7,10 @@ import { validateParams, genericValidation } from '@utils/validator';
 
 const doctorRouter = express.Router();
 
-// GET /api/doctors/me — own doctor profile
 doctorRouter.get('/me', authentication, async (req: Request, res: Response) => {
   await doctorController.getMyProfile(req, res);
 });
 
-// GET /api/doctors — list all doctors (public — anyone can browse)
 doctorRouter.get('/',
   authentication,
   checkPermission(PERMISSIONS.DOCTOR_VIEW),
@@ -21,7 +19,6 @@ doctorRouter.get('/',
   }
 );
 
-// GET /api/doctors/:id — get doctor by ID
 doctorRouter.get('/:id',
   authentication,
   checkPermission(PERMISSIONS.DOCTOR_VIEW),
@@ -31,7 +28,6 @@ doctorRouter.get('/:id',
   }
 );
 
-// POST /api/doctors — create doctor (admin only)
 doctorRouter.post('/',
   authentication,
   checkPermission(PERMISSIONS.DOCTOR_CREATE),
@@ -40,7 +36,6 @@ doctorRouter.post('/',
   }
 );
 
-// PUT /api/doctors/:id — update doctor
 doctorRouter.put('/:id',
   authentication,
   checkPermission(PERMISSIONS.DOCTOR_UPDATE),
@@ -50,7 +45,6 @@ doctorRouter.put('/:id',
   }
 );
 
-// PATCH /api/doctors/:id/availability — toggle availability
 doctorRouter.patch('/:id/availability',
   authentication,
   checkPermission(PERMISSIONS.DOCTOR_UPDATE),
@@ -60,7 +54,6 @@ doctorRouter.patch('/:id/availability',
   }
 );
 
-// DELETE /api/doctors/:id — soft delete (admin only)
 doctorRouter.delete('/:id',
   authentication,
   checkPermission(PERMISSIONS.DOCTOR_DELETE),

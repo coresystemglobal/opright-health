@@ -1,0 +1,191 @@
+paths:
+  /queue/check-in:
+    post:
+      summary: Check a patient into the queue
+      description: Requires QUEUE_CHECK_IN permission
+      tags: [Queue]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patient_id
+                - department_id
+              properties:
+                patient_id:
+                  type: string
+                  format: uuid
+                department_id:
+                  type: string
+                  format: uuid
+                priority:
+                  type: string
+                  enum: [low, normal, high, emergency]
+                  default: normal
+                appointment_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Patient checked into queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Queue'
+
+  /queue/list:
+    get:
+      summary: Get current queue list
+      description: Requires QUEUE_VIEW permission
+      tags: [Queue]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: department_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [waiting, called, in_progress]
+      responses:
+        '200':
+          description: Queue list retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Queue'
+
+  /queue/call-next:
+    post:
+      summary: Call the next patient in the queue
+      description: Requires QUEUE_CALL_NEXT permission. Marks the next waiting patient as "called".
+      tags: [Queue]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - department_id
+              properties:
+                department_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Next patient called
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Queue'
+
+  /queue/{queueId}/priority:
+    patch:
+      summary: Update a patient's queue priority
+      description: Requires QUEUE_UPDATE_PRIORITY permission
+      tags: [Queue]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: queueId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - priority
+              properties:
+                priority:
+                  type: string
+                  enum: [low, normal, high, emergency]
+                  example: emergency
+      responses:
+        '200':
+          description: Priority updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Queue'
+
+  /queue/analytics:
+    get:
+      summary: Get queue analytics
+      description: Requires QUEUE_ANALYTICS permission. Returns wait times, throughput, and volume stats.
+      tags: [Queue]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: department_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Queue analytics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      average_wait_minutes:
+                        type: number
+                      total_served:
+                        type: integer
+                      peak_hour:
+                        type: string

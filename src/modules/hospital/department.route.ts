@@ -7,7 +7,6 @@ import { validateParams, genericValidation } from '@utils/validator';
 
 const departmentRouter = express.Router();
 
-// GET /api/departments — list all (tenant-scoped)
 departmentRouter.get('/',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_VIEW),
@@ -16,7 +15,6 @@ departmentRouter.get('/',
   }
 );
 
-// GET /api/departments/:id — get by ID
 departmentRouter.get('/:id',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_VIEW),
@@ -26,7 +24,6 @@ departmentRouter.get('/:id',
   }
 );
 
-// GET /api/departments/:id/staff — list staff
 departmentRouter.get('/:id/staff',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_VIEW),
@@ -36,7 +33,6 @@ departmentRouter.get('/:id/staff',
   }
 );
 
-// GET /api/departments/:id/analytics — occupancy + metrics
 departmentRouter.get('/:id/analytics',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_VIEW),
@@ -46,7 +42,6 @@ departmentRouter.get('/:id/analytics',
   }
 );
 
-// POST /api/departments — create department (admin+)
 departmentRouter.post('/',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_CREATE),
@@ -55,7 +50,6 @@ departmentRouter.post('/',
   }
 );
 
-// POST /api/departments/:id/staff — assign staff member
 departmentRouter.post('/:id/staff',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_MANAGE_STAFF),
@@ -65,7 +59,6 @@ departmentRouter.post('/:id/staff',
   }
 );
 
-// PUT /api/departments/:id — update department
 departmentRouter.put('/:id',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_UPDATE),
@@ -75,7 +68,6 @@ departmentRouter.put('/:id',
   }
 );
 
-// DELETE /api/departments/:id — deactivate department
 departmentRouter.delete('/:id',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_DELETE),
@@ -85,7 +77,6 @@ departmentRouter.delete('/:id',
   }
 );
 
-// DELETE /api/departments/:id/staff/:assignmentId — remove staff member
 departmentRouter.delete('/:id/staff/:assignmentId',
   authentication,
   checkPermission(PERMISSIONS.DEPARTMENT_MANAGE_STAFF),
