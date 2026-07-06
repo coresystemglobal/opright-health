@@ -198,7 +198,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 SMS notifications — `sendSms()` in `modules/notifications/sms` with VTpass (primary, Nigeria) + Twilio (global) providers behind a factory; automatic primary→fallback, E.164 normalization, bulk send; env-configurable
 - [ ] 🔴 WhatsApp notifications (Twilio WhatsApp API or 360dialog)
 - [ ] 🔴 Push notifications for mobile (FCM / APNs)
-- [ ] 🔴 Appointment reminders (24h and 2h before, configurable per tenant)
+- [x] 🟢 Appointment reminders — `appointment-reminder.service.ts` texts patients 24h & 2h before via `sendSms()`; idempotent per stage (reminder_*_sent_at columns); cron every 30 min from `core`
 - [ ] 🔴 Lab result ready notification (to patient and doctor)
 - [ ] 🔴 Prescription ready notification
 - [ ] 🔴 Payment due and receipt notifications
