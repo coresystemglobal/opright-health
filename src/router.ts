@@ -13,6 +13,7 @@ import permissionRouter from '@modules/rbac/permission.route';
 // Patients
 import patientRouter from '@modules/patients/patient.route';
 import familyRouter from '@modules/patients/family.route';
+import patientPortalRouter from '@modules/portal/patient-portal.route';
 
 // Doctors
 import doctorRouter from '@modules/doctors/doctor.route';
@@ -85,6 +86,7 @@ router.use('/api/permissions', permissionRouter);
 // Patients
 router.use('/api/patients', patientRouter);
 router.use('/api/family', familyRouter);
+router.use('/api/portal', patientPortalRouter);
 
 // Doctors
 router.use('/api/doctors', doctorRouter);

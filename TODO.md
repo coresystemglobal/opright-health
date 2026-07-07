@@ -111,7 +111,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 5. Patient Management
 
 - [x] 🟢 Patient registration and profile — full CRUD module (`modules/patients`) with validation, permissions, and plan-capacity check on create
-- [ ] 🔴 Patient portal — self-service login, view appointments, lab results, invoices
+- [x] 🟢 Patient portal — `/api/portal`: dashboard summary + self-service appointments, prescriptions, invoices, lab results and profile; every endpoint resolves the patient from the authenticated user (own-data-only), reusing the domain services (login uses existing auth)
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
 - [ ] 🔴 Chronic disease management flags
