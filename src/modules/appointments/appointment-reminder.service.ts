@@ -92,7 +92,7 @@ export async function runReminderCycle(): Promise<ReminderResult[]> {
       ]
     },
     include: [
-      { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name', 'phone', 'tenant_id', 'sms_opt_out'] },
+      { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name', 'phone', 'email', 'user_id', 'tenant_id', 'sms_opt_out'] },
       { model: Doctor, as: 'doctor', include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name'] }] }
     ]
   });
@@ -103,9 +103,6 @@ export async function runReminderCycle(): Promise<ReminderResult[]> {
 
     const patient: any = (appt as any).patient;
     if (!patient) continue;
-
-    // Respect patient opt-out
-    if (patient.sms_opt_out) continue;
 
     // Respect per-tenant config
     const settings = await resolveSettings(patient.tenant_id);
@@ -128,29 +125,52 @@ export async function runReminderCycle(): Promise<ReminderResult[]> {
     const patientName = `${patient.first_name || ''}`.trim() || 'there';
     const doctorName = doctorDisplayName((appt as any).doctor);
     const sentColumn = stage === 'short' ? { reminder_2h_sent_at: now } : { reminder_24h_sent_at: now };
+    const message = buildMessage(patientName, doctorName, formatWhen(dt), stage);
 
-    // No phone on file — mark the stage handled so we don't re-scan forever
-    if (!phone) {
-      await appt.update(sentColumn);
-      results.push({ appointmentId: appt.id, stage, to: '', sent: false, error: 'No patient phone on file' });
-      continue;
+    // SMS — honours the patient's per-channel opt-out. Attempted only when a
+    // phone is on file and the patient hasn't opted out of SMS.
+    let smsSent = false;
+    let smsError: string | undefined;
+    const smsAttempted = Boolean(phone) && !patient.sms_opt_out;
+    if (smsAttempted) {
+      const r = await sendSms({ to: phone, message });
+      smsSent = r.success;
+      smsError = r.error;
     }
 
-    const message = buildMessage(patientName, doctorName, formatWhen(dt), stage);
-    const smsResult = await sendSms({ to: phone, message });
+    // Terminal for this stage when SMS is not pending a retry:
+    //  - SMS succeeded, or
+    //  - SMS wasn't attempted (no phone / opted out), or
+    //  - SMS failed because no provider is configured (won't recover per-cycle)
+    const smsTerminal = smsSent || !smsAttempted || smsError === 'No SMS provider is configured';
 
-    // Stamp the sentinel on success OR permanent no-provider failure, so a
-    // misconfigured gateway doesn't cause infinite retries every cycle.
-    if (smsResult.success || smsResult.error === 'No SMS provider is configured') {
+    if (smsTerminal) {
+      // Fan out the reminder on the patient's app/web channels too (once),
+      // respecting their notification preferences. sms_opt_out does not
+      // suppress these — it is SMS-specific.
+      if (patient.user_id) {
+        const { dispatchNotification } = await import('@modules/notifications/notification-dispatcher.service');
+        const { NotificationType, NotificationChannel } = await import('@modules/notifications/notification.model');
+        await dispatchNotification({
+          tenantId: patient.tenant_id,
+          userId: patient.user_id,
+          type: NotificationType.APPOINTMENT_REMINDER,
+          title: 'Appointment reminder',
+          message,
+          data: { appointment_id: appt.id, stage },
+          channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH, NotificationChannel.EMAIL],
+          email: patient.email || undefined
+        }).catch(() => {});
+      }
       await appt.update(sentColumn);
     }
 
     results.push({
       appointmentId: appt.id,
       stage,
-      to: phone,
-      sent: smsResult.success,
-      error: smsResult.success ? undefined : smsResult.error
+      to: phone || '',
+      sent: smsSent,
+      error: smsSent ? undefined : (smsAttempted ? smsError : 'SMS skipped (no phone or opted out)')
     });
   }
 
