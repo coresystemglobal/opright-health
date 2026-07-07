@@ -58,6 +58,13 @@ export { Prescription, PrescriptionStatus } from '@modules/clinical/prescription
 
 export { PrescriptionItem } from '@modules/clinical/prescription-item.model';
 
+// Notification Models
+export { Notification, NotificationType, NotificationChannel } from '@modules/notifications/notification.model';
+
+export { PushSubscription, PushPlatform } from '@modules/notifications/push-subscription.model';
+
+export { NotificationPreference } from '@modules/notifications/notification-preference.model';
+
 
 // ICD-10 Model
 export { ICD10Code } from '@modules/laboratory/icd10-code.model';
@@ -162,6 +169,12 @@ import { Prescription } from '@modules/clinical/prescription.model';
 
 import { PrescriptionItem } from '@modules/clinical/prescription-item.model';
 
+import { Notification } from '@modules/notifications/notification.model';
+
+import { PushSubscription } from '@modules/notifications/push-subscription.model';
+
+import { NotificationPreference } from '@modules/notifications/notification-preference.model';
+
 
 // ICD-10 Model
 import { ICD10Code } from '@modules/laboratory/icd10-code.model';
@@ -235,6 +248,10 @@ export const models = [
   MedicalRecord,
   Prescription,
   PrescriptionItem,
+  // Notifications
+  Notification,
+  PushSubscription,
+  NotificationPreference,
   // ICD-10
   ICD10Code,
   // Department
