@@ -27,6 +27,7 @@ import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
 import clinicalNoteRouter from '@modules/clinical/clinical-note.route';
 import vitalSignRouter from '@modules/clinical/vital-sign.route';
+import prescriptionRouter from '@modules/clinical/prescription.route';
 
 // Triage
 import triageRouter from '@modules/triage/triage.route';
@@ -98,6 +99,7 @@ router.use('/api/appointments', appointmentRouter);
 router.use('/api/medications', medicationRouter);
 router.use('/api/clinical-notes', clinicalNoteRouter);
 router.use('/api/vital-signs', vitalSignRouter);
+router.use('/api/prescriptions', prescriptionRouter);
 
 // Triage
 router.use('/api/triage', triageRouter);

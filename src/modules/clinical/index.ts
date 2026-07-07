@@ -10,3 +10,7 @@ export { clinicalNoteService } from './clinical-note.service';
 export { default as clinicalNoteRouter } from './clinical-note.route';
 export { vitalSignService } from './vital-sign.service';
 export { default as vitalSignRouter } from './vital-sign.route';
+export { Prescription, PrescriptionStatus } from './prescription.model';
+export { PrescriptionItem } from './prescription-item.model';
+export { prescriptionService } from './prescription.service';
+export { default as prescriptionRouter } from './prescription.route';
