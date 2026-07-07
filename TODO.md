@@ -193,17 +193,18 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 11. Notifications & Communications
 
-- [ ] 🟡 In-app notifications (service exists)
-- [ ] 🟡 Email notifications (service exists, updated to Clinical Blue)
+- [x] 🟢 In-app notifications — now persisted (`notifications` table, history + read state) and delivered real-time via Socket.IO through the dispatcher
+- [x] 🟢 Email notifications — wired as a dispatcher channel (Clinical Blue templates via `sendEmail`)
 - [x] 🟢 SMS notifications — `sendSms()` in `modules/notifications/sms` with VTpass (primary, Nigeria) + Twilio (global) providers behind a factory; automatic primary→fallback, E.164 normalization, bulk send; env-configurable
 - [ ] 🔴 WhatsApp notifications (Twilio WhatsApp API or 360dialog)
-- [ ] 🔴 Push notifications for mobile (FCM / APNs)
+- [x] 🟢 Push notifications — FCM (mobile/patient) + VAPID web-push (staff web) providers; device registry (`POST/DELETE /api/notifications/devices`), invalid-token pruning; unified `dispatchNotification()` fans out in-app+push+email+SMS by preference
+- [ ] 🟡 Foundation done (PR A) — event wiring (reminders/appointments/lab-results → dispatcher) is PR B
 - [x] 🟢 Appointment reminders — `appointment-reminder.service.ts` texts patients before appointments via `sendSms()`; idempotent per stage (reminder_*_sent_at columns); cron every 30 min from `core`. Per-tenant configurable (`Tenant.reminder_settings`: enable + long/short lead hours) via `GET/PATCH /api/tenant/reminder-settings`; patients can opt out (`Patient.sms_opt_out`)
 - [ ] 🔴 Lab result ready notification (to patient and doctor)
 - [ ] 🔴 Prescription ready notification
 - [ ] 🔴 Payment due and receipt notifications
 - [ ] 🔴 System alert notifications (to admins — downtime, failed jobs, threshold breaches)
-- [ ] 🔴 Notification preferences per user (opt-in / opt-out per channel)
+- [x] 🟢 Notification preferences per user — per-channel + per-type overrides (`GET/PATCH /api/notifications/preferences`), honoured by the dispatcher
 
 ---
 
