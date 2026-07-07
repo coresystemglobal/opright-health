@@ -127,7 +127,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Appointment scheduling (module exists)
 - [ ] 🟡 Appointment waitlist (model exists — implement waitlist promotion)
 - [ ] 🟡 Telemedicine / video consultation via Daily.co (`telemedicine.service.ts` — review depth) — *decided*
-- [ ] 🔴 Electronic prescriptions (generate, send to pharmacy, track fulfilment)
+- [x] 🟢 Electronic prescriptions — `/api/prescriptions`: create (multi-item, transactional, auto RX number), list-by-patient, get; status lifecycle draft→issued→sent_to_pharmacy→(partially_)dispensed / cancelled with transition guards; per-item dispense tracking
 - [x] 🟢 Clinical notes (SOAP) — full CRUD at `/api/clinical-notes` (create/list-by-patient/get/update/delete) plus lock-to-sign; enforces is_locked immutability and 24h edit window
 - [ ] 🔴 Referral management (internal department-to-department, external)
 - [ ] 🔴 Discharge planning and summary generation

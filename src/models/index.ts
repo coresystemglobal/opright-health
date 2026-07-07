@@ -54,6 +54,10 @@ export { ClinicalNote, NoteType } from '@modules/clinical/clinical-note.model';
 
 export { MedicalRecord, RecordType } from '@modules/clinical/medical-record.model';
 
+export { Prescription, PrescriptionStatus } from '@modules/clinical/prescription.model';
+
+export { PrescriptionItem } from '@modules/clinical/prescription-item.model';
+
 
 // ICD-10 Model
 export { ICD10Code } from '@modules/laboratory/icd10-code.model';
@@ -154,6 +158,10 @@ import { ClinicalNote } from '@modules/clinical/clinical-note.model';
 
 import { MedicalRecord } from '@modules/clinical/medical-record.model';
 
+import { Prescription } from '@modules/clinical/prescription.model';
+
+import { PrescriptionItem } from '@modules/clinical/prescription-item.model';
+
 
 // ICD-10 Model
 import { ICD10Code } from '@modules/laboratory/icd10-code.model';
@@ -225,6 +233,8 @@ export const models = [
   VitalSign,
   ClinicalNote,
   MedicalRecord,
+  Prescription,
+  PrescriptionItem,
   // ICD-10
   ICD10Code,
   // Department

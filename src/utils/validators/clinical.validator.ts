@@ -131,3 +131,49 @@ export const vitalSignValidation = {
     endDate: commonSchemas.date.optional()
   })
 };
+
+const ROUTES = ['oral', 'intravenous', 'intramuscular', 'subcutaneous', 'topical', 'inhalation', 'rectal', 'sublingual', 'transdermal', 'other'];
+const FREQUENCIES = ['once_daily', 'twice_daily', 'three_times_daily', 'four_times_daily', 'every_4_hours', 'every_6_hours', 'every_8_hours', 'every_12_hours', 'as_needed', 'weekly', 'monthly', 'other'];
+const PRESCRIPTION_STATUSES = ['draft', 'issued', 'sent_to_pharmacy', 'partially_dispensed', 'dispensed', 'cancelled'];
+
+const prescriptionItemSchema = Joi.object({
+  medication_name: Joi.string().max(200).trim().required(),
+  dosage: Joi.string().max(100).trim().required(),
+  strength: Joi.string().max(50).trim().optional(),
+  route: Joi.string().valid(...ROUTES).default('oral'),
+  frequency: Joi.string().valid(...FREQUENCIES).required(),
+  duration: Joi.string().max(100).trim().optional(),
+  quantity: Joi.number().integer().min(1).max(10000).optional(),
+  instructions: commonSchemas.longText.optional()
+});
+
+export const prescriptionValidation = {
+  create: Joi.object({
+    patient_id: commonSchemas.uuid,
+    doctor_id: commonSchemas.uuid,
+    appointment_id: commonSchemas.optionalUuid,
+    diagnosis: commonSchemas.longText.optional(),
+    notes: commonSchemas.longText.optional(),
+    status: Joi.string().valid('draft', 'issued').default('issued'),
+    items: Joi.array().items(prescriptionItemSchema).min(1).required()
+  }),
+
+  sendToPharmacy: Joi.object({
+    pharmacy_name: Joi.string().max(200).trim().required()
+  }),
+
+  dispense: Joi.object({
+    // omit item_ids to dispense the whole prescription
+    item_ids: Joi.array().items(commonSchemas.uuid).optional()
+  }),
+
+  cancel: Joi.object({
+    reason: commonSchemas.text.optional()
+  }),
+
+  search: Joi.object({
+    status: Joi.string().valid(...PRESCRIPTION_STATUSES).optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(10)
+  })
+};
