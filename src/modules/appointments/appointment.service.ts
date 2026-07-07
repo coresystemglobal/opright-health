@@ -294,6 +294,10 @@ export const appointmentService = {
         appointment_type: appointment_type || 'in-person'
       });
 
+      // Notify patient + doctor (non-fatal)
+      const { notifyAppointmentEvent } = await import('@modules/appointments/appointment-notifications.service');
+      notifyAppointmentEvent(appointment.id, 'booked').catch(() => {});
+
       return appointment;
     } catch (error) {
       console.error('Create appointment error:', error);
@@ -327,8 +331,8 @@ export const appointmentService = {
 
         // Check for conflicting appointments for the doctor if date or doctor changes
         const doctorId = updateData.doctor_id || appointment.doctor_id;
-        
-        if (updateData.appointment_date !== appointment.appointment_date || 
+
+        if (updateData.appointment_date !== appointment.appointment_date ||
             updateData.doctor_id !== appointment.doctor_id) {
           const doctorAppointments = await Appointment.findAll({
             where: {
@@ -345,7 +349,17 @@ export const appointmentService = {
         }
       }
 
+      // A change of date or doctor is a reschedule → notify
+      const isReschedule =
+        (updateData.appointment_date && updateData.appointment_date !== appointment.appointment_date) ||
+        (updateData.doctor_id && updateData.doctor_id !== appointment.doctor_id);
+
       await appointment.update(updateData);
+
+      if (isReschedule) {
+        const { notifyAppointmentEvent } = await import('@modules/appointments/appointment-notifications.service');
+        notifyAppointmentEvent(appointment.id, 'rescheduled').catch(() => {});
+      }
 
       return appointment;
     } catch (error) {
@@ -379,6 +393,9 @@ export const appointmentService = {
         status: 'cancelled',
         notes: cancelReason ? `${appointment.notes} \nCancellation reason: ${cancelReason}` : appointment.notes
       });
+
+      const { notifyAppointmentEvent } = await import('@modules/appointments/appointment-notifications.service');
+      notifyAppointmentEvent(appointment.id, 'cancelled').catch(() => {});
 
       return appointment;
     } catch (error) {
