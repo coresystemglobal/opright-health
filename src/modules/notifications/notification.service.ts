@@ -1,72 +1,67 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server } from 'http';
+import { NotificationType } from '@modules/notifications/notification.model';
 
-export enum NotificationType {
-  APPOINTMENT_REMINDER = 'appointment_reminder',
-  LAB_RESULT = 'lab_result',
-  EMERGENCY = 'emergency',
-  SYSTEM_ALERT = 'system_alert',
-  PAYMENT_STATUS = 'payment_status'
-}
+// Re-exported for backward compatibility with existing callers.
+export { NotificationType };
 
-interface Notification {
-  id: string;
+interface LegacyNotificationInput {
   type: NotificationType;
   title: string;
   message: string;
   tenantId: string;
   userId?: string;
   data?: any;
-  timestamp: string;
 }
 
+/**
+ * Socket.IO transport for in-app notifications. Persistence and multi-channel
+ * fan-out live in notification-dispatcher.service; this class owns the
+ * real-time socket layer plus a backward-compatible sendNotification() shim.
+ */
 export class NotificationService {
-  private static io: SocketIOServer;
-  private static notifications: Map<string, Notification[]> = new Map();
+  private static io: SocketIOServer | null = null;
 
   static initialize(server: Server) {
     this.io = new SocketIOServer(server, {
-      cors: { origin: "*", methods: ["GET", "POST"] }
+      cors: { origin: '*', methods: ['GET', 'POST'] }
     });
 
     this.io.on('connection', (socket) => {
-      socket.on('join_tenant', (tenantId: string) => {
-        socket.join(`tenant_${tenantId}`);
-      });
-
-      socket.on('join_user', (userId: string) => {
-        socket.join(`user_${userId}`);
-      });
+      socket.on('join_tenant', (tenantId: string) => socket.join(`tenant_${tenantId}`));
+      socket.on('join_user', (userId: string) => socket.join(`user_${userId}`));
     });
   }
 
-  static async sendNotification(notification: Omit<Notification, 'id' | 'timestamp'>) {
-    const fullNotification: Notification = {
-      ...notification,
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString()
-    };
-
-    // Store notification
-    const tenantNotifications = this.notifications.get(notification.tenantId) || [];
-    tenantNotifications.push(fullNotification);
-    this.notifications.set(notification.tenantId, tenantNotifications.slice(-100)); // Keep last 100
-
-    // Send real-time notification
-    if (notification.userId) {
-      this.io.to(`user_${notification.userId}`).emit('notification', fullNotification);
-    } else {
-      this.io.to(`tenant_${notification.tenantId}`).emit('notification', fullNotification);
-    }
-
-    return fullNotification;
+  /** Emit a real-time event to a single user's room. */
+  static emitToUser(userId: string, event: any): void {
+    this.io?.to(`user_${userId}`).emit('notification', event);
   }
 
-  static getNotifications(tenantId: string, userId?: string) {
-    const tenantNotifications = this.notifications.get(tenantId) || [];
-    if (userId) {
-      return tenantNotifications.filter(n => !n.userId || n.userId === userId);
-    }
-    return tenantNotifications;
+  /** Emit a real-time event to every socket joined to a tenant. */
+  static emitToTenant(tenantId: string, event: any): void {
+    this.io?.to(`tenant_${tenantId}`).emit('notification', event);
+  }
+
+  static isInitialized(): boolean {
+    return this.io !== null;
+  }
+
+  /**
+   * Backward-compatible entry point. Existing callers (integrations, mobile)
+   * invoke this; it now persists the notification and fans out across the
+   * user's enabled channels via the dispatcher. Dynamic import breaks the
+   * dispatcher↔service require cycle.
+   */
+  static async sendNotification(input: LegacyNotificationInput) {
+    const { dispatchNotification } = await import('@modules/notifications/notification-dispatcher.service');
+    return dispatchNotification({
+      tenantId: input.tenantId,
+      userId: input.userId,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      data: input.data
+    });
   }
 }

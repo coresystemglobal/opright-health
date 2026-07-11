@@ -31,6 +31,7 @@ interface UpdatePatientData {
   address?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  sms_opt_out?: boolean;
 }
 
 export const patientService = {

@@ -12,7 +12,8 @@ export const patientValidation = {
     email: commonSchemas.email.optional(),
     address: commonSchemas.longText.optional(),
     emergency_contact_name: commonSchemas.name.optional(),
-    emergency_contact_phone: commonSchemas.phone.optional()
+    emergency_contact_phone: commonSchemas.phone.optional(),
+    sms_opt_out: Joi.boolean().optional()
   }),
 
   update: Joi.object({
@@ -24,7 +25,8 @@ export const patientValidation = {
     email: commonSchemas.email.optional(),
     address: commonSchemas.longText.optional(),
     emergency_contact_name: commonSchemas.name.optional(),
-    emergency_contact_phone: commonSchemas.phone.optional()
+    emergency_contact_phone: commonSchemas.phone.optional(),
+    sms_opt_out: Joi.boolean().optional()
   }),
 
   search: Joi.object({

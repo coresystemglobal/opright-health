@@ -13,6 +13,7 @@ import permissionRouter from '@modules/rbac/permission.route';
 // Patients
 import patientRouter from '@modules/patients/patient.route';
 import familyRouter from '@modules/patients/family.route';
+import patientPortalRouter from '@modules/portal/patient-portal.route';
 
 // Doctors
 import doctorRouter from '@modules/doctors/doctor.route';
@@ -22,9 +23,17 @@ import reviewRouter from '@modules/doctors/review.route';
 import hospitalRouter from '@modules/hospital/hospital.route';
 import departmentRouter from '@modules/hospital/department.route';
 
+// Wards & Beds
+import wardRouter from '@modules/wards/ward.route';
+import bedRouter from '@modules/wards/bed.route';
+import admissionRouter from '@modules/wards/admission.route';
+
 // Appointments & Clinical
 import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
+import clinicalNoteRouter from '@modules/clinical/clinical-note.route';
+import vitalSignRouter from '@modules/clinical/vital-sign.route';
+import prescriptionRouter from '@modules/clinical/prescription.route';
 
 // Triage
 import triageRouter from '@modules/triage/triage.route';
@@ -60,6 +69,7 @@ import mobileRouter from '@modules/mobile/mobile.route';
 import healthRouter from '@modules/health/health.route';
 import docsRouter from '@modules/health/docs.route';
 import visitorRouter from '@modules/visitors/visitor-log.route';
+import tenantSettingsRouter from '@modules/tenancy/tenant-settings.route';
 
 const router = Router();
 
@@ -81,6 +91,7 @@ router.use('/api/permissions', permissionRouter);
 // Patients
 router.use('/api/patients', patientRouter);
 router.use('/api/family', familyRouter);
+router.use('/api/portal', patientPortalRouter);
 
 // Doctors
 router.use('/api/doctors', doctorRouter);
@@ -89,10 +100,16 @@ router.use('/api/reviews', reviewRouter);
 // Hospital
 router.use('/api/hospitals', hospitalRouter);
 router.use('/api/departments', departmentRouter);
+router.use('/api/wards', wardRouter);
+router.use('/api/beds', bedRouter);
+router.use('/api/admissions', admissionRouter);
 
 // Appointments & Clinical
 router.use('/api/appointments', appointmentRouter);
 router.use('/api/medications', medicationRouter);
+router.use('/api/clinical-notes', clinicalNoteRouter);
+router.use('/api/vital-signs', vitalSignRouter);
+router.use('/api/prescriptions', prescriptionRouter);
 
 // Triage
 router.use('/api/triage', triageRouter);
@@ -125,6 +142,7 @@ router.use('/api/fhir', fhirRouter);
 router.use('/api/audit', auditRouter);
 router.use('/api/faqs', faqRouter);
 router.use('/api/mobile', mobileRouter);
+router.use('/api/tenant', tenantSettingsRouter);
 
 // Visitor Logs (check-in/check-out public, list staff-only)
 router.use('/api/visitors', visitorRouter);

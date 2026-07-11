@@ -325,6 +325,11 @@ export class LaboratoryService {
     // Update order status
     await order.update({ status: TestOrderStatus.COMPLETED });
 
+    // Notify patient + ordering doctor that results are ready (non-fatal)
+    import('@modules/laboratory/lab-notifications.service')
+      .then(({ notifyLabResultReady }) => notifyLabResultReady(order.id))
+      .catch(() => {});
+
     return testResults;
   }
 

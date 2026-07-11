@@ -54,6 +54,17 @@ export { ClinicalNote, NoteType } from '@modules/clinical/clinical-note.model';
 
 export { MedicalRecord, RecordType } from '@modules/clinical/medical-record.model';
 
+export { Prescription, PrescriptionStatus } from '@modules/clinical/prescription.model';
+
+export { PrescriptionItem } from '@modules/clinical/prescription-item.model';
+
+// Notification Models
+export { Notification, NotificationType, NotificationChannel } from '@modules/notifications/notification.model';
+
+export { PushSubscription, PushPlatform } from '@modules/notifications/push-subscription.model';
+
+export { NotificationPreference } from '@modules/notifications/notification-preference.model';
+
 
 // ICD-10 Model
 export { ICD10Code } from '@modules/laboratory/icd10-code.model';
@@ -69,6 +80,13 @@ export { DepartmentStaff, DepartmentRole } from '@modules/hospital/department-st
 export { AppointmentWaitlist, WaitlistStatus } from '@modules/appointments/appointment-waitlist.model';
 
 export { Resource, ResourceType, ResourceStatus } from '@modules/hospital/resource.model';
+
+// Ward / Bed / Admission Models
+export { Ward, WardType, WardGenderRestriction } from '@modules/wards/ward.model';
+
+export { Bed, BedType, BedStatus } from '@modules/wards/bed.model';
+
+export { Admission, AdmissionStatus } from '@modules/wards/admission.model';
 
 
 // Review Model
@@ -154,6 +172,16 @@ import { ClinicalNote } from '@modules/clinical/clinical-note.model';
 
 import { MedicalRecord } from '@modules/clinical/medical-record.model';
 
+import { Prescription } from '@modules/clinical/prescription.model';
+
+import { PrescriptionItem } from '@modules/clinical/prescription-item.model';
+
+import { Notification } from '@modules/notifications/notification.model';
+
+import { PushSubscription } from '@modules/notifications/push-subscription.model';
+
+import { NotificationPreference } from '@modules/notifications/notification-preference.model';
+
 
 // ICD-10 Model
 import { ICD10Code } from '@modules/laboratory/icd10-code.model';
@@ -169,6 +197,12 @@ import { DepartmentStaff } from '@modules/hospital/department-staff.model';
 import { AppointmentWaitlist } from '@modules/appointments/appointment-waitlist.model';
 
 import { Resource } from '@modules/hospital/resource.model';
+
+import { Ward } from '@modules/wards/ward.model';
+
+import { Bed } from '@modules/wards/bed.model';
+
+import { Admission } from '@modules/wards/admission.model';
 
 
 // Review Model
@@ -225,11 +259,20 @@ export const models = [
   VitalSign,
   ClinicalNote,
   MedicalRecord,
+  Prescription,
+  PrescriptionItem,
+  // Notifications
+  Notification,
+  PushSubscription,
+  NotificationPreference,
   // ICD-10
   ICD10Code,
   // Department
   DepartmentModel,
   DepartmentStaff,
+  Ward,
+  Bed,
+  Admission,
   // Scheduler
   AppointmentWaitlist,
   Resource,

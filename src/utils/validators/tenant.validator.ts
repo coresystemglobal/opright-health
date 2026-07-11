@@ -8,5 +8,11 @@ export const tenantValidation = {
     contact_email: commonSchemas.email.required(),
     contact_phone: commonSchemas.phone.required(),
     address: commonSchemas.longText.optional()
-  })
+  }),
+
+  reminderSettings: Joi.object({
+    enabled: Joi.boolean().optional(),
+    long_lead_hours: Joi.number().integer().min(1).max(168).optional(),  // up to 1 week
+    short_lead_hours: Joi.number().integer().min(1).max(48).optional()
+  }).min(1)
 };

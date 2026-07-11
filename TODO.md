@@ -29,7 +29,7 @@
 - [x] 🟢 Plan limits per tier (patients/users/storage/API) in `plan.config.ts`; subscription model has grace-period + Paystack columns
 - [x] 🟢 Enforcement middleware — `requireActiveSubscription` gates all `/api/*` routes for any request carrying x-tenant-id
 - [x] 🟢 `checkResourceLimit` wired onto POST /api/patients (patient cap); user seats tracked on /auth/register with tenant header
-- [ ] 🟡 Note: `plan.config.ts` now feature-gates tiers (only PRO has `all_features`) — revisit against the flat all-inclusive decision (#1)
+- [x] 🟢 Flat all-inclusive enforced — every tier carries `all_features` in `plan.config.ts`; tiers differ only by capacity (patients/users/storage/API), per decision #1
 - [ ] 🔴 Plan management admin API (create, edit, deactivate plans)
 - [ ] 🔴 Self-service plan upgrade / downgrade (with proration)
 - [x] 🟢 Free trial logic — TRIALING passes with `X-Trial-Days-Remaining` header; PAST_DUE honours grace period, then 402
@@ -111,7 +111,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 5. Patient Management
 
 - [x] 🟢 Patient registration and profile — full CRUD module (`modules/patients`) with validation, permissions, and plan-capacity check on create
-- [ ] 🔴 Patient portal — self-service login, view appointments, lab results, invoices
+- [x] 🟢 Patient portal — `/api/portal`: dashboard summary + self-service appointments, prescriptions, invoices, lab results and profile; every endpoint resolves the patient from the authenticated user (own-data-only), reusing the domain services (login uses existing auth)
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
 - [ ] 🔴 Chronic disease management flags
@@ -127,11 +127,11 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Appointment scheduling (module exists)
 - [ ] 🟡 Appointment waitlist (model exists — implement waitlist promotion)
 - [ ] 🟡 Telemedicine / video consultation via Daily.co (`telemedicine.service.ts` — review depth) — *decided*
-- [ ] 🔴 Electronic prescriptions (generate, send to pharmacy, track fulfilment)
-- [ ] 🟡 Clinical notes (SOAP) — `clinical-note.model.ts` exists; API endpoints still needed
+- [x] 🟢 Electronic prescriptions — `/api/prescriptions`: create (multi-item, transactional, auto RX number), list-by-patient, get; status lifecycle draft→issued→sent_to_pharmacy→(partially_)dispensed / cancelled with transition guards; per-item dispense tracking
+- [x] 🟢 Clinical notes (SOAP) — full CRUD at `/api/clinical-notes` (create/list-by-patient/get/update/delete) plus lock-to-sign; enforces is_locked immutability and 24h edit window
 - [ ] 🔴 Referral management (internal department-to-department, external)
 - [ ] 🔴 Discharge planning and summary generation
-- [ ] 🟡 Vital signs recording — `vital-sign.model.ts` exists; recording API and trend endpoint still needed
+- [x] 🟢 Vital signs recording — full CRUD at `/api/vital-signs` with auto-BMI; `/patient/:id/latest` and `/patient/:id/trends` (time-series per metric, date-range filtered) for trend display
 - [ ] 🔴 Allergy and medication interaction alerts
 - [ ] 🟡 Lab test ordering and results (`lab-integration.service.ts`, `laboratory.service.ts`)
 - [ ] 🔴 Radiology / imaging order management (DICOM-lite, at minimum order tracking)
@@ -141,12 +141,12 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 7. Ward & Bed Management
 
-- [ ] 🔴 Ward / room / bed inventory (create, categorize, set status)
-- [ ] 🔴 Bed assignment on admission
-- [ ] 🔴 Real-time bed availability board
-- [ ] 🔴 Inpatient tracking (admission, daily notes, discharge)
-- [ ] 🔴 ICU / isolation ward flags
-- [ ] 🔴 Housekeeping workflow (bed cleaning status between patients)
+- [x] 🟢 Ward / room / bed inventory — `/api/wards` + `/api/beds`: CRUD, ward types, bed types, manual status (available/reserved/cleaning/maintenance/blocked)
+- [x] 🟢 Bed assignment on admission — `POST /api/admissions` transactionally occupies the bed; guarded against double-admission and non-assignable beds
+- [x] 🟢 Real-time bed availability board — `GET /api/beds/board` (per-ward + tenant totals by status); per-ward `GET /api/wards/:id/availability`
+- [x] 🟢 Inpatient tracking (admission → transfer → discharge) — `/api/admissions` with transfer between beds and discharge; daily notes still TODO
+- [x] 🟢 ICU / isolation ward flags — via `ward_type` (icu, isolation, …) and `bed_type`
+- [x] 🟢 Housekeeping workflow — beds go to `cleaning` on discharge/transfer; staff mark `available` via `PATCH /api/beds/:id/status`
 
 ---
 
@@ -193,17 +193,18 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 11. Notifications & Communications
 
-- [ ] 🟡 In-app notifications (service exists)
-- [ ] 🟡 Email notifications (service exists, updated to Clinical Blue)
-- [ ] 🔴 SMS notifications — VTpass (primary, Nigeria) + Twilio (global) — *decided*
+- [x] 🟢 In-app notifications — now persisted (`notifications` table, history + read state) and delivered real-time via Socket.IO through the dispatcher
+- [x] 🟢 Email notifications — wired as a dispatcher channel (Clinical Blue templates via `sendEmail`)
+- [x] 🟢 SMS notifications — `sendSms()` in `modules/notifications/sms` with VTpass (primary, Nigeria) + Twilio (global) providers behind a factory; automatic primary→fallback, E.164 normalization, bulk send; env-configurable
 - [ ] 🔴 WhatsApp notifications (Twilio WhatsApp API or 360dialog)
-- [ ] 🔴 Push notifications for mobile (FCM / APNs)
-- [ ] 🔴 Appointment reminders (24h and 2h before, configurable per tenant)
-- [ ] 🔴 Lab result ready notification (to patient and doctor)
+- [x] 🟢 Push notifications — FCM (mobile/patient) + VAPID web-push (staff web) providers; device registry (`POST/DELETE /api/notifications/devices`), invalid-token pruning; unified `dispatchNotification()` fans out in-app+push+email+SMS by preference
+- [x] 🟢 Event wiring (PR B) — appointment booked/cancelled/rescheduled and lab-results-ready dispatch to patient (in-app/push/email) + doctor (in-app/push); reminders now also fan out on in-app/push/email alongside SMS
+- [x] 🟢 Appointment reminders — `appointment-reminder.service.ts` texts patients before appointments via `sendSms()`; idempotent per stage (reminder_*_sent_at columns); cron every 30 min from `core`. Per-tenant configurable (`Tenant.reminder_settings`: enable + long/short lead hours) via `GET/PATCH /api/tenant/reminder-settings`; patients can opt out (`Patient.sms_opt_out`)
+- [x] 🟢 Lab result ready notification (to patient and doctor) — fires on results entry (`addTestResults`) via the dispatcher
 - [ ] 🔴 Prescription ready notification
 - [ ] 🔴 Payment due and receipt notifications
 - [ ] 🔴 System alert notifications (to admins — downtime, failed jobs, threshold breaches)
-- [ ] 🔴 Notification preferences per user (opt-in / opt-out per channel)
+- [x] 🟢 Notification preferences per user — per-channel + per-type overrides (`GET/PATCH /api/notifications/preferences`), honoured by the dispatcher
 
 ---
 
