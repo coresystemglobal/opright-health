@@ -141,12 +141,12 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 7. Ward & Bed Management
 
-- [ ] 🔴 Ward / room / bed inventory (create, categorize, set status)
-- [ ] 🔴 Bed assignment on admission
-- [ ] 🔴 Real-time bed availability board
-- [ ] 🔴 Inpatient tracking (admission, daily notes, discharge)
-- [ ] 🔴 ICU / isolation ward flags
-- [ ] 🔴 Housekeeping workflow (bed cleaning status between patients)
+- [x] 🟢 Ward / room / bed inventory — `/api/wards` + `/api/beds`: CRUD, ward types, bed types, manual status (available/reserved/cleaning/maintenance/blocked)
+- [x] 🟢 Bed assignment on admission — `POST /api/admissions` transactionally occupies the bed; guarded against double-admission and non-assignable beds
+- [x] 🟢 Real-time bed availability board — `GET /api/beds/board` (per-ward + tenant totals by status); per-ward `GET /api/wards/:id/availability`
+- [x] 🟢 Inpatient tracking (admission → transfer → discharge) — `/api/admissions` with transfer between beds and discharge; daily notes still TODO
+- [x] 🟢 ICU / isolation ward flags — via `ward_type` (icu, isolation, …) and `bed_type`
+- [x] 🟢 Housekeeping workflow — beds go to `cleaning` on discharge/transfer; staff mark `available` via `PATCH /api/beds/:id/status`
 
 ---
 
