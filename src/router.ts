@@ -23,6 +23,11 @@ import reviewRouter from '@modules/doctors/review.route';
 import hospitalRouter from '@modules/hospital/hospital.route';
 import departmentRouter from '@modules/hospital/department.route';
 
+// Wards & Beds
+import wardRouter from '@modules/wards/ward.route';
+import bedRouter from '@modules/wards/bed.route';
+import admissionRouter from '@modules/wards/admission.route';
+
 // Appointments & Clinical
 import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
@@ -95,6 +100,9 @@ router.use('/api/reviews', reviewRouter);
 // Hospital
 router.use('/api/hospitals', hospitalRouter);
 router.use('/api/departments', departmentRouter);
+router.use('/api/wards', wardRouter);
+router.use('/api/beds', bedRouter);
+router.use('/api/admissions', admissionRouter);
 
 // Appointments & Clinical
 router.use('/api/appointments', appointmentRouter);

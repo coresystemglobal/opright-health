@@ -81,6 +81,13 @@ export { AppointmentWaitlist, WaitlistStatus } from '@modules/appointments/appoi
 
 export { Resource, ResourceType, ResourceStatus } from '@modules/hospital/resource.model';
 
+// Ward / Bed / Admission Models
+export { Ward, WardType, WardGenderRestriction } from '@modules/wards/ward.model';
+
+export { Bed, BedType, BedStatus } from '@modules/wards/bed.model';
+
+export { Admission, AdmissionStatus } from '@modules/wards/admission.model';
+
 
 // Review Model
 export { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -191,6 +198,12 @@ import { AppointmentWaitlist } from '@modules/appointments/appointment-waitlist.
 
 import { Resource } from '@modules/hospital/resource.model';
 
+import { Ward } from '@modules/wards/ward.model';
+
+import { Bed } from '@modules/wards/bed.model';
+
+import { Admission } from '@modules/wards/admission.model';
+
 
 // Review Model
 import { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -257,6 +270,9 @@ export const models = [
   // Department
   DepartmentModel,
   DepartmentStaff,
+  Ward,
+  Bed,
+  Admission,
   // Scheduler
   AppointmentWaitlist,
   Resource,
