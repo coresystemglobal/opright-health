@@ -144,6 +144,21 @@ export class Patient extends Model {
   })
   sms_opt_out!: boolean;
 
+  // NDPR/GDPR: set when the patient's direct identifiers have been redacted
+  // (right to erasure) while clinical records are retained per law.
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  })
+  is_anonymized!: boolean;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  anonymized_at?: Date;
+
   @HasMany(() => Appointment)
   appointments?: Appointment[];
 

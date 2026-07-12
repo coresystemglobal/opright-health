@@ -17,3 +17,5 @@ export * from './notification.validator';
 export * from './ward.validator';
 export * from './pharmacy.validator';
 export * from './insurance.validator';
+export * from './compliance.validator';
+export * from './supply.validator';

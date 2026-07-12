@@ -115,7 +115,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
 - [ ] 🔴 Chronic disease management flags
-- [ ] 🔴 Patient consent forms (digital signature)
+- [x] 🟢 Patient consent management — `/api/compliance/consent` (per-type grant/withdraw, append-only history); digital-signature capture still TODO
 - [ ] 🔴 Next-of-kin / emergency contact management
 - [ ] 🔴 Patient-to-doctor messaging (secure in-app)
 - [ ] 🔴 Patient feedback and satisfaction surveys
@@ -159,8 +159,8 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Drug expiry tracking and alerts — batch expiry dates, expired stock excluded from dispensing, `GET /api/pharmacy/alerts/expiring?days=`
 - [ ] 🟡 Supplier management — captured per batch (supplier field); dedicated supplier directory still TODO
 - [x] 🟢 Stock movement audit trail — every receipt/dispense/adjustment/wastage recorded (`GET /api/pharmacy/movements`)
-- [ ] 🟡 Wire pharmacy dispense into the e-prescription dispense flow (currently standalone; avoids fragile drug-name matching)
-- [ ] 🔴 Medical supplies inventory (consumables, equipment)
+- [x] 🟢 Pharmacy dispense wired into e-prescriptions — prescription items link to a pharmacy catalogue item (`pharmacy_item_id`); dispensing a prescription atomically FEFO-decrements real stock (rolls back if any linked line lacks stock) and records a stock movement referencing the prescription
+- [x] 🟢 Medical supplies inventory — `/api/supplies`: consumables (`/items` with transactional receive/issue-to-department/adjust/wastage ledger + low-stock alerts) and an equipment asset register (`/equipment`: status lifecycle, maintenance tracking + due alerts)
 - [ ] 🔴 Inventory valuation report
 
 ---
@@ -215,13 +215,12 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Audit logging (`audit.middleware.ts` exists — review coverage)
 - [x] 🟢 Error tracking — middleware wired; Slack alerts fire for high/critical severity
 - [ ] 🟡 Rate limiting (middleware exists)
-- [ ] 🔴 **NDPR compliance** (Nigeria Data Protection Regulation) — *priority 1, decided*
-- [ ] 🔴 **GDPR compliance** (EU deployments) — *priority 1, decided*
+- [x] 🟢 **NDPR / GDPR data-subject rights** — `compliance` module (`/api/compliance`): data export, erasure (anonymization), consent management, data-subject-request workflow, retention preview
 - [ ] 🔴 **HIPAA compliance checklist** (US deployments) — *deferred until US expansion*
 - [ ] 🔴 Data encryption at rest (database-level and field-level for PII)
-- [ ] 🔴 Data retention and purge policies (configurable per tenant)
-- [ ] 🔴 Patient data export (right to access / right to portability)
-- [ ] 🔴 Patient data deletion (right to erasure)
+- [x] 🟢 Data retention preview — `GET /api/compliance/retention/preview?years=` lists patients past retention (purge remains a deliberate, separately-authorized action)
+- [x] 🟢 Patient data export (right to access / portability) — `GET /api/compliance/patients/:id/export` aggregates all records
+- [x] 🟢 Patient data erasure (right to erasure) — `POST /api/compliance/patients/:id/anonymize` redacts direct identifiers while retaining de-identified clinical records per medical-retention law; also triggered by completing an erasure request
 - [ ] 🔴 Penetration testing and security audit before go-live
 - [x] 🟢 2FA / MFA — TOTP setup/enable/disable/verify endpoints (`modules/auth/twofa.*`)
 - [x] 🟢 Token revocation — `token_blacklist` table + logout invalidation

@@ -144,7 +144,8 @@ const prescriptionItemSchema = Joi.object({
   frequency: Joi.string().valid(...FREQUENCIES).required(),
   duration: Joi.string().max(100).trim().optional(),
   quantity: Joi.number().integer().min(1).max(10000).optional(),
-  instructions: commonSchemas.longText.optional()
+  instructions: commonSchemas.longText.optional(),
+  pharmacy_item_id: commonSchemas.optionalUuid
 });
 
 export const prescriptionValidation = {

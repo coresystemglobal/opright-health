@@ -102,6 +102,18 @@ export { PatientInsurancePolicy, PolicyRelationship, PolicyStatus } from '@modul
 
 export { InsuranceClaim, ClaimType, ClaimStatus } from '@modules/insurance/claim.model';
 
+// Compliance Models
+export { ConsentRecord, ConsentType } from '@modules/compliance/consent.model';
+
+export { DataSubjectRequest, DataRequestType, DataRequestStatus } from '@modules/compliance/data-subject-request.model';
+
+// Medical Supplies / Equipment Models
+export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
+
+export { SupplyMovement, SupplyMovementType } from '@modules/supplies/supply-movement.model';
+
+export { Equipment, EquipmentCategory, EquipmentStatus } from '@modules/supplies/equipment.model';
+
 
 // Review Model
 export { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -230,6 +242,16 @@ import { PatientInsurancePolicy } from '@modules/insurance/patient-policy.model'
 
 import { InsuranceClaim } from '@modules/insurance/claim.model';
 
+import { ConsentRecord } from '@modules/compliance/consent.model';
+
+import { DataSubjectRequest } from '@modules/compliance/data-subject-request.model';
+
+import { SupplyItem } from '@modules/supplies/supply-item.model';
+
+import { SupplyMovement } from '@modules/supplies/supply-movement.model';
+
+import { Equipment } from '@modules/supplies/equipment.model';
+
 
 // Review Model
 import { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -305,6 +327,11 @@ export const models = [
   InsuranceProvider,
   PatientInsurancePolicy,
   InsuranceClaim,
+  ConsentRecord,
+  DataSubjectRequest,
+  SupplyItem,
+  SupplyMovement,
+  Equipment,
   // Scheduler
   AppointmentWaitlist,
   Resource,
