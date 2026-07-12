@@ -37,6 +37,9 @@ import insuranceRouter from '@modules/insurance/insurance.route';
 // Compliance (NDPR/GDPR)
 import complianceRouter from '@modules/compliance/compliance.route';
 
+// Medical Supplies & Equipment
+import suppliesRouter from '@modules/supplies/supplies.route';
+
 // Appointments & Clinical
 import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
@@ -115,6 +118,7 @@ router.use('/api/admissions', admissionRouter);
 router.use('/api/pharmacy', pharmacyRouter);
 router.use('/api/insurance', insuranceRouter);
 router.use('/api/compliance', complianceRouter);
+router.use('/api/supplies', suppliesRouter);
 
 // Appointments & Clinical
 router.use('/api/appointments', appointmentRouter);
