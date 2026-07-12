@@ -72,8 +72,8 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Financial summary report — exposed at `GET /api/reports/financial`
 - [x] 🟢 **Export formats** — `GET /api/reports/export?reportType=…&format=csv|xlsx|pdf|json` via `report-export.service.ts` (PDFKit + ExcelJS, Clinical Blue PDF styling); covers all four report types with date-range filtering
 - [ ] 🔴 Appointment volume report (daily / weekly / monthly, by department)
-- [ ] 🔴 Lab turnaround time report (order → result)
-- [ ] 🔴 Bed occupancy report (ward-level, hospital-level)
+- [x] 🟢 Lab turnaround time — in `GET /api/reports/operational-metrics` (avg/min/max hours order→results)
+- [x] 🟢 Bed occupancy — in operational-metrics (occupancy rate, admissions/discharges, avg length of stay)
 - [ ] 🔴 Prescription and pharmacy dispensing report
 - [ ] 🔴 Waitlist and no-show report
 - [ ] 🔴 Insurance claims report (submitted, approved, rejected, pending)
@@ -96,10 +96,10 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Performance KPIs (per doctor, per department)
 - [x] 🟢 **Analytics dashboard API** — `GET /api/dashboard/analytics`: overview stats + trend series + performance KPIs + realtime metrics in one call; date-range params; 60s Redis cache; raw data for frontend-rendered charts
 - [ ] 🔴 Real-time occupancy tracker (beds, wards, emergency)
-- [ ] 🔴 Wait time analytics (average, by department, by doctor)
+- [x] 🟡 Wait time analytics — average wait (check-in→start) in operational-metrics; by-department/doctor breakdown still TODO
 - [ ] 🔴 Readmission rate tracking (30-day, 60-day, 90-day)
 - [ ] 🔴 Disease / diagnosis trend tracking (ICD-10 codes)
-- [ ] 🔴 Staff utilization rate (booked hours vs available hours)
+- [x] 🟢 Doctor utilization — booked minutes vs assumed capacity (business days × 8h) per doctor in operational-metrics
 - [ ] 🔴 Revenue per patient, revenue per doctor
 - [ ] 🔴 Patient satisfaction score tracking (post-appointment survey)
 - [ ] 🟡 Predictive insights (ML service exists in `ml-prediction.service.ts` — review depth)

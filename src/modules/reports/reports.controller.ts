@@ -181,6 +181,34 @@ export const reportsController = {
     }
   },
 
+  getOperationalMetricsReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
+    try {
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = { startDate: new Date(startDate), endDate: new Date(endDate) };
+        if (dateRange.startDate > dateRange.endDate) {
+          return res.status(400).json({ success: false, message: 'Start date must be before end date' });
+        }
+      }
+
+      const report = await reportsService.getOperationalMetricsReport(dateRange);
+      return res.status(200).json({
+        success: true,
+        message: 'Operational metrics report retrieved successfully',
+        data: report
+      });
+    } catch (error) {
+      console.error('Get operational metrics report error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  },
+
   getInventoryValuationReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
       const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;

@@ -13,6 +13,8 @@ router.get('/appointment-analytics', reportsController.getAppointmentAnalyticsRe
 
 router.get('/inventory-valuation', reportsController.getInventoryValuationReport);
 
+router.get('/operational-metrics', reportsController.getOperationalMetricsReport);
+
 router.get('/system-health', reportsController.getSystemHealthReport);
 
 router.post('/custom', reportsController.getCustomReport);
