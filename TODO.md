@@ -160,7 +160,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Supplier management — captured per batch (supplier field); dedicated supplier directory still TODO
 - [x] 🟢 Stock movement audit trail — every receipt/dispense/adjustment/wastage recorded (`GET /api/pharmacy/movements`)
 - [x] 🟢 Pharmacy dispense wired into e-prescriptions — prescription items link to a pharmacy catalogue item (`pharmacy_item_id`); dispensing a prescription atomically FEFO-decrements real stock (rolls back if any linked line lacks stock) and records a stock movement referencing the prescription
-- [ ] 🔴 Medical supplies inventory (consumables, equipment)
+- [x] 🟢 Medical supplies inventory — `/api/supplies`: consumables (`/items` with transactional receive/issue-to-department/adjust/wastage ledger + low-stock alerts) and an equipment asset register (`/equipment`: status lifecycle, maintenance tracking + due alerts)
 - [ ] 🔴 Inventory valuation report
 
 ---
