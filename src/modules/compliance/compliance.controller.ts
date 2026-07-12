@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { complianceService } from '@modules/compliance/compliance.service';
 import { consentService } from '@modules/compliance/consent.service';
+import { consentSignatureService } from '@modules/compliance/consent-signature.service';
 import { dataRequestService } from '@modules/compliance/data-request.service';
 import { DataRequestStatus, DataRequestType } from '@modules/compliance/data-subject-request.model';
 import { ResponseUtil } from '@utils/response.util';
@@ -65,6 +66,35 @@ const complianceController = {
       const data = await consentService.getPatientConsents(req.params.patientId);
       return ResponseUtil.success(res, data, 'Consents retrieved successfully');
     } catch (e) { return fail(res, e, 'retrieve consents'); }
+  },
+
+  // ── Consent signatures ─────────────────────────────────────────────────────
+  signConsent: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const tenantId = tenantOf(req);
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      const signature = await consentSignatureService.signConsent(req.params.consentId, {
+        ...req.body,
+        ip_address: req.ip,
+        user_agent: req.get('user-agent') || undefined,
+        tenant_id: tenantId
+      });
+      return ResponseUtil.success(res, signature, 'Consent signed successfully', 201);
+    } catch (e) { return fail(res, e, 'sign consent'); }
+  },
+
+  getConsentSignatures: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const data = await consentSignatureService.getSignatures(req.params.consentId);
+      return ResponseUtil.success(res, data, 'Consent signatures retrieved successfully');
+    } catch (e) { return fail(res, e, 'retrieve consent signatures'); }
+  },
+
+  verifySignature: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const data = await consentSignatureService.verifySignature(req.params.id);
+      return ResponseUtil.success(res, data, 'Signature verification completed');
+    } catch (e) { return fail(res, e, 'verify signature'); }
   },
 
   // ── Data subject requests ────────────────────────────────────────────────

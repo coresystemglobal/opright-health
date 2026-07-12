@@ -1,4 +1,4 @@
-import { Patient, Doctor, Appointment, Invoice, Payment, User } from '../../models';
+import { Patient, Doctor, Appointment, Invoice, Payment, User, PharmacyItem, StockBatch, SupplyItem } from '../../models';
 import { Op } from 'sequelize';
 import { PaginationQuery } from '@appTypes/common.types';
 import { PaginationUtil } from '@utils/pagination.util';
@@ -483,6 +483,93 @@ export const reportsService = {
       };
     } catch (error) {
       console.error('Get appointment analytics report error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Inventory valuation across pharmacy stock (batch-level) and medical
+   * supplies (quantity on hand). Pharmacy is valued at cost (batch cost_price,
+   * falling back to the item's unit_price) and at retail (unit_price); supplies
+   * are valued at unit_price. Grouped by category with grand totals.
+   */
+  getInventoryValuationReport: async (tenantId: string) => {
+    try {
+      const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+      // ── Pharmacy ────────────────────────────────────────────────────────────
+      const pharmacyItems = await PharmacyItem.findAll({
+        where: { tenant_id: tenantId, is_active: true },
+        include: [{ model: StockBatch, as: 'batches', attributes: ['quantity', 'cost_price'] }]
+      });
+
+      const pharmacyLines = pharmacyItems.map((it: any) => {
+        const unitPrice = parseFloat(it.unit_price?.toString() || '0');
+        let quantity = 0, costValue = 0;
+        for (const b of (it.batches || [])) {
+          const q = b.quantity || 0;
+          const unitCost = b.cost_price != null ? parseFloat(b.cost_price.toString()) : unitPrice;
+          quantity += q;
+          costValue += q * unitCost;
+        }
+        return {
+          id: it.id, name: it.name, sku: it.sku, category: it.category,
+          quantity, unit_price: unitPrice,
+          cost_value: round2(costValue),
+          retail_value: round2(quantity * unitPrice)
+        };
+      });
+
+      // ── Supplies ────────────────────────────────────────────────────────────
+      const supplyItems = await SupplyItem.findAll({ where: { tenant_id: tenantId, is_active: true } });
+      const supplyLines = supplyItems.map((it: any) => {
+        const unitPrice = parseFloat(it.unit_price?.toString() || '0');
+        const quantity = it.on_hand || 0;
+        return {
+          id: it.id, name: it.name, sku: it.sku, category: it.category,
+          quantity, unit_price: unitPrice,
+          value: round2(quantity * unitPrice)
+        };
+      });
+
+      const byCategory = (lines: any[], valueKey: string) => {
+        const acc: Record<string, { quantity: number; value: number; items: number }> = {};
+        for (const l of lines) {
+          const c = l.category || 'uncategorized';
+          if (!acc[c]) acc[c] = { quantity: 0, value: 0, items: 0 };
+          acc[c].quantity += l.quantity;
+          acc[c].value = round2(acc[c].value + (l[valueKey] || 0));
+          acc[c].items += 1;
+        }
+        return acc;
+      };
+
+      const pharmacyCost = round2(pharmacyLines.reduce((s, l) => s + l.cost_value, 0));
+      const pharmacyRetail = round2(pharmacyLines.reduce((s, l) => s + l.retail_value, 0));
+      const suppliesValue = round2(supplyLines.reduce((s, l) => s + l.value, 0));
+
+      return {
+        generated_at: new Date().toISOString(),
+        pharmacy: {
+          item_count: pharmacyLines.length,
+          total_cost_value: pharmacyCost,
+          total_retail_value: pharmacyRetail,
+          by_category: byCategory(pharmacyLines, 'cost_value'),
+          items: pharmacyLines
+        },
+        supplies: {
+          item_count: supplyLines.length,
+          total_value: suppliesValue,
+          by_category: byCategory(supplyLines, 'value'),
+          items: supplyLines
+        },
+        totals: {
+          grand_total_cost: round2(pharmacyCost + suppliesValue),
+          grand_total_retail: round2(pharmacyRetail + suppliesValue)
+        }
+      };
+    } catch (error) {
+      console.error('Get inventory valuation report error:', error);
       throw error;
     }
   }
