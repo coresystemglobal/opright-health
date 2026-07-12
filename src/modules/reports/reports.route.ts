@@ -11,6 +11,8 @@ router.get('/financial', reportsController.getFinancialReport);
 
 router.get('/appointment-analytics', reportsController.getAppointmentAnalyticsReport);
 
+router.get('/inventory-valuation', reportsController.getInventoryValuationReport);
+
 router.get('/system-health', reportsController.getSystemHealthReport);
 
 router.post('/custom', reportsController.getCustomReport);
