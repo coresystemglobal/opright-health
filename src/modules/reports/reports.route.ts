@@ -13,6 +13,11 @@ router.get('/appointment-analytics', reportsController.getAppointmentAnalyticsRe
 
 router.get('/inventory-valuation', reportsController.getInventoryValuationReport);
 
+router.get('/operational-metrics', reportsController.getOperationalMetricsReport);
+
+// ?metric=revenue|patients|appointments&period=daily|weekly|monthly&startDate=&endDate=
+router.get('/trends', reportsController.getTrendsReport);
+
 router.get('/system-health', reportsController.getSystemHealthReport);
 
 router.post('/custom', reportsController.getCustomReport);
