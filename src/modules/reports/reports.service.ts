@@ -1,4 +1,4 @@
-import { Patient, Doctor, Appointment, Invoice, Payment, User, PharmacyItem, StockBatch, SupplyItem } from '../../models';
+import { Patient, Doctor, Appointment, Invoice, Payment, User, PharmacyItem, StockBatch, SupplyItem, Bed, Admission, TestOrder } from '../../models';
 import { Op } from 'sequelize';
 import { PaginationQuery } from '@appTypes/common.types';
 import { PaginationUtil } from '@utils/pagination.util';
@@ -570,6 +570,148 @@ export const reportsService = {
       };
     } catch (error) {
       console.error('Get inventory valuation report error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Operational metrics: appointment no-show/cancellation/completion rates and
+   * average wait time, bed occupancy + length of stay, lab turnaround, and
+   * doctor utilization. Date-range filtered (global, consistent with the other
+   * reports — appointments/lab orders are not tenant-scoped in the schema).
+   */
+  getOperationalMetricsReport: async (dateRange?: DateRange) => {
+    try {
+      const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+      const pct = (num: number, den: number) => (den > 0 ? round2((num / den) * 100) : 0);
+
+      // ── Appointments ────────────────────────────────────────────────────────
+      const apptWhere: any = {};
+      if (dateRange) {
+        apptWhere.appointment_date = {
+          [Op.between]: [dateRange.startDate.toISOString().split('T')[0], dateRange.endDate.toISOString().split('T')[0]]
+        };
+      }
+      const appts = await Appointment.findAll({
+        where: apptWhere,
+        attributes: ['status', 'checked_in_at', 'started_at', 'doctor_id', 'duration_minutes'],
+        raw: true
+      });
+
+      const total = appts.length;
+      const byStatus: Record<string, number> = {};
+      let waitSum = 0, waitCount = 0;
+      for (const a of appts as any[]) {
+        byStatus[a.status] = (byStatus[a.status] || 0) + 1;
+        if (a.checked_in_at && a.started_at) {
+          const w = (new Date(a.started_at).getTime() - new Date(a.checked_in_at).getTime()) / 60000;
+          if (w >= 0) { waitSum += w; waitCount++; }
+        }
+      }
+      const appointments = {
+        total,
+        by_status: byStatus,
+        no_show_rate: pct(byStatus['no_show'] || 0, total),
+        cancellation_rate: pct(byStatus['cancelled'] || 0, total),
+        completion_rate: pct(byStatus['completed'] || 0, total),
+        average_wait_minutes: waitCount > 0 ? round2(waitSum / waitCount) : 0,
+        wait_sample_size: waitCount
+      };
+
+      // ── Bed occupancy ─────────────────────────────────────────────────────────
+      const [totalBeds, occupiedBeds] = await Promise.all([
+        Bed.count({ where: { is_active: true } }),
+        Bed.count({ where: { status: 'occupied' } })
+      ]);
+      const admWhere: any = {};
+      if (dateRange) admWhere.admitted_at = { [Op.between]: [dateRange.startDate, dateRange.endDate] };
+      const admissionsInRange = await Admission.count({ where: admWhere });
+      const dischargedWhere: any = { status: 'discharged' };
+      if (dateRange) dischargedWhere.discharged_at = { [Op.between]: [dateRange.startDate, dateRange.endDate] };
+      const discharged = await Admission.findAll({ where: dischargedWhere, attributes: ['admitted_at', 'discharged_at'], raw: true });
+      let losSum = 0, losCount = 0;
+      for (const d of discharged as any[]) {
+        if (d.admitted_at && d.discharged_at) {
+          const days = (new Date(d.discharged_at).getTime() - new Date(d.admitted_at).getTime()) / 86400000;
+          if (days >= 0) { losSum += days; losCount++; }
+        }
+      }
+      const beds = {
+        total_beds: totalBeds,
+        occupied_beds: occupiedBeds,
+        occupancy_rate: pct(occupiedBeds, totalBeds),
+        admissions_in_period: admissionsInRange,
+        discharges_in_period: losCount,
+        average_length_of_stay_days: losCount > 0 ? round2(losSum / losCount) : 0
+      };
+
+      // ── Lab turnaround (order → results available) ───────────────────────────
+      const orderWhere: any = { results_available_at: { [Op.ne]: null } };
+      if (dateRange) orderWhere.created_at = { [Op.between]: [dateRange.startDate, dateRange.endDate] };
+      const orders = await TestOrder.findAll({ where: orderWhere, attributes: ['created_at', 'results_available_at'], raw: true });
+      let tSum = 0, tMin = Infinity, tMax = 0, tCount = 0;
+      for (const o of orders as any[]) {
+        const hrs = (new Date(o.results_available_at).getTime() - new Date(o.created_at).getTime()) / 3600000;
+        if (hrs >= 0) { tSum += hrs; tMin = Math.min(tMin, hrs); tMax = Math.max(tMax, hrs); tCount++; }
+      }
+      const lab_turnaround = {
+        completed_orders: tCount,
+        average_hours: tCount > 0 ? round2(tSum / tCount) : 0,
+        min_hours: tCount > 0 ? round2(tMin) : 0,
+        max_hours: tCount > 0 ? round2(tMax) : 0
+      };
+
+      // ── Doctor utilization ────────────────────────────────────────────────────
+      // Booked minutes per doctor vs an assumed capacity (business days × 480 min).
+      const perDoctor: Record<string, { booked_minutes: number; appointments: number; completed: number }> = {};
+      for (const a of appts as any[]) {
+        if (!a.doctor_id) continue;
+        const d = perDoctor[a.doctor_id] || (perDoctor[a.doctor_id] = { booked_minutes: 0, appointments: 0, completed: 0 });
+        d.booked_minutes += a.duration_minutes || 0;
+        d.appointments += 1;
+        if (a.status === 'completed') d.completed += 1;
+      }
+
+      // Capacity: only computable with a date range
+      let businessDays = 0;
+      if (dateRange) {
+        for (let t = new Date(dateRange.startDate); t <= dateRange.endDate; t.setDate(t.getDate() + 1)) {
+          const day = t.getDay();
+          if (day !== 0 && day !== 6) businessDays++;
+        }
+      }
+      const capacityMinutes = businessDays * 480; // 8h/business day
+
+      const doctorIds = Object.keys(perDoctor);
+      const doctors = doctorIds.length
+        ? await Doctor.findAll({ where: { id: { [Op.in]: doctorIds } }, include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name'] }] })
+        : [];
+      const nameById: Record<string, string> = {};
+      for (const doc of doctors as any[]) {
+        nameById[doc.id] = doc.user ? `Dr. ${doc.user.first_name || ''} ${doc.user.last_name || ''}`.trim() : doc.id;
+      }
+      const doctor_utilization = doctorIds.map(id => ({
+        doctor_id: id,
+        doctor_name: nameById[id] || id,
+        appointments: perDoctor[id].appointments,
+        completed: perDoctor[id].completed,
+        booked_minutes: perDoctor[id].booked_minutes,
+        utilization_rate: capacityMinutes > 0 ? pct(perDoctor[id].booked_minutes, capacityMinutes) : null
+      })).sort((a, b) => b.booked_minutes - a.booked_minutes);
+
+      return {
+        generated_at: new Date().toISOString(),
+        period: dateRange
+          ? { startDate: dateRange.startDate.toISOString().split('T')[0], endDate: dateRange.endDate.toISOString().split('T')[0] }
+          : null,
+        appointments,
+        beds,
+        lab_turnaround,
+        doctor_utilization,
+        capacity_assumption: dateRange ? '8 working hours per business day' : 'utilization requires a date range'
+      };
+    } catch (error) {
+      console.error('Get operational metrics report error:', error);
       throw error;
     }
   }
