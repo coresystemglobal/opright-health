@@ -714,5 +714,106 @@ export const reportsService = {
       console.error('Get operational metrics report error:', error);
       throw error;
     }
+  },
+
+  /**
+   * Time-series trends with period grouping (daily/weekly/monthly) and a
+   * period-over-period delta. Metrics: revenue (completed payments), patients
+   * (new registrations), appointments (by appointment date). Buckets are gap-
+   * filled with zeros so the series is chart-ready.
+   */
+  getTrendsReport: async (opts: { metric: 'revenue' | 'patients' | 'appointments'; period: 'daily' | 'weekly' | 'monthly'; dateRange?: DateRange }) => {
+    try {
+      const metric = opts.metric;
+      const period = opts.period;
+      const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+      const end = opts.dateRange?.endDate ?? new Date();
+      const start = opts.dateRange?.startDate ?? new Date(end.getTime() - 30 * 86400000);
+      const windowMs = end.getTime() - start.getTime();
+      const prevStart = new Date(start.getTime() - windowMs);
+
+      // Bucket label for a date under the chosen period
+      const bucketKey = (d: Date): string => {
+        const dt = new Date(d);
+        if (period === 'monthly') return dt.toISOString().slice(0, 7);           // YYYY-MM
+        if (period === 'weekly') {                                                // ISO week start (Monday)
+          const day = (dt.getUTCDay() + 6) % 7;
+          const monday = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate() - day));
+          return monday.toISOString().slice(0, 10);
+        }
+        return dt.toISOString().slice(0, 10);                                     // YYYY-MM-DD
+      };
+
+      // Fetch {date, value} rows for a metric over an arbitrary window
+      const fetchRows = async (from: Date, to: Date): Promise<Array<{ date: Date; value: number }>> => {
+        if (metric === 'revenue') {
+          const rows = await Payment.findAll({
+            where: { payment_status: 'completed', payment_date: { [Op.between]: [from, to] } },
+            attributes: ['payment_date', 'amount'], raw: true
+          });
+          return (rows as any[]).map(r => ({ date: r.payment_date, value: parseFloat(r.amount?.toString() || '0') }));
+        }
+        if (metric === 'patients') {
+          const rows = await Patient.findAll({
+            where: { created_at: { [Op.between]: [from, to] } } as any,
+            attributes: ['created_at'], raw: true
+          });
+          return (rows as any[]).map(r => ({ date: r.created_at, value: 1 }));
+        }
+        // appointments — by appointment_date (DATEONLY)
+        const rows = await Appointment.findAll({
+          where: { appointment_date: { [Op.between]: [from.toISOString().split('T')[0], to.toISOString().split('T')[0]] } },
+          attributes: ['appointment_date'], raw: true
+        });
+        return (rows as any[]).map(r => ({ date: new Date(r.appointment_date), value: 1 }));
+      };
+
+      const currentRows = await fetchRows(start, end);
+
+      // Aggregate into buckets
+      const bucketTotals: Record<string, number> = {};
+      let currentTotal = 0;
+      for (const r of currentRows) {
+        const k = bucketKey(r.date);
+        bucketTotals[k] = round2((bucketTotals[k] || 0) + r.value);
+        currentTotal = round2(currentTotal + r.value);
+      }
+
+      // Gap-fill buckets across the range
+      const labels: string[] = [];
+      const seen = new Set<string>();
+      const cursor = new Date(start);
+      while (cursor <= end) {
+        const k = bucketKey(cursor);
+        if (!seen.has(k)) { seen.add(k); labels.push(k); }
+        if (period === 'monthly') cursor.setMonth(cursor.getMonth() + 1);
+        else if (period === 'weekly') cursor.setDate(cursor.getDate() + 7);
+        else cursor.setDate(cursor.getDate() + 1);
+      }
+      const series = labels.map(label => ({ period: label, value: bucketTotals[label] || 0 }));
+
+      // Period-over-period
+      const prevRows = await fetchRows(prevStart, start);
+      const previousTotal = round2(prevRows.reduce((s, r) => s + r.value, 0));
+      const delta = round2(currentTotal - previousTotal);
+      const deltaPct = previousTotal > 0 ? round2((delta / previousTotal) * 100) : null;
+
+      return {
+        metric,
+        period,
+        range: { startDate: start.toISOString().slice(0, 10), endDate: end.toISOString().slice(0, 10) },
+        series,
+        summary: {
+          total: currentTotal,
+          previous_period_total: previousTotal,
+          delta,
+          delta_pct: deltaPct
+        }
+      };
+    } catch (error) {
+      console.error('Get trends report error:', error);
+      throw error;
+    }
   }
 };

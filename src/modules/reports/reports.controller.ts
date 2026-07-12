@@ -181,6 +181,43 @@ export const reportsController = {
     }
   },
 
+  getTrendsReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
+    try {
+      const metric = (req.query.metric as string) || 'revenue';
+      const period = (req.query.period as string) || 'daily';
+      if (!['revenue', 'patients', 'appointments'].includes(metric)) {
+        return res.status(400).json({ success: false, message: 'metric must be one of: revenue, patients, appointments' });
+      }
+      if (!['daily', 'weekly', 'monthly'].includes(period)) {
+        return res.status(400).json({ success: false, message: 'period must be one of: daily, weekly, monthly' });
+      }
+
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = { startDate: new Date(startDate), endDate: new Date(endDate) };
+        if (dateRange.startDate > dateRange.endDate) {
+          return res.status(400).json({ success: false, message: 'Start date must be before end date' });
+        }
+      }
+
+      const report = await reportsService.getTrendsReport({ metric: metric as any, period: period as any, dateRange });
+      return res.status(200).json({
+        success: true,
+        message: 'Trends report retrieved successfully',
+        data: report
+      });
+    } catch (error) {
+      console.error('Get trends report error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  },
+
   getOperationalMetricsReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
       const startDate = req.query.startDate as string | undefined;

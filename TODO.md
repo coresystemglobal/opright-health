@@ -71,7 +71,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Doctor performance report — exposed at `GET /api/reports/doctor-performance`
 - [x] 🟢 Financial summary report — exposed at `GET /api/reports/financial`
 - [x] 🟢 **Export formats** — `GET /api/reports/export?reportType=…&format=csv|xlsx|pdf|json` via `report-export.service.ts` (PDFKit + ExcelJS, Clinical Blue PDF styling); covers all four report types with date-range filtering
-- [ ] 🔴 Appointment volume report (daily / weekly / monthly, by department)
+- [x] 🟡 Appointment volume trend (daily/weekly/monthly) via `GET /api/reports/trends?metric=appointments`; by-department split still TODO
 - [x] 🟢 Lab turnaround time — in `GET /api/reports/operational-metrics` (avg/min/max hours order→results)
 - [x] 🟢 Bed occupancy — in operational-metrics (occupancy rate, admissions/discharges, avg length of stay)
 - [ ] 🔴 Prescription and pharmacy dispensing report
@@ -90,8 +90,8 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 `analytics.service.ts` has the SQL queries. What's needed on top:
 
-- [ ] 🟡 Patient trend analytics (new vs returning, cohort analysis)
-- [ ] 🟡 Revenue trend analytics (MRR, ARR, churn)
+- [x] 🟡 Patient registration trend — `GET /api/reports/trends?metric=patients` (period grouping + period-over-period delta); new-vs-returning/cohorts still TODO
+- [x] 🟡 Revenue trend — `GET /api/reports/trends?metric=revenue` (period grouping + delta); MRR/ARR/churn still TODO
 - [ ] 🟡 Appointment metrics (completion rate, cancellation rate, peak hours)
 - [ ] 🟡 Performance KPIs (per doctor, per department)
 - [x] 🟢 **Analytics dashboard API** — `GET /api/dashboard/analytics`: overview stats + trend series + performance KPIs + realtime metrics in one call; date-range params; 60s Redis cache; raw data for frontend-rendered charts
