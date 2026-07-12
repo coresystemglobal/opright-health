@@ -115,7 +115,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
 - [ ] 🔴 Chronic disease management flags
-- [ ] 🔴 Patient consent forms (digital signature)
+- [x] 🟢 Patient consent management — `/api/compliance/consent` (per-type grant/withdraw, append-only history); digital-signature capture still TODO
 - [ ] 🔴 Next-of-kin / emergency contact management
 - [ ] 🔴 Patient-to-doctor messaging (secure in-app)
 - [ ] 🔴 Patient feedback and satisfaction surveys
@@ -215,13 +215,12 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Audit logging (`audit.middleware.ts` exists — review coverage)
 - [x] 🟢 Error tracking — middleware wired; Slack alerts fire for high/critical severity
 - [ ] 🟡 Rate limiting (middleware exists)
-- [ ] 🔴 **NDPR compliance** (Nigeria Data Protection Regulation) — *priority 1, decided*
-- [ ] 🔴 **GDPR compliance** (EU deployments) — *priority 1, decided*
+- [x] 🟢 **NDPR / GDPR data-subject rights** — `compliance` module (`/api/compliance`): data export, erasure (anonymization), consent management, data-subject-request workflow, retention preview
 - [ ] 🔴 **HIPAA compliance checklist** (US deployments) — *deferred until US expansion*
 - [ ] 🔴 Data encryption at rest (database-level and field-level for PII)
-- [ ] 🔴 Data retention and purge policies (configurable per tenant)
-- [ ] 🔴 Patient data export (right to access / right to portability)
-- [ ] 🔴 Patient data deletion (right to erasure)
+- [x] 🟢 Data retention preview — `GET /api/compliance/retention/preview?years=` lists patients past retention (purge remains a deliberate, separately-authorized action)
+- [x] 🟢 Patient data export (right to access / portability) — `GET /api/compliance/patients/:id/export` aggregates all records
+- [x] 🟢 Patient data erasure (right to erasure) — `POST /api/compliance/patients/:id/anonymize` redacts direct identifiers while retaining de-identified clinical records per medical-retention law; also triggered by completing an erasure request
 - [ ] 🔴 Penetration testing and security audit before go-live
 - [x] 🟢 2FA / MFA — TOTP setup/enable/disable/verify endpoints (`modules/auth/twofa.*`)
 - [x] 🟢 Token revocation — `token_blacklist` table + logout invalidation
