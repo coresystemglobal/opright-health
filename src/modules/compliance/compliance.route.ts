@@ -28,6 +28,16 @@ complianceRouter.post('/consent/withdraw', ...auth, validate(complianceValidatio
 complianceRouter.get('/consent/patient/:patientId', ...auth,
   (req: Request, res: Response) => complianceController.getPatientConsents(req, res));
 
+// ── Consent signatures (digital signature capture) ──────────────────────────
+complianceRouter.post('/consent/:consentId/sign', ...auth, validate(complianceValidation.signConsent),
+  (req: Request, res: Response) => complianceController.signConsent(req, res));
+
+complianceRouter.get('/consent/:consentId/signatures', ...auth,
+  (req: Request, res: Response) => complianceController.getConsentSignatures(req, res));
+
+complianceRouter.get('/signatures/:id/verify', ...auth, validateParams(genericValidation.id),
+  (req: Request, res: Response) => complianceController.verifySignature(req, res));
+
 // ── Data subject requests ────────────────────────────────────────────────────
 complianceRouter.post('/requests', ...auth, validate(complianceValidation.createRequest),
   (req: Request, res: Response) => complianceController.createRequest(req, res));

@@ -14,6 +14,14 @@ export const complianceValidation = {
     notes: commonSchemas.longText.optional()
   }),
 
+  signConsent: Joi.object({
+    signer_role: Joi.string().valid('patient', 'guardian', 'witness', 'staff').default('patient'),
+    signer_name: Joi.string().max(150).trim().required(),
+    signature_type: Joi.string().valid('drawn', 'typed', 'uploaded').required(),
+    // base64 data URI or typed name; capped to keep row sizes sane
+    signature_data: Joi.string().max(2000000).required()
+  }),
+
   withdrawConsent: Joi.object({
     patient_id: commonSchemas.uuid,
     consent_type: Joi.string().valid(...CONSENT_TYPES).required()

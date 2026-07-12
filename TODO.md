@@ -115,7 +115,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
 - [ ] 🔴 Chronic disease management flags
-- [x] 🟢 Patient consent management — `/api/compliance/consent` (per-type grant/withdraw, append-only history); digital-signature capture still TODO
+- [x] 🟢 Patient consent management — `/api/compliance/consent` (per-type grant/withdraw, append-only history) with **digital-signature capture**: `POST /consent/:id/sign` (drawn/typed/uploaded, signer role, IP/UA), SHA-256 document hash for tamper-evidence, `GET /signatures/:id/verify`
 - [ ] 🔴 Next-of-kin / emergency contact management
 - [ ] 🔴 Patient-to-doctor messaging (secure in-app)
 - [ ] 🔴 Patient feedback and satisfaction surveys
