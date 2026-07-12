@@ -152,13 +152,15 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 8. Pharmacy & Inventory
 
-- [ ] 🔴 Drug / medication catalogue (name, form, strength, stock level)
-- [ ] 🔴 Prescription dispensing workflow
-- [ ] 🔴 Stock level tracking with low-stock alerts
-- [ ] 🔴 Reorder / purchase order management
-- [ ] 🔴 Drug expiry tracking and alerts
+- [x] 🟢 Drug / medication catalogue — `/api/pharmacy/items` (name, generic, SKU, form, strength, unit, price, reorder level)
+- [x] 🟢 Stock dispensing workflow — `POST /api/pharmacy/items/:id/dispense` with transactional FEFO (first-expiry-first-out), insufficient-stock guard, per-batch audit; optional prescription reference
+- [x] 🟢 Stock level tracking with low-stock alerts — batch-level quantities; `GET /api/pharmacy/alerts/low-stock`; per-item `GET /items/:id/stock`
+- [ ] 🟡 Reorder / purchase order management — reorder level + low-stock alert exist; PO workflow still TODO
+- [x] 🟢 Drug expiry tracking and alerts — batch expiry dates, expired stock excluded from dispensing, `GET /api/pharmacy/alerts/expiring?days=`
+- [ ] 🟡 Supplier management — captured per batch (supplier field); dedicated supplier directory still TODO
+- [x] 🟢 Stock movement audit trail — every receipt/dispense/adjustment/wastage recorded (`GET /api/pharmacy/movements`)
+- [ ] 🟡 Wire pharmacy dispense into the e-prescription dispense flow (currently standalone; avoids fragile drug-name matching)
 - [ ] 🔴 Medical supplies inventory (consumables, equipment)
-- [ ] 🔴 Supplier management
 - [ ] 🔴 Inventory valuation report
 
 ---

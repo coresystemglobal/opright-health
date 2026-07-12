@@ -15,3 +15,4 @@ export * from './generic.validator';
 export * from './visitor.validator';
 export * from './notification.validator';
 export * from './ward.validator';
+export * from './pharmacy.validator';
