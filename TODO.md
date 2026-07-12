@@ -79,7 +79,8 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Insurance claims report (submitted, approved, rejected, pending)
 - [ ] 🔴 Staff attendance and shift report
 - [ ] 🔴 Inventory consumption report
-- [ ] 🔴 Scheduled / automated reports (cron-based, emailed to admins)
+- [x] 🟢 Scheduled / automated reports — weekly cron (`report-scheduler.service`, wired in `core`) emails a digest (inventory valuation + 7-day operations + revenue trend) to each active tenant's admins
+- [x] 🟢 Report exports extended — inventory-valuation, operational-metrics, and trends now exportable via `/api/reports/export` (CSV/XLSX/PDF)
 - [ ] 🔴 Report access control (which roles can view which reports)
 - [x] 🟢 Custom date-range filtering on all reports (`startDate`/`endDate` query params, validated)
 - [ ] 🔴 Report audit log (who ran what report and when)
