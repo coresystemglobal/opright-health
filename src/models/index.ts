@@ -107,6 +107,8 @@ export { ConsentRecord, ConsentType } from '@modules/compliance/consent.model';
 
 export { DataSubjectRequest, DataRequestType, DataRequestStatus } from '@modules/compliance/data-subject-request.model';
 
+export { ConsentSignature, SignerRole, SignatureType } from '@modules/compliance/consent-signature.model';
+
 // Medical Supplies / Equipment Models
 export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
 
@@ -246,6 +248,8 @@ import { ConsentRecord } from '@modules/compliance/consent.model';
 
 import { DataSubjectRequest } from '@modules/compliance/data-subject-request.model';
 
+import { ConsentSignature } from '@modules/compliance/consent-signature.model';
+
 import { SupplyItem } from '@modules/supplies/supply-item.model';
 
 import { SupplyMovement } from '@modules/supplies/supply-movement.model';
@@ -329,6 +333,7 @@ export const models = [
   InsuranceClaim,
   ConsentRecord,
   DataSubjectRequest,
+  ConsentSignature,
   SupplyItem,
   SupplyMovement,
   Equipment,
