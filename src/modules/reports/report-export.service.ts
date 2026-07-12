@@ -144,6 +144,112 @@ export function flattenAppointmentAnalytics(data: any): FlatReport {
   };
 }
 
+export function flattenInventoryValuation(data: any): FlatReport {
+  const catRows = (byCat: Record<string, any>) =>
+    Object.entries(byCat || {}).map(([cat, v]: [string, any]) => [cat, v.items, v.quantity, v.value]);
+  return {
+    reportTitle: 'Inventory Valuation Report',
+    sections: [
+      {
+        title: 'Totals',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Pharmacy Cost Value', data.pharmacy?.total_cost_value],
+          ['Pharmacy Retail Value', data.pharmacy?.total_retail_value],
+          ['Supplies Value', data.supplies?.total_value],
+          ['Grand Total (Cost)', data.totals?.grand_total_cost],
+          ['Grand Total (Retail)', data.totals?.grand_total_retail]
+        ]
+      },
+      {
+        title: 'Pharmacy by Category',
+        headers: ['Category', 'Items', 'Quantity', 'Cost Value'],
+        rows: catRows(data.pharmacy?.by_category)
+      },
+      {
+        title: 'Supplies by Category',
+        headers: ['Category', 'Items', 'Quantity', 'Value'],
+        rows: catRows(data.supplies?.by_category)
+      }
+    ]
+  };
+}
+
+export function flattenOperationalMetrics(data: any): FlatReport {
+  const a = data.appointments || {}, b = data.beds || {}, l = data.lab_turnaround || {};
+  return {
+    reportTitle: 'Operational Metrics Report',
+    period: data.period ? `${data.period.startDate} to ${data.period.endDate}` : undefined,
+    sections: [
+      {
+        title: 'Appointments',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Total', a.total],
+          ['No-show Rate (%)', a.no_show_rate],
+          ['Cancellation Rate (%)', a.cancellation_rate],
+          ['Completion Rate (%)', a.completion_rate],
+          ['Average Wait (min)', a.average_wait_minutes]
+        ]
+      },
+      {
+        title: 'Beds',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Total Beds', b.total_beds],
+          ['Occupied', b.occupied_beds],
+          ['Occupancy Rate (%)', b.occupancy_rate],
+          ['Admissions', b.admissions_in_period],
+          ['Discharges', b.discharges_in_period],
+          ['Avg Length of Stay (days)', b.average_length_of_stay_days]
+        ]
+      },
+      {
+        title: 'Lab Turnaround',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Completed Orders', l.completed_orders],
+          ['Average Hours', l.average_hours],
+          ['Min Hours', l.min_hours],
+          ['Max Hours', l.max_hours]
+        ]
+      },
+      {
+        title: 'Doctor Utilization',
+        headers: ['Doctor', 'Appointments', 'Completed', 'Booked Minutes', 'Utilization (%)'],
+        rows: (data.doctor_utilization || []).map((d: any) => [
+          d.doctor_name, d.appointments, d.completed, d.booked_minutes, d.utilization_rate ?? 'n/a'
+        ])
+      }
+    ]
+  };
+}
+
+export function flattenTrends(data: any): FlatReport {
+  const s = data.summary || {};
+  return {
+    reportTitle: `Trend Report — ${data.metric} (${data.period})`,
+    period: data.range ? `${data.range.startDate} to ${data.range.endDate}` : undefined,
+    sections: [
+      {
+        title: 'Summary',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Total', s.total],
+          ['Previous Period Total', s.previous_period_total],
+          ['Delta', s.delta],
+          ['Delta (%)', s.delta_pct ?? 'n/a']
+        ]
+      },
+      {
+        title: 'Series',
+        headers: ['Period', 'Value'],
+        rows: (data.series || []).map((p: any) => [p.period, p.value])
+      }
+    ]
+  };
+}
+
 // ── Renderers ────────────────────────────────────────────────────────────────
 
 function csvEscape(value: string | number): string {
