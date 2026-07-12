@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { PharmacyItem, StockBatch, StockMovement } from '../../models';
 import { MovementType } from '@modules/pharmacy/stock-movement.model';
 import { itemStockTotal } from '@modules/pharmacy/pharmacy-item.service';
@@ -67,21 +67,25 @@ export const stockService = {
    * Dispense a quantity of an item using FEFO (first-expiry-first-out).
    * Expired batches are skipped. Fails if available (non-expired) stock is
    * insufficient. Records one movement per batch consumed.
+   *
+   * Pass `externalTransaction` to run within a caller's transaction (e.g. the
+   * e-prescription dispense flow) so stock decrement is atomic with it;
+   * otherwise a dedicated transaction is used.
    */
   dispenseStock: async (
     itemId: string,
     quantity: number,
     performedBy: string,
     tenantId: string,
-    ref?: { reference_type?: string; reference_id?: string; reason?: string }
+    ref?: { reference_type?: string; reference_id?: string; reason?: string },
+    externalTransaction?: Transaction
   ) => {
     await assertItem(itemId, tenantId);
     if (!Number.isInteger(quantity) || quantity <= 0) throw new Error('quantity must be a positive integer');
 
     const today = new Date().toISOString().split('T')[0];
-    const sequelize = StockBatch.sequelize!;
 
-    return sequelize.transaction(async (transaction) => {
+    const run = async (transaction: Transaction) => {
       // Non-expired batches with stock, earliest expiry first (nulls last)
       const batches = await StockBatch.findAll({
         where: {
@@ -127,7 +131,9 @@ export const stockService = {
       }
 
       return { dispensed: quantity, remaining_stock: runningBalance, batches: consumed };
-    });
+    };
+
+    return externalTransaction ? run(externalTransaction) : StockBatch.sequelize!.transaction(run);
   },
 
   /** Manual quantity correction on a batch (positive or negative). */

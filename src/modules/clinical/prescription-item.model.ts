@@ -8,6 +8,7 @@ import {
 } from 'sequelize-typescript';
 import { Prescription } from '@modules/clinical/prescription.model';
 import { MedicationRoute, MedicationFrequency } from '@modules/clinical/medication.model';
+import { PharmacyItem } from '@modules/pharmacy/pharmacy-item.model';
 
 @Table({
   tableName: 'prescription_items',
@@ -69,6 +70,15 @@ export class PrescriptionItem extends Model {
 
   @Column({ type: DataType.INTEGER, allowNull: true })
   dispensed_quantity?: number;
+
+  // Optional link to a pharmacy catalogue item; when set, dispensing this
+  // line decrements real stock.
+  @ForeignKey(() => PharmacyItem)
+  @Column({ type: DataType.UUID, allowNull: true })
+  pharmacy_item_id?: string;
+
+  @BelongsTo(() => PharmacyItem)
+  pharmacy_item?: PharmacyItem;
 
   declare createdAt: Date;
   declare updatedAt: Date;

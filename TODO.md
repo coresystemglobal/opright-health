@@ -159,7 +159,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Drug expiry tracking and alerts — batch expiry dates, expired stock excluded from dispensing, `GET /api/pharmacy/alerts/expiring?days=`
 - [ ] 🟡 Supplier management — captured per batch (supplier field); dedicated supplier directory still TODO
 - [x] 🟢 Stock movement audit trail — every receipt/dispense/adjustment/wastage recorded (`GET /api/pharmacy/movements`)
-- [ ] 🟡 Wire pharmacy dispense into the e-prescription dispense flow (currently standalone; avoids fragile drug-name matching)
+- [x] 🟢 Pharmacy dispense wired into e-prescriptions — prescription items link to a pharmacy catalogue item (`pharmacy_item_id`); dispensing a prescription atomically FEFO-decrements real stock (rolls back if any linked line lacks stock) and records a stock movement referencing the prescription
 - [ ] 🔴 Medical supplies inventory (consumables, equipment)
 - [ ] 🔴 Inventory valuation report
 

@@ -92,6 +92,7 @@ const prescriptionController = {
       return ResponseUtil.success(res, prescription, 'Prescription dispensed');
     } catch (error) {
       if (error instanceof Error && error.message === 'Prescription not found') return ResponseUtil.notFound(res, 'Prescription not found');
+      if (error instanceof Error && error.message.includes('Insufficient stock')) return ResponseUtil.conflict(res, error.message);
       if (error instanceof Error && (error.message.includes('cannot be dispensed') || error.message.includes('already') || error.message.includes('no items'))) {
         return ResponseUtil.validationError(res, [error.message]);
       }
