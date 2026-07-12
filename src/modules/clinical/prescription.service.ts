@@ -14,6 +14,7 @@ interface PrescriptionItemInput {
   duration?: string;
   quantity?: number;
   instructions?: string;
+  pharmacy_item_id?: string;
 }
 
 interface CreatePrescriptionData {
@@ -86,7 +87,8 @@ export const prescriptionService = {
           frequency: item.frequency,
           duration: item.duration || null,
           quantity: item.quantity ?? null,
-          instructions: item.instructions || null
+          instructions: item.instructions || null,
+          pharmacy_item_id: item.pharmacy_item_id || null
         } as any, { transaction });
       }
 
@@ -173,27 +175,49 @@ export const prescriptionService = {
     if (items.length === 0) throw new Error('Prescription has no items to dispense');
 
     const targetIds = itemIds && itemIds.length > 0 ? new Set(itemIds) : null;
+    const targets = items.filter(item => !targetIds || targetIds.has(item.id));
 
-    for (const item of items) {
-      if (!targetIds || targetIds.has(item.id)) {
-        await item.update({
-          is_dispensed: true,
-          dispensed_quantity: item.dispensed_quantity ?? item.quantity ?? null
-        });
+    // Whole dispense (item marks + linked stock decrements) is atomic: if any
+    // pharmacy-linked line lacks stock, nothing is committed.
+    const sequelize = Prescription.sequelize!;
+    const stockResults: Array<{ item_id: string; pharmacy_item_id: string; dispensed: number }> = [];
+
+    await sequelize.transaction(async (transaction) => {
+      const { stockService } = await import('@modules/pharmacy/stock.service');
+
+      for (const item of targets) {
+        const qty = item.dispensed_quantity ?? item.quantity ?? null;
+
+        // Decrement real stock for lines linked to a pharmacy catalogue item
+        if (item.pharmacy_item_id && qty && qty > 0) {
+          await stockService.dispenseStock(
+            item.pharmacy_item_id,
+            qty,
+            dispensedBy,
+            prescription.tenant_id,
+            { reference_type: 'prescription', reference_id: prescription.id, reason: `Prescription ${prescription.prescription_number}` },
+            transaction
+          );
+          stockResults.push({ item_id: item.id, pharmacy_item_id: item.pharmacy_item_id, dispensed: qty });
+        }
+
+        await item.update({ is_dispensed: true, dispensed_quantity: qty }, { transaction });
       }
-    }
 
-    // Re-read item state to decide overall status
-    const fresh = await PrescriptionItem.findAll({ where: { prescription_id: prescription.id } });
-    const allDispensed = fresh.every(i => i.is_dispensed);
+      // Decide overall status from the full item set within the same transaction
+      const fresh = await PrescriptionItem.findAll({ where: { prescription_id: prescription.id }, transaction });
+      const allDispensed = fresh.every(i => i.is_dispensed);
 
-    await prescription.update({
-      status: allDispensed ? PrescriptionStatus.DISPENSED : PrescriptionStatus.PARTIALLY_DISPENSED,
-      dispensed_by: dispensedBy,
-      dispensed_at: allDispensed ? new Date() : prescription.dispensed_at
+      await prescription.update({
+        status: allDispensed ? PrescriptionStatus.DISPENSED : PrescriptionStatus.PARTIALLY_DISPENSED,
+        dispensed_by: dispensedBy,
+        dispensed_at: allDispensed ? new Date() : prescription.dispensed_at
+      }, { transaction });
     });
 
-    return Prescription.findByPk(prescription.id, { include: [itemInclude] });
+    const result: any = await Prescription.findByPk(prescription.id, { include: [itemInclude] });
+    if (stockResults.length) (result as any).dataValues.stock_dispensed = stockResults;
+    return result;
   },
 
   cancel: async (prescriptionId: string, reason?: string) => {
