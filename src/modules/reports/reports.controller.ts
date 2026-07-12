@@ -181,6 +181,29 @@ export const reportsController = {
     }
   },
 
+  getInventoryValuationReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
+    try {
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      if (!tenantId) {
+        return res.status(400).json({ success: false, message: 'Tenant ID is required' });
+      }
+
+      const report = await reportsService.getInventoryValuationReport(tenantId);
+      return res.status(200).json({
+        success: true,
+        message: 'Inventory valuation report retrieved successfully',
+        data: report
+      });
+    } catch (error) {
+      console.error('Get inventory valuation report error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  },
+
   getSystemHealthReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
       // System health metrics
