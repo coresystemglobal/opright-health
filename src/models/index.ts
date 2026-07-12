@@ -88,6 +88,13 @@ export { Bed, BedType, BedStatus } from '@modules/wards/bed.model';
 
 export { Admission, AdmissionStatus } from '@modules/wards/admission.model';
 
+// Pharmacy / Inventory Models
+export { PharmacyItem, DrugForm, StockUnit } from '@modules/pharmacy/pharmacy-item.model';
+
+export { StockBatch } from '@modules/pharmacy/stock-batch.model';
+
+export { StockMovement, MovementType } from '@modules/pharmacy/stock-movement.model';
+
 
 // Review Model
 export { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -204,6 +211,12 @@ import { Bed } from '@modules/wards/bed.model';
 
 import { Admission } from '@modules/wards/admission.model';
 
+import { PharmacyItem } from '@modules/pharmacy/pharmacy-item.model';
+
+import { StockBatch } from '@modules/pharmacy/stock-batch.model';
+
+import { StockMovement } from '@modules/pharmacy/stock-movement.model';
+
 
 // Review Model
 import { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -273,6 +286,9 @@ export const models = [
   Ward,
   Bed,
   Admission,
+  PharmacyItem,
+  StockBatch,
+  StockMovement,
   // Scheduler
   AppointmentWaitlist,
   Resource,
