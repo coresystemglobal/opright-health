@@ -95,6 +95,13 @@ export { StockBatch } from '@modules/pharmacy/stock-batch.model';
 
 export { StockMovement, MovementType } from '@modules/pharmacy/stock-movement.model';
 
+// Insurance / Claims Models
+export { InsuranceProvider, ProviderType } from '@modules/insurance/insurance-provider.model';
+
+export { PatientInsurancePolicy, PolicyRelationship, PolicyStatus } from '@modules/insurance/patient-policy.model';
+
+export { InsuranceClaim, ClaimType, ClaimStatus } from '@modules/insurance/claim.model';
+
 
 // Review Model
 export { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -217,6 +224,12 @@ import { StockBatch } from '@modules/pharmacy/stock-batch.model';
 
 import { StockMovement } from '@modules/pharmacy/stock-movement.model';
 
+import { InsuranceProvider } from '@modules/insurance/insurance-provider.model';
+
+import { PatientInsurancePolicy } from '@modules/insurance/patient-policy.model';
+
+import { InsuranceClaim } from '@modules/insurance/claim.model';
+
 
 // Review Model
 import { DoctorReview } from '@modules/doctors/doctor-review.model';
@@ -289,6 +302,9 @@ export const models = [
   PharmacyItem,
   StockBatch,
   StockMovement,
+  InsuranceProvider,
+  PatientInsurancePolicy,
+  InsuranceClaim,
   // Scheduler
   AppointmentWaitlist,
   Resource,

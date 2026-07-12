@@ -31,6 +31,9 @@ import admissionRouter from '@modules/wards/admission.route';
 // Pharmacy & Inventory
 import pharmacyRouter from '@modules/pharmacy/pharmacy.route';
 
+// Insurance & Claims
+import insuranceRouter from '@modules/insurance/insurance.route';
+
 // Appointments & Clinical
 import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
@@ -107,6 +110,7 @@ router.use('/api/wards', wardRouter);
 router.use('/api/beds', bedRouter);
 router.use('/api/admissions', admissionRouter);
 router.use('/api/pharmacy', pharmacyRouter);
+router.use('/api/insurance', insuranceRouter);
 
 // Appointments & Clinical
 router.use('/api/appointments', appointmentRouter);

@@ -181,13 +181,13 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 10. Insurance & Claims
 
-- [ ] 🟡 `insurance.service.ts` exists — review completeness
-- [ ] 🔴 Insurance provider directory (HMOs, insurers)
-- [ ] 🔴 Patient insurance policy management
-- [ ] 🔴 Pre-authorization request workflow
-- [ ] 🔴 Claims submission (HL7 837 or custom per provider)
-- [ ] 🔴 Claims status tracking (submitted, approved, denied, appealed)
-- [ ] 🔴 Co-pay and co-insurance calculation at point of billing
+- [ ] 🟡 `integrations/insurance.service.ts` — external clearinghouse eligibility check (separate from the new persistent module)
+- [x] 🟢 Insurance provider directory (HMOs, insurers) — `/api/insurance/providers` CRUD
+- [x] 🟢 Patient insurance policy management — `/api/insurance/policies` (coverage %, validity, primary flag, per-patient list)
+- [x] 🟢 Pre-authorization request workflow — claims support `claim_type=preauthorization` with an authorization_code on approval
+- [x] 🟢 Claims submission & status tracking — `/api/insurance/claims`: create → submit → decision (approve/partial/reject) → pay / cancel, guarded lifecycle
+- [x] 🟢 Co-pay and co-insurance calculation — `POST /api/insurance/claims/estimate` and auto co-pay on claim create/decision from policy coverage %
+- [ ] 🔴 Claims submission via HL7 837 EDI (currently a custom claim record per provider)
 - [ ] 🔴 Denial management and re-submission workflow
 - [ ] 🔴 EOB (Explanation of Benefits) parsing and reconciliation
 
