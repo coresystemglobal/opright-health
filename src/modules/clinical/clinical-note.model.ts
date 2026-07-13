@@ -16,6 +16,7 @@ import { Doctor } from '@modules/doctors/doctor.model';
 import { User } from '@modules/users/user.model';
 
 import { Tenant } from '@modules/tenancy/tenant.model';
+import { encryptedColumn } from '@utils/encryption.util';
 
 export enum NoteType {
   SOAP = 'soap',
@@ -110,10 +111,8 @@ export class ClinicalNote extends Model {
   })
   title?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  // Medical free-text — encrypted at rest (AES-256-GCM)
+  @Column(encryptedColumn('chief_complaint'))
   chief_complaint?: string;
 
   @Column({
@@ -123,34 +122,19 @@ export class ClinicalNote extends Model {
   })
   soap_note?: SOAPNote;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('content'))
   content?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('diagnosis'))
   diagnosis?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('treatment_plan'))
   treatment_plan?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('prescriptions'))
   prescriptions?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('follow_up_instructions'))
   follow_up_instructions?: string;
 
   @Column({

@@ -17,6 +17,7 @@ import { Doctor } from '@modules/doctors/doctor.model';
 import { User } from '@modules/users/user.model';
 
 import { Invoice } from '@modules/billing/invoice.model';
+import { encryptedColumn } from '@utils/encryption.util';
 
 
 export enum AppointmentStatus {
@@ -166,22 +167,14 @@ export class Appointment extends Model {
   })
   chief_complaint?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  // Medical free-text — encrypted at rest (AES-256-GCM)
+  @Column(encryptedColumn('diagnosis'))
   diagnosis?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('treatment_plan'))
   treatment_plan?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('prescription'))
   prescription?: string;
 
   @ForeignKey(() => User)
