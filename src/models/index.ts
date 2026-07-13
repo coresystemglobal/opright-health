@@ -118,6 +118,13 @@ export { LeaveRequest, LeaveType, LeaveStatus } from '@modules/staff/leave-reque
 export { Attendance, AttendanceStatus } from '@modules/staff/attendance.model';
 export { PerformanceReview, ReviewType, ReviewStatus } from '@modules/staff/performance-review.model';
 
+// IoT / Medical Device Models
+export { IoTDevice, DeviceType, DeviceStatus } from '@modules/iot/iot-device.model';
+export { DeviceReading } from '@modules/iot/device-reading.model';
+
+// Telemedicine Models
+export { TelemedicineSession, TelemedicineProvider, TelemedicineStatus } from '@modules/telemedicine/telemedicine-session.model';
+
 // Medical Supplies / Equipment Models
 export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
 
@@ -271,6 +278,12 @@ import { Attendance } from '@modules/staff/attendance.model';
 
 import { PerformanceReview } from '@modules/staff/performance-review.model';
 
+import { IoTDevice } from '@modules/iot/iot-device.model';
+
+import { DeviceReading } from '@modules/iot/device-reading.model';
+
+import { TelemedicineSession } from '@modules/telemedicine/telemedicine-session.model';
+
 import { SupplyItem } from '@modules/supplies/supply-item.model';
 
 import { SupplyMovement } from '@modules/supplies/supply-movement.model';
@@ -362,6 +375,11 @@ export const models = [
   LeaveRequest,
   Attendance,
   PerformanceReview,
+  // IoT / Medical Devices
+  IoTDevice,
+  DeviceReading,
+  // Telemedicine
+  TelemedicineSession,
   SupplyItem,
   SupplyMovement,
   Equipment,

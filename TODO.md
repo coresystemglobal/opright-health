@@ -127,7 +127,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 - [ ] 🟡 Appointment scheduling (module exists)
 - [ ] 🟡 Appointment waitlist (model exists — implement waitlist promotion)
-- [ ] 🟡 Telemedicine / video consultation via Daily.co (`telemedicine.service.ts` — review depth) — *decided*
+- [x] 🟢 Telemedicine / video consultation — persistent `telemedicine` module (`telemedicine_sessions` table): create / list / get sessions + scheduled→active→completed / cancelled lifecycle at `/api/telemedicine/sessions` (start/end/cancel, duration computed on end); pluggable video-provider stub (`buildRoomLinks` generates room + join/host links for Daily.co / Jitsi / WebRTC — swap for a vendor SDK without touching the lifecycle). Supersedes the in-memory `integrations/telemedicine.service.ts` stub
 - [x] 🟢 Electronic prescriptions — `/api/prescriptions`: create (multi-item, transactional, auto RX number), list-by-patient, get; status lifecycle draft→issued→sent_to_pharmacy→(partially_)dispensed / cancelled with transition guards; per-item dispense tracking
 - [x] 🟢 Clinical notes (SOAP) — full CRUD at `/api/clinical-notes` (create/list-by-patient/get/update/delete) plus lock-to-sign; enforces is_locked immutability and 24h edit window
 - [ ] 🔴 Referral management (internal department-to-department, external)
@@ -233,11 +233,11 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 13. Integrations
 
 - [ ] 🟡 FHIR R4 module exists — review completeness against the standard
-- [ ] 🟡 IoT device integration (`iot-device.service.ts` — review depth)
+- [x] 🟢 IoT device integration — persistent `iot` module (`iot_devices` table): register / list / update / retire devices with per-metric alert thresholds, patient assignment, and `last_seen_at` at `/api/iot/devices`. Supersedes the in-memory `integrations/iot-device.service.ts` stub
 - [ ] 🔴 HL7 v2 message handling (for legacy lab and radiology systems)
 - [ ] 🔴 Government health registry integration (NHIS in Nigeria, or country-specific)
 - [ ] 🔴 Biometric device integration (fingerprint / face ID for patient identity)
-- [ ] 🔴 Medical device data ingestion (vitals monitors, glucometers)
+- [x] 🟢 Medical device data ingestion (vitals monitors, glucometers) — `iot_device_readings` table; `POST /api/iot/devices/:id/readings` evaluates thresholds at ingest (flags abnormal + best-effort emergency alert), with `GET /api/iot/readings` and `GET /api/iot/patients/:id/readings`
 - [ ] 🔴 EHR data import / migration tool (for onboarding new tenants)
 - [ ] 🔴 Accounting system export (QuickBooks, Sage, or CSV journal entries)
 - [ ] 🔴 Google / Outlook calendar sync for appointments
