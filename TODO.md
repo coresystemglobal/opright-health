@@ -74,9 +74,9 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟡 Appointment volume trend (daily/weekly/monthly) via `GET /api/reports/trends?metric=appointments`; by-department split still TODO
 - [x] 🟢 Lab turnaround time — in `GET /api/reports/operational-metrics` (avg/min/max hours order→results)
 - [x] 🟢 Bed occupancy — in operational-metrics (occupancy rate, admissions/discharges, avg length of stay)
-- [ ] 🔴 Prescription and pharmacy dispensing report
-- [ ] 🔴 Waitlist and no-show report
-- [ ] 🔴 Insurance claims report (submitted, approved, rejected, pending)
+- [x] 🟢 Prescription and pharmacy dispensing report — `GET /api/reports/prescription-dispensing` (reports:view, tenant-scoped, date-range): status mix, item-level dispense/fill rates, top-20 medications; exportable via `/export?reportType=prescription-dispensing`
+- [x] 🟢 Waitlist and no-show report — `GET /api/reports/waitlist-no-show` (reports:view): tenant-scoped waitlist status mix + promotion rate, plus appointment no-show/cancellation rates; exportable
+- [x] 🟢 Insurance claims report (submitted, approved, rejected, pending) — `GET /api/reports/insurance-claims` (invoice:view finance-tier): status & type breakdown, claimed vs approved value, approval/rejection rates, per-provider split; exportable
 - [ ] 🔴 Staff attendance and shift report
 - [ ] 🔴 Inventory consumption report
 - [x] 🟢 Scheduled / automated reports — **configurable per-tenant schedules** (`report-schedule.service` + `report_schedules` table): CRUD at `/api/reports/schedules` (analytics-tier) to pick report type (digest or any of the 7 report types), format (html inline / csv / xlsx / pdf attachment), frequency (daily/weekly/monthly), recipients (explicit or tenant admins) and params; hourly cron (`scheduleReportRunner` in `core`) delivers each schedule when its `next_run_at` comes due and advances the cadence; `POST /schedules/:id/run` for on-demand delivery. Digest reuses the inventory-valuation + operations + revenue-trend summary
