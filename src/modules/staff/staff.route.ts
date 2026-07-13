@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';
 import staffController from './staff.controller';
+import performanceReviewController from './performance-review.controller';
 import authentication from '@middlewares/authentication';
 import { tenantMiddleware } from '@middlewares/tenant.middleware';
 import { checkPermission } from '@middlewares/permission.middleware';
 import { PERMISSIONS } from '@config/rbac.config';
-import { validate, validateParams, validateQuery, staffValidation, genericValidation } from '@utils/validator';
+import { validate, validateParams, validateQuery, staffValidation, performanceReviewValidation, genericValidation } from '@utils/validator';
 
 const staffRouter = express.Router();
 
@@ -34,6 +35,16 @@ staffRouter.get('/leave/:id', VIEW, validateParams(genericValidation.id), wrap(s
 staffRouter.patch('/leave/:id/approve', MANAGE, validateParams(genericValidation.id), validate(staffValidation.reviewLeave), wrap(staffController.approveLeave));
 staffRouter.patch('/leave/:id/reject', MANAGE, validateParams(genericValidation.id), validate(staffValidation.reviewLeave), wrap(staffController.rejectLeave));
 staffRouter.patch('/leave/:id/cancel', MANAGE, validateParams(genericValidation.id), wrap(staffController.cancelLeave));
+
+// ── Performance reviews (before /:id) ───────────────────────────────────────
+staffRouter.post('/reviews', MANAGE, validate(performanceReviewValidation.create), wrap(performanceReviewController.create));
+staffRouter.get('/reviews', VIEW, validateQuery(performanceReviewValidation.list), wrap(performanceReviewController.list));
+staffRouter.get('/reviews/:id', VIEW, validateParams(genericValidation.id), wrap(performanceReviewController.get));
+staffRouter.put('/reviews/:id', MANAGE, validateParams(genericValidation.id), validate(performanceReviewValidation.update), wrap(performanceReviewController.update));
+staffRouter.patch('/reviews/:id/submit', MANAGE, validateParams(genericValidation.id), wrap(performanceReviewController.submit));
+staffRouter.patch('/reviews/:id/acknowledge', MANAGE, validateParams(genericValidation.id), validate(performanceReviewValidation.acknowledge), wrap(performanceReviewController.acknowledge));
+staffRouter.patch('/reviews/:id/finalize', MANAGE, validateParams(genericValidation.id), wrap(performanceReviewController.finalize));
+staffRouter.delete('/reviews/:id', MANAGE, validateParams(genericValidation.id), wrap(performanceReviewController.remove));
 
 // ── Attendance & payroll (before /:id) ──────────────────────────────────────
 staffRouter.get('/attendance', VIEW, validateQuery(staffValidation.listAttendance), wrap(staffController.listAttendance));
