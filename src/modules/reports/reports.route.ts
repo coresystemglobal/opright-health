@@ -1,28 +1,42 @@
 import { Router } from 'express';
 import { reportsController } from './reports.controller';
+import authentication from '@middlewares/authentication';
+import { tenantMiddleware } from '@middlewares/tenant.middleware';
+import { checkPermission } from '@middlewares/permission.middleware';
+import { PERMISSIONS } from '@config/rbac.config';
 
 const router = Router();
 
-router.get('/patient-demographics', reportsController.getPatientDemographicsReport);
+// All report endpoints require an authenticated, tenant-scoped caller.
+router.use(authentication, tenantMiddleware);
 
-router.get('/doctor-performance', reportsController.getDoctorPerformanceReport);
+// Access control by report class:
+//  - clinical / operational summaries      → reports:view
+//  - money & inventory-value reports        → invoice:view (finance)
+//  - trend / operational analytics + infra  → analytics:view
+const REPORTS_VIEW = checkPermission(PERMISSIONS.REPORTS_VIEW);
+const FINANCE_VIEW = checkPermission(PERMISSIONS.INVOICE_VIEW);
+const ANALYTICS_VIEW = checkPermission(PERMISSIONS.ANALYTICS_VIEW);
 
-router.get('/financial', reportsController.getFinancialReport);
+router.get('/patient-demographics', REPORTS_VIEW, reportsController.getPatientDemographicsReport);
+router.get('/doctor-performance', REPORTS_VIEW, reportsController.getDoctorPerformanceReport);
+router.get('/appointment-analytics', REPORTS_VIEW, reportsController.getAppointmentAnalyticsReport);
 
-router.get('/appointment-analytics', reportsController.getAppointmentAnalyticsReport);
+router.get('/financial', FINANCE_VIEW, reportsController.getFinancialReport);
+router.get('/inventory-valuation', FINANCE_VIEW, reportsController.getInventoryValuationReport);
 
-router.get('/inventory-valuation', reportsController.getInventoryValuationReport);
-
-router.get('/operational-metrics', reportsController.getOperationalMetricsReport);
-
+router.get('/operational-metrics', ANALYTICS_VIEW, reportsController.getOperationalMetricsReport);
 // ?metric=revenue|patients|appointments&period=daily|weekly|monthly&startDate=&endDate=
-router.get('/trends', reportsController.getTrendsReport);
+router.get('/trends', ANALYTICS_VIEW, reportsController.getTrendsReport);
 
-router.get('/system-health', reportsController.getSystemHealthReport);
+// Infrastructure/system health — analytics-tier (admins) only
+router.get('/system-health', ANALYTICS_VIEW, reportsController.getSystemHealthReport);
 
-router.post('/custom', reportsController.getCustomReport);
+router.post('/custom', REPORTS_VIEW, reportsController.getCustomReport);
 
-// ?reportType=patient-demographics|doctor-performance|financial|appointment-analytics&format=json|csv|xlsx|pdf&startDate=&endDate=
-router.get('/export', reportsController.exportReport);
+// Export any report type (json/csv/xlsx/pdf). Requires reports:view; the
+// finance-only report types additionally validate finance access below.
+// ?reportType=…&format=…&startDate=&endDate=
+router.get('/export', REPORTS_VIEW, reportsController.exportReport);
 
 export default router;
