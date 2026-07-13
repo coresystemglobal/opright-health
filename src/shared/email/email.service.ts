@@ -1,10 +1,17 @@
 import nodemailer from 'nodemailer';
 
+interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+}
+
 interface EmailPayload {
   to: string;
   subject: string;
   text: string;
   html?: string;
+  attachments?: EmailAttachment[];
 }
 
 const FONT_STACK = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
@@ -68,13 +75,16 @@ const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
       },
     });
 
-    const mailOptions = {
+    const mailOptions: any = {
       from: process.env.EMAIL_FROM || '"Hospital Management" <no-reply@hospital-management.com>',
       to: payload.to,
       subject: payload.subject,
       text: payload.text,
       html: payload.html,
     };
+    if (payload.attachments && payload.attachments.length) {
+      mailOptions.attachments = payload.attachments;
+    }
 
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent:', info.messageId);
