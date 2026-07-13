@@ -116,6 +116,7 @@ export { StaffProfile, EmploymentType, EmploymentStatus } from '@modules/staff/s
 export { Shift, ShiftType, ShiftStatus } from '@modules/staff/shift.model';
 export { LeaveRequest, LeaveType, LeaveStatus } from '@modules/staff/leave-request.model';
 export { Attendance, AttendanceStatus } from '@modules/staff/attendance.model';
+export { PerformanceReview, ReviewType, ReviewStatus } from '@modules/staff/performance-review.model';
 
 // Medical Supplies / Equipment Models
 export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
@@ -268,6 +269,8 @@ import { LeaveRequest } from '@modules/staff/leave-request.model';
 
 import { Attendance } from '@modules/staff/attendance.model';
 
+import { PerformanceReview } from '@modules/staff/performance-review.model';
+
 import { SupplyItem } from '@modules/supplies/supply-item.model';
 
 import { SupplyMovement } from '@modules/supplies/supply-movement.model';
@@ -358,6 +361,7 @@ export const models = [
   Shift,
   LeaveRequest,
   Attendance,
+  PerformanceReview,
   SupplyItem,
   SupplyMovement,
   Equipment,

@@ -176,7 +176,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Leave / time-off requests and approvals — `staff_leave_requests` table; submit / list / approve / reject / cancel at `/api/staff/leave`, inclusive day-count computed on submit, plus per-staff balance at `/api/staff/:id/leave-balance`
 - [x] 🟢 Payroll data export (hours worked, leave taken — not full payroll, just the data feed) — `GET /api/staff/payroll/export?from=&to=` aggregates per-staff hours worked, days present, and approved leave days
 - [x] 🟢 Credentialing / licence expiry tracking for doctors and nurses — licence fields on the staff record + `GET /api/staff/licences/expiring?within_days=` (soonest-first, flags already-expired)
-- [ ] 🔴 Staff performance reviews
+- [x] 🟢 Staff performance reviews — `staff_performance_reviews` table; per-competency + overall (1–5) ratings, strengths / areas-for-improvement / goals, with a draft → submitted → acknowledged → finalized workflow (`/api/staff/reviews`, staff:manage; ratings lock on finalize)
 
 ---
 

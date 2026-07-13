@@ -8,6 +8,10 @@ const SHIFT_STATUSES = ['scheduled', 'completed', 'cancelled', 'missed'];
 const LEAVE_TYPES = ['annual', 'sick', 'maternity', 'paternity', 'compassionate', 'unpaid', 'study', 'other'];
 const LEAVE_STATUSES = ['pending', 'approved', 'rejected', 'cancelled'];
 const ATTENDANCE_STATUSES = ['present', 'late', 'absent', 'half_day', 'on_leave'];
+const REVIEW_TYPES = ['annual', 'probation', 'quarterly', 'mid_year', 'ad_hoc'];
+const REVIEW_STATUSES = ['draft', 'submitted', 'acknowledged', 'finalized'];
+
+const ratingsMap = Joi.object().pattern(Joi.string().max(60), Joi.number().integer().min(1).max(5));
 
 export const staffValidation = {
   // ── Staff profiles ──────────────────────────────────────────────────────────
@@ -135,5 +139,44 @@ export const staffValidation = {
   payrollExport: Joi.object({
     from: commonSchemas.date.required(),
     to: commonSchemas.date.required()
+  })
+};
+
+export const performanceReviewValidation = {
+  create: Joi.object({
+    staff_id: commonSchemas.uuid,
+    reviewer_id: commonSchemas.optionalUuid,
+    review_type: Joi.string().valid(...REVIEW_TYPES).default('annual'),
+    period_start: commonSchemas.date.required(),
+    period_end: commonSchemas.date.required(),
+    overall_rating: Joi.number().integer().min(1).max(5).optional(),
+    ratings: ratingsMap.optional(),
+    strengths: Joi.string().max(5000).trim().optional(),
+    areas_for_improvement: Joi.string().max(5000).trim().optional(),
+    goals: Joi.alternatives().try(Joi.array().items(Joi.string().max(1000)), Joi.object()).optional(),
+    reviewer_comments: Joi.string().max(5000).trim().optional()
+  }),
+  update: Joi.object({
+    reviewer_id: commonSchemas.optionalUuid.allow(null),
+    review_type: Joi.string().valid(...REVIEW_TYPES).optional(),
+    period_start: commonSchemas.date.optional(),
+    period_end: commonSchemas.date.optional(),
+    overall_rating: Joi.number().integer().min(1).max(5).optional().allow(null),
+    ratings: ratingsMap.optional().allow(null),
+    strengths: Joi.string().max(5000).trim().optional().allow(null),
+    areas_for_improvement: Joi.string().max(5000).trim().optional().allow(null),
+    goals: Joi.alternatives().try(Joi.array().items(Joi.string().max(1000)), Joi.object()).optional().allow(null),
+    reviewer_comments: Joi.string().max(5000).trim().optional().allow(null)
+  }).min(1),
+  list: Joi.object({
+    staff_id: commonSchemas.optionalUuid,
+    reviewer_id: commonSchemas.optionalUuid,
+    status: Joi.string().valid(...REVIEW_STATUSES).optional(),
+    review_type: Joi.string().valid(...REVIEW_TYPES).optional(),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(10)
+  }),
+  acknowledge: Joi.object({
+    staff_comments: Joi.string().max(5000).trim().optional()
   })
 };
