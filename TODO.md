@@ -79,7 +79,8 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Insurance claims report (submitted, approved, rejected, pending)
 - [ ] 🔴 Staff attendance and shift report
 - [ ] 🔴 Inventory consumption report
-- [ ] 🔴 Scheduled / automated reports (cron-based, emailed to admins)
+- [x] 🟢 Scheduled / automated reports — weekly cron (`report-scheduler.service`, wired in `core`) emails a digest (inventory valuation + 7-day operations + revenue trend) to each active tenant's admins
+- [x] 🟢 Report exports extended — inventory-valuation, operational-metrics, and trends now exportable via `/api/reports/export` (CSV/XLSX/PDF)
 - [ ] 🔴 Report access control (which roles can view which reports)
 - [x] 🟢 Custom date-range filtering on all reports (`startDate`/`endDate` query params, validated)
 - [ ] 🔴 Report audit log (who ran what report and when)
@@ -217,7 +218,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🟡 Rate limiting (middleware exists)
 - [x] 🟢 **NDPR / GDPR data-subject rights** — `compliance` module (`/api/compliance`): data export, erasure (anonymization), consent management, data-subject-request workflow, retention preview
 - [ ] 🔴 **HIPAA compliance checklist** (US deployments) — *deferred until US expansion*
-- [ ] 🔴 Data encryption at rest (database-level and field-level for PII)
+- [x] 🟢 Field-level encryption at rest (AES-256-GCM) for sensitive/medical fields — patient contact PII (phone, address, emergency contacts) + clinical free-text (appointment & clinical-note diagnosis/treatment/prescription/notes); transparent getter/setter, legacy-tolerant, backfill script. Searchable basics (name/email/MRN) stay plaintext. (DB-level/TDE + email blind-index still optional follow-ups)
 - [x] 🟢 Data retention preview — `GET /api/compliance/retention/preview?years=` lists patients past retention (purge remains a deliberate, separately-authorized action)
 - [x] 🟢 Patient data export (right to access / portability) — `GET /api/compliance/patients/:id/export` aggregates all records
 - [x] 🟢 Patient data erasure (right to erasure) — `POST /api/compliance/patients/:id/anonymize` redacts direct identifiers while retaining de-identified clinical records per medical-retention law; also triggered by completing an erasure request

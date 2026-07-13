@@ -209,6 +209,22 @@ function scheduleAppointmentReminders() {
   }, 2 * 60 * 1000);
 }
 
+function scheduleWeeklyReports() {
+  const runCycle = async () => {
+    const { runScheduledReports } = await import('../modules/reports/report-scheduler.service');
+    const sent = await runScheduledReports();
+    if (sent > 0) console.log(`Scheduled reports: emailed ${sent} digest(s).`);
+  };
+
+  // First run 10 minutes after startup, then weekly. Simple fixed interval —
+  // no per-tenant scheduling table yet, so every active tenant's admins get
+  // a weekly digest.
+  setTimeout(() => {
+    runCycle().catch(e => console.error('Scheduled reports error:', e));
+    setInterval(() => runCycle().catch(e => console.error('Scheduled reports error:', e)), 7 * 24 * 60 * 60 * 1000);
+  }, 10 * 60 * 1000);
+}
+
 const startServer = async () => {
   // Fail fast if required secrets are missing
   validateRequiredEnvVars();
@@ -233,6 +249,9 @@ const startServer = async () => {
 
     // Appointment SMS reminders (24h / 2h before, every 30 min)
     scheduleAppointmentReminders();
+
+    // Weekly emailed report digests to tenant admins
+    scheduleWeeklyReports();
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }

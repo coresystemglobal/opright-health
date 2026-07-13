@@ -14,6 +14,7 @@ import { User } from '@modules/users/user.model';
 import { Appointment } from '@modules/appointments/appointment.model';
 
 import { Tenant } from '@modules/tenancy/tenant.model';
+import { encryptedColumn } from '@utils/encryption.util';
 
 export enum Gender {
   MALE = 'male',
@@ -83,10 +84,9 @@ export class Patient extends Model {
   })
   gender?: Gender;
 
-  @Column({
-    type: DataType.STRING(20),
-    allowNull: true
-  })
+  // Sensitive contact PII — encrypted at rest (AES-256-GCM). Not used in
+  // search, so encryption is transparent. Email stays plaintext (searchable).
+  @Column(encryptedColumn('phone'))
   phone?: string;
 
   @Column({
@@ -98,22 +98,13 @@ export class Patient extends Model {
   })
   email?: string;
 
-  @Column({
-    type: DataType.TEXT,
-    allowNull: true
-  })
+  @Column(encryptedColumn('address'))
   address?: string;
 
-  @Column({
-    type: DataType.STRING(200),
-    allowNull: true
-  })
+  @Column(encryptedColumn('emergency_contact_name'))
   emergency_contact_name?: string;
 
-  @Column({
-    type: DataType.STRING(20),
-    allowNull: true
-  })
+  @Column(encryptedColumn('emergency_contact_phone'))
   emergency_contact_phone?: string;
 
   @ForeignKey(() => User)

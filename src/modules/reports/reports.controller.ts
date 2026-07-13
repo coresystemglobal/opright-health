@@ -5,6 +5,9 @@ import {
   flattenDoctorPerformance,
   flattenFinancial,
   flattenAppointmentAnalytics,
+  flattenInventoryValuation,
+  flattenOperationalMetrics,
+  flattenTrends,
   renderCsv,
   renderExcel,
   renderPdf
@@ -373,10 +376,30 @@ export const reportsController = {
         case 'appointment-analytics':
           flat = flattenAppointmentAnalytics(await reportsService.getAppointmentAnalyticsReport(dateRange));
           break;
+        case 'inventory-valuation': {
+          const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+          if (!tenantId) {
+            return res.status(400).json({ success: false, message: 'Tenant ID is required for inventory valuation' });
+          }
+          flat = flattenInventoryValuation(await reportsService.getInventoryValuationReport(tenantId));
+          break;
+        }
+        case 'operational-metrics':
+          flat = flattenOperationalMetrics(await reportsService.getOperationalMetricsReport(dateRange));
+          break;
+        case 'trends': {
+          const metric = (req.query.metric as string) || 'revenue';
+          const period = (req.query.period as string) || 'daily';
+          if (!['revenue', 'patients', 'appointments'].includes(metric) || !['daily', 'weekly', 'monthly'].includes(period)) {
+            return res.status(400).json({ success: false, message: 'Invalid metric or period for trends export' });
+          }
+          flat = flattenTrends(await reportsService.getTrendsReport({ metric: metric as any, period: period as any, dateRange }));
+          break;
+        }
         default:
           return res.status(400).json({
             success: false,
-            message: `Unknown report type '${reportType}'. Supported: patient-demographics, doctor-performance, financial, appointment-analytics`
+            message: `Unknown report type '${reportType}'. Supported: patient-demographics, doctor-performance, financial, appointment-analytics, inventory-valuation, operational-metrics, trends`
           });
       }
 

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { DataType } from 'sequelize-typescript';
 
 const ALGORITHM = 'aes-256-gcm';
 
@@ -53,4 +54,45 @@ export class EncryptionUtil {
 
     return decrypted;
   }
+
+  /** Our ciphertext shape: iv(32 hex):authTag(32 hex):ciphertext(hex). */
+  static isEncrypted(value: unknown): boolean {
+    return typeof value === 'string' && /^[0-9a-f]{32}:[0-9a-f]{32}:[0-9a-f]*$/i.test(value);
+  }
+
+  /**
+   * Decrypts if the value is our ciphertext; otherwise returns it unchanged.
+   * Lets encrypted columns tolerate legacy plaintext during/after rollout and
+   * never throw on read.
+   */
+  static decryptSafe(value: string): string {
+    if (!EncryptionUtil.isEncrypted(value)) return value;
+    try {
+      return EncryptionUtil.decrypt(value);
+    } catch {
+      return value;
+    }
+  }
+}
+
+/**
+ * Build Sequelize column options that transparently encrypt on write and
+ * decrypt on read for a sensitive/medical field. Stored as TEXT (ciphertext
+ * is longer than the plaintext). `field` must be the model attribute name.
+ *
+ *   @Column(encryptedColumn('phone'))
+ *   phone?: string;
+ */
+export function encryptedColumn(field: string, opts: { allowNull?: boolean } = {}) {
+  return {
+    type: DataType.TEXT,
+    allowNull: opts.allowNull ?? true,
+    set(this: any, value: string | null | undefined) {
+      this.setDataValue(field, value == null || value === '' ? value : EncryptionUtil.encrypt(value));
+    },
+    get(this: any): string | null | undefined {
+      const raw = this.getDataValue(field);
+      return raw == null ? raw : EncryptionUtil.decryptSafe(raw);
+    }
+  };
 }
