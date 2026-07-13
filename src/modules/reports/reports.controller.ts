@@ -1,5 +1,6 @@
 import { Request as ExpressRequest, Response } from 'express';
 import { reportsService } from '@modules/reports/reports.service';
+import { PERMISSIONS, ROLE_PERMISSIONS } from '@config/rbac.config';
 import {
   flattenPatientDemographics,
   flattenDoctorPerformance,
@@ -340,6 +341,16 @@ export const reportsController = {
           success: false,
           message: 'Report type is required'
         });
+      }
+
+      // Finance-tier report types require finance access even via export
+      // (the route only enforces reports:view broadly).
+      if (['financial', 'inventory-valuation'].includes(reportType)) {
+        const role = (req as any).user?.role;
+        const perms = ROLE_PERMISSIONS[role] || [];
+        if (!perms.includes(PERMISSIONS.INVOICE_VIEW)) {
+          return res.status(403).json({ success: false, message: 'Access denied - finance permission required to export this report' });
+        }
       }
 
       const supportedFormats = ['json', 'csv', 'pdf', 'xlsx'];

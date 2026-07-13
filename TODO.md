@@ -81,7 +81,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Inventory consumption report
 - [x] 🟢 Scheduled / automated reports — weekly cron (`report-scheduler.service`, wired in `core`) emails a digest (inventory valuation + 7-day operations + revenue trend) to each active tenant's admins
 - [x] 🟢 Report exports extended — inventory-valuation, operational-metrics, and trends now exportable via `/api/reports/export` (CSV/XLSX/PDF)
-- [ ] 🔴 Report access control (which roles can view which reports)
+- [x] 🟢 Report access control — all `/api/reports/*` now require auth + tenant; per-report permission gating (clinical/summary→reports:view, financial & inventory-valuation→invoice:view, operational/trends/system-health→analytics:view); export re-checks finance permission for finance report types
 - [x] 🟢 Custom date-range filtering on all reports (`startDate`/`endDate` query params, validated)
 - [ ] 🔴 Report audit log (who ran what report and when)
 
