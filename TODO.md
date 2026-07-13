@@ -168,14 +168,14 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 
 ## 9. Staff & HR
 
-- [ ] 🟡 User / staff accounts (model and auth exist)
+- [x] 🟢 Staff / HR records — `staff` module (`staff_profiles` table): employment record (employee no, job title, employment type/status, hire/termination dates, department, licence, base salary, emergency contact) linked to a `User` account; CRUD at `/api/staff`, gated by new `staff:view` / `staff:manage` permissions (admin tier)
 - [ ] 🟡 Role-based access control (RBAC fully implemented)
-- [ ] 🔴 Staff scheduling / shift management
-- [ ] 🔴 On-call roster management
-- [ ] 🔴 Staff attendance tracking (clock-in / clock-out)
-- [ ] 🔴 Leave / time-off requests and approvals
-- [ ] 🔴 Payroll data export (hours worked, leave taken — not full payroll, just the data feed)
-- [ ] 🔴 Credentialing / licence expiry tracking for doctors and nurses
+- [x] 🟢 Staff scheduling / shift management — `staff_shifts` table; CRUD + filtered roster listing at `/api/staff/shifts` (by staff/department/type/status/date window)
+- [x] 🟢 On-call roster management — on-call shifts (`shift_type=on_call`/`is_on_call`) surfaced via `GET /api/staff/shifts/on-call?from=&to=`
+- [x] 🟢 Staff attendance tracking (clock-in / clock-out) — `staff_attendance` table (one row per staff/day, unique); `POST /api/staff/:id/clock-in` and `/clock-out` compute hours worked; `GET /api/staff/attendance` with date/status filters
+- [x] 🟢 Leave / time-off requests and approvals — `staff_leave_requests` table; submit / list / approve / reject / cancel at `/api/staff/leave`, inclusive day-count computed on submit, plus per-staff balance at `/api/staff/:id/leave-balance`
+- [x] 🟢 Payroll data export (hours worked, leave taken — not full payroll, just the data feed) — `GET /api/staff/payroll/export?from=&to=` aggregates per-staff hours worked, days present, and approved leave days
+- [x] 🟢 Credentialing / licence expiry tracking for doctors and nurses — licence fields on the staff record + `GET /api/staff/licences/expiring?within_days=` (soonest-first, flags already-expired)
 - [ ] 🔴 Staff performance reviews
 
 ---

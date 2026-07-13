@@ -111,6 +111,12 @@ export { ConsentSignature, SignerRole, SignatureType } from '@modules/compliance
 
 export { ReportSchedule, ScheduledReportType, ScheduleFormat, ScheduleFrequency } from '@modules/reports/report-schedule.model';
 
+// Staff & HR Models
+export { StaffProfile, EmploymentType, EmploymentStatus } from '@modules/staff/staff-profile.model';
+export { Shift, ShiftType, ShiftStatus } from '@modules/staff/shift.model';
+export { LeaveRequest, LeaveType, LeaveStatus } from '@modules/staff/leave-request.model';
+export { Attendance, AttendanceStatus } from '@modules/staff/attendance.model';
+
 // Medical Supplies / Equipment Models
 export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
 
@@ -254,6 +260,14 @@ import { ConsentSignature } from '@modules/compliance/consent-signature.model';
 
 import { ReportSchedule } from '@modules/reports/report-schedule.model';
 
+import { StaffProfile } from '@modules/staff/staff-profile.model';
+
+import { Shift } from '@modules/staff/shift.model';
+
+import { LeaveRequest } from '@modules/staff/leave-request.model';
+
+import { Attendance } from '@modules/staff/attendance.model';
+
 import { SupplyItem } from '@modules/supplies/supply-item.model';
 
 import { SupplyMovement } from '@modules/supplies/supply-movement.model';
@@ -339,6 +353,11 @@ export const models = [
   DataSubjectRequest,
   ConsentSignature,
   ReportSchedule,
+  // Staff & HR
+  StaffProfile,
+  Shift,
+  LeaveRequest,
+  Attendance,
   SupplyItem,
   SupplyMovement,
   Equipment,
