@@ -43,6 +43,10 @@ import suppliesRouter from '@modules/supplies/supplies.route';
 // Staff & HR
 import staffRouter from '@modules/staff/staff.route';
 
+// IoT / Medical Devices & Telemedicine
+import iotRouter from '@modules/iot/iot.route';
+import telemedicineRouter from '@modules/telemedicine/telemedicine.route';
+
 // Appointments & Clinical
 import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
@@ -123,6 +127,8 @@ router.use('/api/insurance', insuranceRouter);
 router.use('/api/compliance', complianceRouter);
 router.use('/api/supplies', suppliesRouter);
 router.use('/api/staff', staffRouter);
+router.use('/api/iot', iotRouter);
+router.use('/api/telemedicine', telemedicineRouter);
 
 // Appointments & Clinical
 router.use('/api/appointments', appointmentRouter);
