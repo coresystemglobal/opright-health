@@ -209,19 +209,19 @@ function scheduleAppointmentReminders() {
   }, 2 * 60 * 1000);
 }
 
-function scheduleWeeklyReports() {
+function scheduleReportRunner() {
   const runCycle = async () => {
-    const { runScheduledReports } = await import('../modules/reports/report-scheduler.service');
-    const sent = await runScheduledReports();
-    if (sent > 0) console.log(`Scheduled reports: emailed ${sent} digest(s).`);
+    const { reportScheduleService } = await import('../modules/reports/report-schedule.service');
+    const sent = await reportScheduleService.runDueSchedules();
+    if (sent > 0) console.log(`Report schedules: emailed ${sent} report(s).`);
   };
 
-  // First run 10 minutes after startup, then weekly. Simple fixed interval —
-  // no per-tenant scheduling table yet, so every active tenant's admins get
-  // a weekly digest.
+  // First run 10 minutes after startup, then hourly. Each configurable
+  // schedule carries its own next_run_at, so an hourly tick delivers daily/
+  // weekly/monthly schedules when they come due (opt-in per tenant).
   setTimeout(() => {
-    runCycle().catch(e => console.error('Scheduled reports error:', e));
-    setInterval(() => runCycle().catch(e => console.error('Scheduled reports error:', e)), 7 * 24 * 60 * 60 * 1000);
+    runCycle().catch(e => console.error('Report schedule runner error:', e));
+    setInterval(() => runCycle().catch(e => console.error('Report schedule runner error:', e)), 60 * 60 * 1000);
   }, 10 * 60 * 1000);
 }
 
@@ -250,8 +250,8 @@ const startServer = async () => {
     // Appointment SMS reminders (24h / 2h before, every 30 min)
     scheduleAppointmentReminders();
 
-    // Weekly emailed report digests to tenant admins
-    scheduleWeeklyReports();
+    // Configurable emailed report schedules (per-tenant, checked hourly)
+    scheduleReportRunner();
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }

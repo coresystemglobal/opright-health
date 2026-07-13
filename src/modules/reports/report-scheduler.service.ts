@@ -42,9 +42,25 @@ function digestHtml(tenantName: string, valuation: any, ops: any, revenue: any):
 }
 
 /**
+ * Build the multi-section digest HTML for a tenant over a date range.
+ * Reused by both the legacy all-tenant digest and configurable schedules.
+ */
+export async function buildTenantDigestHtml(tenantId: string, tenantName: string, dateRange: { startDate: Date; endDate: Date }): Promise<string> {
+  const [valuation, ops, revenue] = await Promise.all([
+    reportsService.getInventoryValuationReport(tenantId).catch(() => null),
+    reportsService.getOperationalMetricsReport(dateRange).catch(() => null),
+    reportsService.getTrendsReport({ metric: 'revenue', period: 'daily', dateRange }).catch(() => null)
+  ]);
+  return digestHtml(tenantName, valuation, ops, revenue);
+}
+
+/**
  * Build a weekly digest per active tenant and email it to that tenant's
  * admins. Best-effort and non-fatal — a failure for one tenant/recipient
  * doesn't stop the rest. Returns the number of emails sent.
+ *
+ * Superseded by configurable schedules (report-schedule.service) but kept
+ * for reuse/testing.
  */
 export async function runScheduledReports(): Promise<number> {
   const now = new Date();

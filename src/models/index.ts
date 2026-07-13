@@ -109,6 +109,8 @@ export { DataSubjectRequest, DataRequestType, DataRequestStatus } from '@modules
 
 export { ConsentSignature, SignerRole, SignatureType } from '@modules/compliance/consent-signature.model';
 
+export { ReportSchedule, ScheduledReportType, ScheduleFormat, ScheduleFrequency } from '@modules/reports/report-schedule.model';
+
 // Medical Supplies / Equipment Models
 export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
 
@@ -250,6 +252,8 @@ import { DataSubjectRequest } from '@modules/compliance/data-subject-request.mod
 
 import { ConsentSignature } from '@modules/compliance/consent-signature.model';
 
+import { ReportSchedule } from '@modules/reports/report-schedule.model';
+
 import { SupplyItem } from '@modules/supplies/supply-item.model';
 
 import { SupplyMovement } from '@modules/supplies/supply-movement.model';
@@ -334,6 +338,7 @@ export const models = [
   ConsentRecord,
   DataSubjectRequest,
   ConsentSignature,
+  ReportSchedule,
   SupplyItem,
   SupplyMovement,
   Equipment,
