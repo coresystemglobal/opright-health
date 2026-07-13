@@ -40,6 +40,9 @@ import complianceRouter from '@modules/compliance/compliance.route';
 // Medical Supplies & Equipment
 import suppliesRouter from '@modules/supplies/supplies.route';
 
+// Staff & HR
+import staffRouter from '@modules/staff/staff.route';
+
 // Appointments & Clinical
 import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
@@ -119,6 +122,7 @@ router.use('/api/pharmacy', pharmacyRouter);
 router.use('/api/insurance', insuranceRouter);
 router.use('/api/compliance', complianceRouter);
 router.use('/api/supplies', suppliesRouter);
+router.use('/api/staff', staffRouter);
 
 // Appointments & Clinical
 router.use('/api/appointments', appointmentRouter);
