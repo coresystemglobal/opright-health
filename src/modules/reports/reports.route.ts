@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { reportsController } from './reports.controller';
+import reportScheduleController from './report-schedule.controller';
 import authentication from '@middlewares/authentication';
 import { tenantMiddleware } from '@middlewares/tenant.middleware';
 import { checkPermission } from '@middlewares/permission.middleware';
 import { PERMISSIONS } from '@config/rbac.config';
+import { validate, validateParams, reportScheduleValidation, genericValidation } from '@utils/validator';
 
 const router = Router();
 
@@ -31,6 +33,14 @@ router.get('/trends', ANALYTICS_VIEW, reportsController.getTrendsReport);
 
 // Infrastructure/system health — analytics-tier (admins) only
 router.get('/system-health', ANALYTICS_VIEW, reportsController.getSystemHealthReport);
+
+// ── Configurable report schedules (analytics-tier) ──────────────────────────
+router.post('/schedules', ANALYTICS_VIEW, validate(reportScheduleValidation.create), reportScheduleController.create);
+router.get('/schedules', ANALYTICS_VIEW, reportScheduleController.list);
+router.get('/schedules/:id', ANALYTICS_VIEW, validateParams(genericValidation.id), reportScheduleController.get);
+router.put('/schedules/:id', ANALYTICS_VIEW, validateParams(genericValidation.id), validate(reportScheduleValidation.update), reportScheduleController.update);
+router.delete('/schedules/:id', ANALYTICS_VIEW, validateParams(genericValidation.id), reportScheduleController.remove);
+router.post('/schedules/:id/run', ANALYTICS_VIEW, validateParams(genericValidation.id), reportScheduleController.runNow);
 
 router.post('/custom', REPORTS_VIEW, reportsController.getCustomReport);
 
