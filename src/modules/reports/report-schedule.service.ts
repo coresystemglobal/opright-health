@@ -8,6 +8,7 @@ import { reportsService } from '@modules/reports/reports.service';
 import {
   flattenFinancial, flattenOperationalMetrics, flattenTrends, flattenInventoryValuation,
   flattenPatientDemographics, flattenDoctorPerformance, flattenAppointmentAnalytics,
+  flattenPrescriptionDispensing, flattenWaitlistNoShow, flattenInsuranceClaims,
   renderCsv, renderExcel, renderPdf, FlatReport
 } from '@modules/reports/report-export.service';
 import { buildTenantDigestHtml } from '@modules/reports/report-scheduler.service';
@@ -73,6 +74,12 @@ async function buildFlatReport(schedule: ReportSchedule, dateRange: { startDate:
       return flattenDoctorPerformance(await reportsService.getDoctorPerformanceReport(dateRange));
     case ScheduledReportType.APPOINTMENT_ANALYTICS:
       return flattenAppointmentAnalytics(await reportsService.getAppointmentAnalyticsReport(dateRange));
+    case ScheduledReportType.PRESCRIPTION_DISPENSING:
+      return flattenPrescriptionDispensing(await reportsService.getPrescriptionDispensingReport(schedule.tenant_id, dateRange));
+    case ScheduledReportType.WAITLIST_NO_SHOW:
+      return flattenWaitlistNoShow(await reportsService.getWaitlistNoShowReport(schedule.tenant_id, dateRange));
+    case ScheduledReportType.INSURANCE_CLAIMS:
+      return flattenInsuranceClaims(await reportsService.getInsuranceClaimsReport(schedule.tenant_id, dateRange));
     default:
       throw new Error(`Report type ${schedule.report_type} has no flat representation`);
   }
