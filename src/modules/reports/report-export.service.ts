@@ -250,6 +250,116 @@ export function flattenTrends(data: any): FlatReport {
   };
 }
 
+export function flattenPrescriptionDispensing(data: any): FlatReport {
+  const d = data.dispensing || {};
+  return {
+    reportTitle: 'Prescription & Dispensing Report',
+    period: data.period,
+    sections: [
+      {
+        title: 'Summary',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Total Prescriptions', data.total_prescriptions],
+          ['Total Items', d.total_items],
+          ['Dispensed Items', d.dispensed_items],
+          ['Pending Items', d.pending_items],
+          ['Item Dispense Rate (%)', d.item_dispense_rate],
+          ['Quantity Prescribed', d.quantity_prescribed],
+          ['Quantity Dispensed', d.quantity_dispensed],
+          ['Quantity Fill Rate (%)', d.quantity_fill_rate],
+          ['Fully Dispensed', d.fully_dispensed_prescriptions],
+          ['Partially Dispensed', d.partially_dispensed_prescriptions]
+        ]
+      },
+      {
+        title: 'Status Breakdown',
+        headers: ['Status', 'Count'],
+        rows: Object.entries(data.status_breakdown || {}).map(([k, v]) => [k, v as number])
+      },
+      {
+        title: 'Top Medications',
+        headers: ['Medication', 'Prescriptions', 'Qty Prescribed', 'Qty Dispensed'],
+        rows: (data.top_medications || []).map((m: any) => [m.medication, m.prescriptions, m.quantity_prescribed, m.quantity_dispensed])
+      }
+    ]
+  };
+}
+
+export function flattenWaitlistNoShow(data: any): FlatReport {
+  const w = data.waitlist || {};
+  const a = data.appointments || {};
+  return {
+    reportTitle: 'Waitlist & No-Show Report',
+    period: data.period,
+    sections: [
+      {
+        title: 'Waitlist',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Total Entries', w.total_entries],
+          ['Scheduled From Waitlist', w.scheduled_from_waitlist],
+          ['Promotion Rate (%)', w.promotion_rate],
+          ['Expired', w.expired]
+        ]
+      },
+      {
+        title: 'Waitlist Status Breakdown',
+        headers: ['Status', 'Count'],
+        rows: Object.entries(w.status_breakdown || {}).map(([k, v]) => [k, v as number])
+      },
+      {
+        title: 'Appointments',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Total', a.total],
+          ['Completed', a.completed],
+          ['Cancelled', a.cancelled],
+          ['No-Show', a.no_show],
+          ['No-Show Rate (%)', a.no_show_rate],
+          ['Cancellation Rate (%)', a.cancellation_rate]
+        ]
+      }
+    ]
+  };
+}
+
+export function flattenInsuranceClaims(data: any): FlatReport {
+  const f = data.financials || {};
+  return {
+    reportTitle: 'Insurance Claims Report',
+    period: data.period,
+    sections: [
+      {
+        title: 'Summary',
+        headers: ['Metric', 'Value'],
+        rows: [
+          ['Total Claims', data.total_claims],
+          ['Total Claimed', f.total_claimed],
+          ['Total Approved', f.total_approved],
+          ['Approval Rate (%)', f.approval_rate],
+          ['Rejection Rate (%)', f.rejection_rate]
+        ]
+      },
+      {
+        title: 'Status Breakdown',
+        headers: ['Status', 'Count'],
+        rows: Object.entries(data.status_breakdown || {}).map(([k, v]) => [k, v as number])
+      },
+      {
+        title: 'Type Breakdown',
+        headers: ['Type', 'Count'],
+        rows: Object.entries(data.type_breakdown || {}).map(([k, v]) => [k, v as number])
+      },
+      {
+        title: 'By Provider',
+        headers: ['Provider', 'Claims', 'Claimed', 'Approved'],
+        rows: (data.by_provider || []).map((p: any) => [p.provider, p.claims, p.claimed_amount, p.approved_amount])
+      }
+    ]
+  };
+}
+
 // ── Renderers ────────────────────────────────────────────────────────────────
 
 function csvEscape(value: string | number): string {

@@ -19,3 +19,6 @@ export * from './pharmacy.validator';
 export * from './insurance.validator';
 export * from './compliance.validator';
 export * from './supply.validator';
+export * from './staff.validator';
+export * from './iot.validator';
+export * from './telemedicine.validator';

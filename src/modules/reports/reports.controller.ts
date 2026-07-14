@@ -9,6 +9,9 @@ import {
   flattenInventoryValuation,
   flattenOperationalMetrics,
   flattenTrends,
+  flattenPrescriptionDispensing,
+  flattenWaitlistNoShow,
+  flattenInsuranceClaims,
   renderCsv,
   renderExcel,
   renderPdf
@@ -273,6 +276,63 @@ export const reportsController = {
     }
   },
 
+  getPrescriptionDispensingReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
+    try {
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant ID is required' });
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = { startDate: new Date(startDate), endDate: new Date(endDate) };
+        if (dateRange.startDate > dateRange.endDate) return res.status(400).json({ success: false, message: 'Start date must be before end date' });
+      }
+      const report = await reportsService.getPrescriptionDispensingReport(tenantId, dateRange);
+      return res.status(200).json({ success: true, message: 'Prescription dispensing report retrieved successfully', data: report });
+    } catch (error) {
+      console.error('Get prescription dispensing report error:', error);
+      return res.status(500).json({ success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  },
+
+  getWaitlistNoShowReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
+    try {
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant ID is required' });
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = { startDate: new Date(startDate), endDate: new Date(endDate) };
+        if (dateRange.startDate > dateRange.endDate) return res.status(400).json({ success: false, message: 'Start date must be before end date' });
+      }
+      const report = await reportsService.getWaitlistNoShowReport(tenantId, dateRange);
+      return res.status(200).json({ success: true, message: 'Waitlist and no-show report retrieved successfully', data: report });
+    } catch (error) {
+      console.error('Get waitlist/no-show report error:', error);
+      return res.status(500).json({ success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  },
+
+  getInsuranceClaimsReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
+    try {
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant ID is required' });
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      let dateRange;
+      if (startDate && endDate) {
+        dateRange = { startDate: new Date(startDate), endDate: new Date(endDate) };
+        if (dateRange.startDate > dateRange.endDate) return res.status(400).json({ success: false, message: 'Start date must be before end date' });
+      }
+      const report = await reportsService.getInsuranceClaimsReport(tenantId, dateRange);
+      return res.status(200).json({ success: true, message: 'Insurance claims report retrieved successfully', data: report });
+    } catch (error) {
+      console.error('Get insurance claims report error:', error);
+      return res.status(500).json({ success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  },
+
   getSystemHealthReport: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
       // System health metrics
@@ -345,7 +405,7 @@ export const reportsController = {
 
       // Finance-tier report types require finance access even via export
       // (the route only enforces reports:view broadly).
-      if (['financial', 'inventory-valuation'].includes(reportType)) {
+      if (['financial', 'inventory-valuation', 'insurance-claims'].includes(reportType)) {
         const role = (req as any).user?.role;
         const perms = ROLE_PERMISSIONS[role] || [];
         if (!perms.includes(PERMISSIONS.INVOICE_VIEW)) {
@@ -407,10 +467,28 @@ export const reportsController = {
           flat = flattenTrends(await reportsService.getTrendsReport({ metric: metric as any, period: period as any, dateRange }));
           break;
         }
+        case 'prescription-dispensing': {
+          const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+          if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant ID is required for prescription dispensing' });
+          flat = flattenPrescriptionDispensing(await reportsService.getPrescriptionDispensingReport(tenantId, dateRange));
+          break;
+        }
+        case 'waitlist-no-show': {
+          const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+          if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant ID is required for waitlist/no-show' });
+          flat = flattenWaitlistNoShow(await reportsService.getWaitlistNoShowReport(tenantId, dateRange));
+          break;
+        }
+        case 'insurance-claims': {
+          const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+          if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant ID is required for insurance claims' });
+          flat = flattenInsuranceClaims(await reportsService.getInsuranceClaimsReport(tenantId, dateRange));
+          break;
+        }
         default:
           return res.status(400).json({
             success: false,
-            message: `Unknown report type '${reportType}'. Supported: patient-demographics, doctor-performance, financial, appointment-analytics, inventory-valuation, operational-metrics, trends`
+            message: `Unknown report type '${reportType}'. Supported: patient-demographics, doctor-performance, financial, appointment-analytics, inventory-valuation, operational-metrics, trends, prescription-dispensing, waitlist-no-show, insurance-claims`
           });
       }
 

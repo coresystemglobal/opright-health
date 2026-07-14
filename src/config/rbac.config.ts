@@ -66,7 +66,11 @@ export const PERMISSIONS = {
 
   // Reports
   REPORTS_VIEW: 'reports:view',
-  ANALYTICS_VIEW: 'analytics:view'
+  ANALYTICS_VIEW: 'analytics:view',
+
+  // Staff & HR
+  STAFF_VIEW: 'staff:view',
+  STAFF_MANAGE: 'staff:manage'
 };
 
 export const ROLE_PERMISSIONS = {
@@ -94,7 +98,9 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.APPOINTMENT_UPDATE,
     PERMISSIONS.INVOICE_VIEW,
     PERMISSIONS.REPORTS_VIEW,
-    PERMISSIONS.ANALYTICS_VIEW
+    PERMISSIONS.ANALYTICS_VIEW,
+    PERMISSIONS.STAFF_VIEW,
+    PERMISSIONS.STAFF_MANAGE
   ],
 
   [ROLES.DOCTOR]: [

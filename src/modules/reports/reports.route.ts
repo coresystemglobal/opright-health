@@ -26,6 +26,12 @@ router.get('/appointment-analytics', REPORTS_VIEW, reportsController.getAppointm
 
 router.get('/financial', FINANCE_VIEW, reportsController.getFinancialReport);
 router.get('/inventory-valuation', FINANCE_VIEW, reportsController.getInventoryValuationReport);
+// Insurance claims are money-tier → finance access
+router.get('/insurance-claims', FINANCE_VIEW, reportsController.getInsuranceClaimsReport);
+
+// Clinical / operational summaries → reports:view
+router.get('/prescription-dispensing', REPORTS_VIEW, reportsController.getPrescriptionDispensingReport);
+router.get('/waitlist-no-show', REPORTS_VIEW, reportsController.getWaitlistNoShowReport);
 
 router.get('/operational-metrics', ANALYTICS_VIEW, reportsController.getOperationalMetricsReport);
 // ?metric=revenue|patients|appointments&period=daily|weekly|monthly&startDate=&endDate=
