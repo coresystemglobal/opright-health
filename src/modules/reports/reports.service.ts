@@ -1,4 +1,4 @@
-import { Patient, Doctor, Appointment, Invoice, Payment, User, PharmacyItem, StockBatch, SupplyItem, Bed, Admission, TestOrder } from '../../models';
+import { Patient, Doctor, Appointment, Invoice, Payment, User, PharmacyItem, StockBatch, SupplyItem, Bed, Admission, TestOrder, Prescription, PrescriptionItem, PrescriptionStatus, AppointmentWaitlist, WaitlistStatus, AppointmentStatus, InsuranceClaim, InsuranceProvider, ClaimStatus, ClaimType } from '../../models';
 import { Op } from 'sequelize';
 import { PaginationQuery } from '@appTypes/common.types';
 import { PaginationUtil } from '@utils/pagination.util';
@@ -813,6 +813,191 @@ export const reportsService = {
       };
     } catch (error) {
       console.error('Get trends report error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Prescription & pharmacy dispensing report (tenant-scoped). Status mix,
+   * item-level dispensing fulfilment, and the most-prescribed medications over
+   * the window.
+   */
+  getPrescriptionDispensingReport: async (tenantId: string, dateRange?: DateRange) => {
+    try {
+      const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+      const where: any = { tenant_id: tenantId };
+      if (dateRange) where.createdAt = { [Op.between]: [dateRange.startDate, dateRange.endDate] };
+
+      const prescriptions = await Prescription.findAll({
+        where,
+        include: [{ model: PrescriptionItem, as: 'items', attributes: ['medication_name', 'quantity', 'dispensed_quantity', 'is_dispensed'] }]
+      });
+
+      const statusBreakdown: Record<string, number> = {};
+      for (const s of Object.values(PrescriptionStatus)) statusBreakdown[s] = 0;
+
+      let totalItems = 0, dispensedItems = 0, pendingItems = 0, qtyPrescribed = 0, qtyDispensed = 0;
+      const medMap: Record<string, { medication: string; prescriptions: number; quantity_prescribed: number; quantity_dispensed: number }> = {};
+
+      for (const p of prescriptions as any[]) {
+        statusBreakdown[p.status] = (statusBreakdown[p.status] || 0) + 1;
+        for (const it of (p.items || [])) {
+          totalItems++;
+          const qty = it.quantity || 0;
+          const dq = it.dispensed_quantity || 0;
+          qtyPrescribed += qty;
+          qtyDispensed += dq;
+          if (it.is_dispensed) dispensedItems++; else pendingItems++;
+          const key = it.medication_name || 'unknown';
+          if (!medMap[key]) medMap[key] = { medication: key, prescriptions: 0, quantity_prescribed: 0, quantity_dispensed: 0 };
+          medMap[key].prescriptions++;
+          medMap[key].quantity_prescribed += qty;
+          medMap[key].quantity_dispensed += dq;
+        }
+      }
+
+      const topMedications = Object.values(medMap)
+        .sort((a, b) => b.quantity_prescribed - a.quantity_prescribed)
+        .slice(0, 20);
+
+      return {
+        period: dateRange ? `${dateRange.startDate.toISOString().slice(0, 10)} to ${dateRange.endDate.toISOString().slice(0, 10)}` : 'All time',
+        generated_at: new Date().toISOString(),
+        total_prescriptions: prescriptions.length,
+        status_breakdown: statusBreakdown,
+        dispensing: {
+          total_items: totalItems,
+          dispensed_items: dispensedItems,
+          pending_items: pendingItems,
+          item_dispense_rate: totalItems ? round2((dispensedItems / totalItems) * 100) : 0,
+          quantity_prescribed: qtyPrescribed,
+          quantity_dispensed: qtyDispensed,
+          quantity_fill_rate: qtyPrescribed ? round2((qtyDispensed / qtyPrescribed) * 100) : 0,
+          fully_dispensed_prescriptions: statusBreakdown[PrescriptionStatus.DISPENSED] || 0,
+          partially_dispensed_prescriptions: statusBreakdown[PrescriptionStatus.PARTIALLY_DISPENSED] || 0
+        },
+        top_medications: topMedications
+      };
+    } catch (error) {
+      console.error('Get prescription dispensing report error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Waitlist & no-show report. The waitlist portion is tenant-scoped; the
+   * appointment no-show/cancellation portion is global by appointment_date
+   * (appointments are not tenant-scoped in the schema — consistent with the
+   * appointment-analytics report).
+   */
+  getWaitlistNoShowReport: async (tenantId: string, dateRange?: DateRange) => {
+    try {
+      const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+      // ── Waitlist (tenant-scoped) ──────────────────────────────────────────
+      const wlWhere: any = { tenant_id: tenantId };
+      if (dateRange) wlWhere.createdAt = { [Op.between]: [dateRange.startDate, dateRange.endDate] };
+      const waitlist = await AppointmentWaitlist.findAll({ where: wlWhere, attributes: ['status'] });
+
+      const wlStatus: Record<string, number> = {};
+      for (const s of Object.values(WaitlistStatus)) wlStatus[s] = 0;
+      for (const w of waitlist as any[]) wlStatus[w.status] = (wlStatus[w.status] || 0) + 1;
+      const wlTotal = waitlist.length;
+      const scheduledFromWaitlist = wlStatus[WaitlistStatus.SCHEDULED] || 0;
+
+      // ── Appointments no-show / cancellation (global by date) ──────────────
+      const apptWhere: any = {};
+      if (dateRange) apptWhere.appointment_date = { [Op.between]: [dateRange.startDate, dateRange.endDate] };
+      const appts = await Appointment.findAll({ where: apptWhere, attributes: ['status'] });
+      const apptTotal = appts.length;
+      const countStatus = (st: AppointmentStatus) => (appts as any[]).filter(a => a.status === st).length;
+      const noShow = countStatus(AppointmentStatus.NO_SHOW);
+      const cancelled = countStatus(AppointmentStatus.CANCELLED);
+      const completed = countStatus(AppointmentStatus.COMPLETED);
+
+      return {
+        period: dateRange ? `${dateRange.startDate.toISOString().slice(0, 10)} to ${dateRange.endDate.toISOString().slice(0, 10)}` : 'All time',
+        generated_at: new Date().toISOString(),
+        waitlist: {
+          total_entries: wlTotal,
+          status_breakdown: wlStatus,
+          scheduled_from_waitlist: scheduledFromWaitlist,
+          promotion_rate: wlTotal ? round2((scheduledFromWaitlist / wlTotal) * 100) : 0,
+          expired: wlStatus[WaitlistStatus.EXPIRED] || 0
+        },
+        appointments: {
+          total: apptTotal,
+          completed,
+          cancelled,
+          no_show: noShow,
+          no_show_rate: apptTotal ? round2((noShow / apptTotal) * 100) : 0,
+          cancellation_rate: apptTotal ? round2((cancelled / apptTotal) * 100) : 0
+        }
+      };
+    } catch (error) {
+      console.error('Get waitlist/no-show report error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Insurance claims report (tenant-scoped): status and type mix, claimed vs
+   * approved value, approval/rejection rates, and a per-provider breakdown.
+   */
+  getInsuranceClaimsReport: async (tenantId: string, dateRange?: DateRange) => {
+    try {
+      const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+      const num = (v: any) => parseFloat(v?.toString() || '0');
+      const where: any = { tenant_id: tenantId };
+      if (dateRange) where.createdAt = { [Op.between]: [dateRange.startDate, dateRange.endDate] };
+
+      const claims = await InsuranceClaim.findAll({
+        where,
+        include: [{ model: InsuranceProvider, as: 'provider', attributes: ['id', 'name'] }]
+      });
+
+      const statusBreakdown: Record<string, number> = {};
+      for (const s of Object.values(ClaimStatus)) statusBreakdown[s] = 0;
+      const typeBreakdown: Record<string, number> = {};
+      for (const t of Object.values(ClaimType)) typeBreakdown[t] = 0;
+
+      let totalClaimed = 0, totalApproved = 0;
+      const providerMap: Record<string, { provider: string; claims: number; claimed_amount: number; approved_amount: number }> = {};
+
+      for (const c of claims as any[]) {
+        statusBreakdown[c.status] = (statusBreakdown[c.status] || 0) + 1;
+        typeBreakdown[c.claim_type] = (typeBreakdown[c.claim_type] || 0) + 1;
+        totalClaimed += num(c.claimed_amount);
+        totalApproved += num(c.approved_amount);
+        const pname = c.provider?.name || 'Unknown';
+        if (!providerMap[pname]) providerMap[pname] = { provider: pname, claims: 0, claimed_amount: 0, approved_amount: 0 };
+        providerMap[pname].claims++;
+        providerMap[pname].claimed_amount += num(c.claimed_amount);
+        providerMap[pname].approved_amount += num(c.approved_amount);
+      }
+
+      const total = claims.length;
+      const approvedCount = (statusBreakdown[ClaimStatus.APPROVED] || 0) + (statusBreakdown[ClaimStatus.PARTIALLY_APPROVED] || 0) + (statusBreakdown[ClaimStatus.PAID] || 0);
+      const rejectedCount = statusBreakdown[ClaimStatus.REJECTED] || 0;
+
+      return {
+        period: dateRange ? `${dateRange.startDate.toISOString().slice(0, 10)} to ${dateRange.endDate.toISOString().slice(0, 10)}` : 'All time',
+        generated_at: new Date().toISOString(),
+        total_claims: total,
+        status_breakdown: statusBreakdown,
+        type_breakdown: typeBreakdown,
+        financials: {
+          total_claimed: round2(totalClaimed),
+          total_approved: round2(totalApproved),
+          approval_rate: total ? round2((approvedCount / total) * 100) : 0,
+          rejection_rate: total ? round2((rejectedCount / total) * 100) : 0
+        },
+        by_provider: Object.values(providerMap)
+          .map(p => ({ ...p, claimed_amount: round2(p.claimed_amount), approved_amount: round2(p.approved_amount) }))
+          .sort((a, b) => b.claimed_amount - a.claimed_amount)
+      };
+    } catch (error) {
+      console.error('Get insurance claims report error:', error);
       throw error;
     }
   }
