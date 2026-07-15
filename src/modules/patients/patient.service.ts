@@ -5,6 +5,7 @@ import { ValidationUtil } from '@utils/validation.util';
 import { Op } from 'sequelize';
 import { sanitizeInput } from '@utils/validator';
 import { Gender } from '@modules/patients/patient.model';
+import { personService } from '@modules/mpi/person.service';
 
 
 interface CreatePatientData {
@@ -17,6 +18,9 @@ interface CreatePatientData {
   address?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  // National ID (NIN). When present, deterministically links the patient to a
+  // global MPI Person so the same human is recognized across hospitals.
+  national_id?: string;
   user_id?: string;
   tenant_id: string;
 }
@@ -153,6 +157,7 @@ export const patientService = {
         address,
         emergency_contact_name,
         emergency_contact_phone,
+        national_id,
         user_id,
         tenant_id
       } = patientData;
@@ -176,6 +181,20 @@ export const patientService = {
         throw new Error('Invalid emergency contact phone format');
       }
 
+      // Deterministic MPI link: resolve/create the global Person by national_id
+      // (if provided) before creating the patient, so the patient is born linked.
+      let person_id: string | null = null;
+      if (national_id) {
+        const person = await personService.resolveOrCreatePerson({
+          national_id,
+          first_name,
+          last_name,
+          date_of_birth,
+          gender
+        });
+        person_id = person?.id || null;
+      }
+
       const patient = await Patient.create({
         first_name,
         last_name,
@@ -186,6 +205,7 @@ export const patientService = {
         address: address || null,
         emergency_contact_name: emergency_contact_name || null,
         emergency_contact_phone: emergency_contact_phone || null,
+        person_id,
         user_id: user_id || null,
         tenant_id
       } as any);

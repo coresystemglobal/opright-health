@@ -6,10 +6,10 @@ import {
   HasMany,
   BelongsTo,
   ForeignKey,
-  BeforeCreate,
-  Index
+  BeforeCreate
 } from 'sequelize-typescript';
 import { User } from '@modules/users/user.model';
+import { Person } from '@modules/mpi/person.model';
 
 import { Appointment } from '@modules/appointments/appointment.model';
 
@@ -31,7 +31,11 @@ export enum Gender {
   indexes: [
     {
       unique: true,
-      fields: ['mrn']
+      fields: ['tenant_id', 'mrn'],
+      name: 'patients_tenant_mrn_uq'
+    },
+    {
+      fields: ['person_id']
     },
     {
       fields: ['email']
@@ -52,11 +56,11 @@ export class Patient extends Model {
   })
   override id!: string;
 
-  @Index({ unique: true })
+  // MRN is unique PER TENANT (composite index in @Table.indexes above), not
+  // globally — the same code may exist at two different hospitals.
   @Column({
     type: DataType.STRING(20),
-    allowNull: false,
-    unique: true
+    allowNull: false
   })
   mrn!: string;
 
@@ -127,6 +131,17 @@ export class Patient extends Model {
   @BelongsTo(() => Tenant)
   tenant?: Tenant;
 
+  // Link to the global MPI Person identity (nullable until matched/linked).
+  @ForeignKey(() => Person)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  person_id?: string;
+
+  @BelongsTo(() => Person)
+  person?: Person;
+
   // Patient has opted out of SMS notifications (reminders, etc.)
   @Column({
     type: DataType.BOOLEAN,
@@ -172,14 +187,26 @@ export class Patient extends Model {
     return age;
   }
 
-  // Generate MRN before creating patient
+  // Generate a per-tenant MRN before create: `PAT` + a zero-padded 6-digit
+  // sequence, unique within the tenant. Uniqueness is enforced per-tenant by
+  // the (tenant_id, mrn) index; this picks the next free number with a bounded
+  // retry, and the index is the backstop against a concurrent-insert race.
   @BeforeCreate
   static async generateMRN(instance: Patient) {
-    if (!instance.mrn) {
-      const timestamp = Date.now().toString();
-      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      instance.mrn = `PAT${timestamp.slice(-6)}${random}`;
+    if (instance.mrn) return;
+    const model = instance.constructor as typeof Patient;
+    const tenantId = instance.tenant_id;
+    const base = await model.count({ where: { tenant_id: tenantId }, paranoid: false });
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const candidate = `PAT${String(base + 1 + attempt).padStart(6, '0')}`;
+      const clash = await model.count({ where: { tenant_id: tenantId, mrn: candidate }, paranoid: false });
+      if (!clash) {
+        instance.mrn = candidate;
+        return;
+      }
     }
+    // Fallback: random 6-digit within the tenant (index still guarantees uniqueness).
+    instance.mrn = `PAT${Math.floor(100000 + Math.random() * 900000)}`;
   }
 
   // Instance method to get masked phone for privacy

@@ -112,6 +112,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 ## 5. Patient Management
 
 - [x] 🟢 Patient registration and profile — full CRUD module (`modules/patients`) with validation, permissions, and plan-capacity check on create
+- [x] 🟢 Master Patient Index (MPI) — **Phase 1**: global `persons` table (cross-tenant identity, NIN/verified-contact keys with partial-unique indexes) + `patient.person_id` link; MRN now **unique per-tenant** (`PAT`+6 digits, was global `PAT`+9); NIN deterministic auto-link on patient create + manual `POST/DELETE /api/patients/:id/link-person` and `GET /api/persons/search|:id`. *Phase 2 (consent-gated cross-tenant record sharing) and Phase 3 (DTC platform tenant) to follow; companion PR to close accidental cross-tenant patient lookups.*
 - [x] 🟢 Patient portal — `/api/portal`: dashboard summary + self-service appointments, prescriptions, invoices, lab results and profile; every endpoint resolves the patient from the authenticated user (own-data-only), reusing the domain services (login uses existing auth)
 - [ ] 🔴 Patient mobile app API (`mobile-api.service.ts` exists — review completeness)
 - [ ] 🔴 Patient medical history timeline view
