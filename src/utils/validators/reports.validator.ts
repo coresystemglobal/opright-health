@@ -25,7 +25,7 @@ export const reportValidation = {
   })
 };
 
-const REPORT_TYPES = ['digest', 'financial', 'operational-metrics', 'trends', 'inventory-valuation', 'patient-demographics', 'doctor-performance', 'appointment-analytics'];
+const REPORT_TYPES = ['digest', 'financial', 'operational-metrics', 'trends', 'inventory-valuation', 'patient-demographics', 'doctor-performance', 'appointment-analytics', 'prescription-dispensing', 'waitlist-no-show', 'insurance-claims'];
 const FORMATS = ['html', 'csv', 'xlsx', 'pdf'];
 const FREQUENCIES = ['daily', 'weekly', 'monthly'];
 
