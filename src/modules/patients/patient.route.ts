@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express';
 import patientController from './patient.controller';
+import mpiController from '@modules/mpi/mpi.controller';
 import authentication from '@middlewares/authentication';
 import { checkPermission } from '@middlewares/permission.middleware';
 import { tenantMiddleware } from '@middlewares/tenant.middleware';
 import { checkResourceLimit } from '@middlewares/billing.middleware';
 import { PERMISSIONS } from '@config/rbac.config';
-import { validate, validateParams, validateQuery, patientValidation, genericValidation } from '@utils/validator';
+import { validate, validateParams, validateQuery, patientValidation, mpiValidation, genericValidation } from '@utils/validator';
 
 const patientRouter = express.Router();
 
@@ -60,6 +61,24 @@ patientRouter.delete('/:id',
   async (req: Request, res: Response) => {
     await patientController.deletePatient(req, res);
   }
+);
+
+// ── MPI: link/unlink a patient to a global Person identity (tenant-scoped) ──
+patientRouter.post('/:id/link-person',
+  authentication,
+  tenantMiddleware,
+  checkPermission(PERMISSIONS.PATIENT_UPDATE),
+  validateParams(genericValidation.id),
+  validate(mpiValidation.linkPerson),
+  (req: Request, res: Response) => mpiController.linkPerson(req, res)
+);
+
+patientRouter.delete('/:id/link-person',
+  authentication,
+  tenantMiddleware,
+  checkPermission(PERMISSIONS.PATIENT_UPDATE),
+  validateParams(genericValidation.id),
+  (req: Request, res: Response) => mpiController.unlinkPerson(req, res)
 );
 
 export default patientRouter;

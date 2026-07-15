@@ -125,6 +125,9 @@ export { DeviceReading } from '@modules/iot/device-reading.model';
 // Telemedicine Models
 export { TelemedicineSession, TelemedicineProvider, TelemedicineStatus } from '@modules/telemedicine/telemedicine-session.model';
 
+// MPI / Global Person Identity
+export { Person, PersonGender, PersonStatus } from '@modules/mpi/person.model';
+
 // Medical Supplies / Equipment Models
 export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
 
@@ -284,6 +287,8 @@ import { DeviceReading } from '@modules/iot/device-reading.model';
 
 import { TelemedicineSession } from '@modules/telemedicine/telemedicine-session.model';
 
+import { Person } from '@modules/mpi/person.model';
+
 import { SupplyItem } from '@modules/supplies/supply-item.model';
 
 import { SupplyMovement } from '@modules/supplies/supply-movement.model';
@@ -380,6 +385,8 @@ export const models = [
   DeviceReading,
   // Telemedicine
   TelemedicineSession,
+  // MPI / Global Person Identity
+  Person,
   SupplyItem,
   SupplyMovement,
   Equipment,
