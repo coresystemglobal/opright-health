@@ -13,6 +13,7 @@ export const patientValidation = {
     address: commonSchemas.longText.optional(),
     emergency_contact_name: commonSchemas.name.optional(),
     emergency_contact_phone: commonSchemas.phone.optional(),
+    national_id: Joi.string().max(30).trim().optional(),
     sms_opt_out: Joi.boolean().optional()
   }),
 

@@ -47,6 +47,9 @@ import staffRouter from '@modules/staff/staff.route';
 import iotRouter from '@modules/iot/iot.route';
 import telemedicineRouter from '@modules/telemedicine/telemedicine.route';
 
+// MPI / Global Person Identity
+import mpiRouter from '@modules/mpi/mpi.route';
+
 // Appointments & Clinical
 import appointmentRouter from '@modules/appointments/appointment.route';
 import medicationRouter from '@modules/clinical/medication.route';
@@ -129,6 +132,7 @@ router.use('/api/supplies', suppliesRouter);
 router.use('/api/staff', staffRouter);
 router.use('/api/iot', iotRouter);
 router.use('/api/telemedicine', telemedicineRouter);
+router.use('/api/persons', mpiRouter);
 
 // Appointments & Clinical
 router.use('/api/appointments', appointmentRouter);
