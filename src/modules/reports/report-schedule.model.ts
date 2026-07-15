@@ -12,7 +12,10 @@ export enum ScheduledReportType {
   INVENTORY_VALUATION = 'inventory-valuation',
   PATIENT_DEMOGRAPHICS = 'patient-demographics',
   DOCTOR_PERFORMANCE = 'doctor-performance',
-  APPOINTMENT_ANALYTICS = 'appointment-analytics'
+  APPOINTMENT_ANALYTICS = 'appointment-analytics',
+  PRESCRIPTION_DISPENSING = 'prescription-dispensing',
+  WAITLIST_NO_SHOW = 'waitlist-no-show',
+  INSURANCE_CLAIMS = 'insurance-claims'
 }
 
 export enum ScheduleFormat {
