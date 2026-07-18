@@ -27,7 +27,9 @@ const patientController = {
   getPatientById: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      const patient = await patientService.getPatientById(id);
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      const patient = await patientService.getPatientById(id, tenantId);
       return ResponseUtil.success(res, patient, 'Patient retrieved successfully');
     } catch (error) {
       if (error instanceof Error && error.message === 'Patient not found') {
@@ -91,7 +93,9 @@ const patientController = {
   updatePatient: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      const patient = await patientService.updatePatient(id, req.body);
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      const patient = await patientService.updatePatient(id, tenantId, req.body);
       return ResponseUtil.success(res, patient, 'Patient updated successfully');
     } catch (error) {
       if (error instanceof Error && error.message === 'Patient not found') {
@@ -108,7 +112,9 @@ const patientController = {
   deletePatient: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      await patientService.deletePatient(id);
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      await patientService.deletePatient(id, tenantId);
       return ResponseUtil.success(res, null, 'Patient deleted successfully');
     } catch (error) {
       if (error instanceof Error && error.message === 'Patient not found') {

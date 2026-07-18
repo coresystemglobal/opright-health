@@ -25,6 +25,7 @@ patientRouter.get('/',
 
 patientRouter.get('/:id',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.PATIENT_VIEW),
   validateParams(genericValidation.id),
   async (req: Request, res: Response) => {
@@ -46,6 +47,7 @@ patientRouter.post('/',
 
 patientRouter.put('/:id',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.PATIENT_UPDATE),
   validateParams(genericValidation.id),
   validate(patientValidation.update),
@@ -56,6 +58,7 @@ patientRouter.put('/:id',
 
 patientRouter.delete('/:id',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.PATIENT_DELETE),
   validateParams(genericValidation.id),
   async (req: Request, res: Response) => {
