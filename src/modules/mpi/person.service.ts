@@ -1,7 +1,8 @@
 import { Op, Transaction } from 'sequelize';
-import { Person, Patient, AuditLog } from '../../models';
+import { Person, Patient, AuditLog, User } from '../../models';
 import { PersonStatus, PersonGender } from '@modules/mpi/person.model';
 import { AuditAction } from '@modules/audit/audit-log.model';
+import { getPlatformTenant } from '@config/platform.config';
 import { ValidationUtil } from '@utils/validation.util';
 
 interface PersonIdentityInput {
@@ -141,6 +142,63 @@ export const personService = {
     } as any).catch(() => { /* audit is best-effort */ });
 
     return { patient, person };
+  },
+
+  /**
+   * Direct-to-consumer self-enrollment. Gives an authenticated user (who
+   * belongs to no hospital) a Patient record under the platform tenant, linked
+   * to a verified global Person — so they can use telemedicine, hold record
+   * shares, etc. Idempotent: returns the existing platform patient if already
+   * enrolled.
+   */
+  selfEnrollConsumer: async (userId: string, data: { date_of_birth: string; national_id?: string; phone?: string }) => {
+    if (!ValidationUtil.isValidUUID(userId)) throw new Error('Invalid user ID format');
+    if (!data.date_of_birth) throw new Error('date_of_birth is required');
+
+    const platform = await getPlatformTenant();
+    if (!platform) throw new Error('Platform tenant is not available');
+
+    const user: any = await User.findByPk(userId);
+    if (!user) throw new Error('User not found');
+
+    const existing = await Patient.findOne({ where: { user_id: userId, tenant_id: platform.id } });
+    if (existing) {
+      const person = existing.person_id ? await Person.findByPk(existing.person_id) : null;
+      return { patient: existing, person, already_enrolled: true };
+    }
+
+    // Resolve/create a verified Person (email-verified via signup; NIN if given).
+    const nationalId = data.national_id?.trim();
+    let person: Person | null = null;
+    if (nationalId) {
+      person = await Person.findOne({ where: { national_id: nationalId, status: { [Op.ne]: PersonStatus.MERGED } } });
+    }
+    if (!person && user.email) {
+      person = await Person.findOne({ where: { verified_email: user.email, status: { [Op.ne]: PersonStatus.MERGED } } });
+    }
+    if (!person) {
+      person = await Person.create({
+        national_id: nationalId || null,
+        verified_email: user.email || null,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        date_of_birth: data.date_of_birth,
+        status: PersonStatus.VERIFIED
+      } as any);
+    }
+
+    const patient = await Patient.create({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      date_of_birth: data.date_of_birth,
+      email: user.email || null,
+      phone: data.phone || user.phone || null,
+      user_id: userId,
+      person_id: person.id,
+      tenant_id: platform.id
+    } as any);
+
+    return { patient, person, already_enrolled: false };
   },
 
   /** Detach a patient from its Person (correcting a mis-link). */

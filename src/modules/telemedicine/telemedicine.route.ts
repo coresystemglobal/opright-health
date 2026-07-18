@@ -1,11 +1,14 @@
 import express, { Request, Response } from 'express';
 import telemedicineController from './telemedicine.controller';
 import authentication from '@middlewares/authentication';
-import { tenantMiddleware } from '@middlewares/tenant.middleware';
+import { optionalTenantMiddleware } from '@middlewares/optional-tenant.middleware';
 import { validate, validateParams, validateQuery, telemedicineValidation, genericValidation } from '@utils/validator';
 
+// Telemedicine is a direct-to-consumer surface: hospital callers pass their
+// x-tenant-id and stay scoped to their tenant; self-service users with no
+// hospital fall back to the platform tenant.
 const telemedicineRouter = express.Router();
-const auth = [authentication, tenantMiddleware];
+const auth = [authentication, optionalTenantMiddleware];
 const wrap = (fn: (req: Request, res: Response) => Promise<Response>) => (req: Request, res: Response) => fn(req, res);
 
 telemedicineRouter.post('/sessions', ...auth, validate(telemedicineValidation.create), wrap(telemedicineController.create));
