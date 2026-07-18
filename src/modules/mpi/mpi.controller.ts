@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { personService } from '@modules/mpi/person.service';
+import { recordShareService } from '@modules/mpi/record-share.service';
+import { ShareScope } from '@modules/mpi/patient-record-share.model';
 import { ResponseUtil } from '@utils/response.util';
 
 const tenantOf = (req: Request) => (req as any).tenant?.id || (req.headers['x-tenant-id'] as string);
@@ -50,6 +52,51 @@ const mpiController = {
     try {
       return ResponseUtil.success(res, await personService.getPersonById(req.params.id), 'Person retrieved successfully');
     } catch (e) { return fail(res, e, 'retrieve person'); }
+  },
+
+  // ── Cross-tenant record sharing (Phase 2) ──────────────────────────────────
+  // POST /api/patients/:id/record-shares  (source tenant grants to a recipient)
+  createShare: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const tenantId = tenantOf(req);
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      const { recipient_tenant_id, scope, expires_at, consent_signature_id } = req.body;
+      const share = await recordShareService.createGrant({
+        patientId: req.params.id, sourceTenantId: tenantId, recipientTenantId: recipient_tenant_id,
+        scope: scope as ShareScope, expiresAt: expires_at, consentSignatureId: consent_signature_id, actorUserId: userOf(req)
+      });
+      return ResponseUtil.success(res, share, 'Record share granted successfully', 201);
+    } catch (e) { return fail(res, e, 'grant record share'); }
+  },
+
+  // POST /api/patients/:id/record-shares/:shareId/revoke
+  revokeShare: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const tenantId = tenantOf(req);
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      const share = await recordShareService.revokeGrant(req.params.shareId, tenantId);
+      return ResponseUtil.success(res, share, 'Record share revoked');
+    } catch (e) { return fail(res, e, 'revoke record share'); }
+  },
+
+  // GET /api/patients/:id/record-shares
+  listShares: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const tenantId = tenantOf(req);
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      const shares = await recordShareService.listGrants(req.params.id, tenantId);
+      return ResponseUtil.success(res, shares, 'Record shares retrieved successfully');
+    } catch (e) { return fail(res, e, 'retrieve record shares'); }
+  },
+
+  // GET /api/patients/:id/external-records  (recipient tenant reads shared records)
+  externalRecords: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const tenantId = tenantOf(req);
+      if (!tenantId) return ResponseUtil.error(res, 'Tenant ID is required', 400);
+      const data = await recordShareService.getExternalRecords(req.params.id, tenantId, userOf(req));
+      return ResponseUtil.success(res, data, 'External records retrieved successfully');
+    } catch (e) { return fail(res, e, 'retrieve external records'); }
   }
 };
 
