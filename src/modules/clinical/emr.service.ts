@@ -399,8 +399,10 @@ export class EMRService {
 
   // ============ COMPREHENSIVE PATIENT EMR ============
 
-  static async getPatientEMRSummary(patientId: string): Promise<any> {
-    const patient = await Patient.findByPk(patientId);
+  static async getPatientEMRSummary(patientId: string, tenantId?: string): Promise<any> {
+    const where: any = { id: patientId };
+    if (tenantId) where.tenant_id = tenantId; // tenant-scope when a context is available
+    const patient = await Patient.findOne({ where });
     if (!patient) {
       throw new Error('Patient not found');
     }

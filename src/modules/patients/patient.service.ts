@@ -88,13 +88,18 @@ export const patientService = {
     }
   },
 
-  getPatientById: async (patientId: string) => {
+  getPatientById: async (patientId: string, tenantId: string) => {
     try {
       if (!ValidationUtil.isValidUUID(patientId)) {
         throw new Error('Invalid patient ID format');
       }
+      if (!tenantId) {
+        throw new Error('Tenant ID is required');
+      }
 
-      const patient = await Patient.findByPk(patientId, {
+      // Tenant-scoped: a patient is only visible within its own tenant.
+      const patient = await Patient.findOne({
+        where: { id: patientId, tenant_id: tenantId },
         include: [
           {
             model: User,
@@ -217,13 +222,16 @@ export const patientService = {
     }
   },
 
-  updatePatient: async (patientId: string, updateData: UpdatePatientData) => {
+  updatePatient: async (patientId: string, tenantId: string, updateData: UpdatePatientData) => {
     try {
       if (!ValidationUtil.isValidUUID(patientId)) {
         throw new Error('Invalid patient ID format');
       }
+      if (!tenantId) {
+        throw new Error('Tenant ID is required');
+      }
 
-      const patient = await Patient.findByPk(patientId);
+      const patient = await Patient.findOne({ where: { id: patientId, tenant_id: tenantId } });
 
       if (!patient) {
         throw new Error('Patient not found');
@@ -242,13 +250,16 @@ export const patientService = {
     }
   },
 
-  deletePatient: async (patientId: string) => {
+  deletePatient: async (patientId: string, tenantId: string) => {
     try {
       if (!ValidationUtil.isValidUUID(patientId)) {
         throw new Error('Invalid patient ID format');
       }
+      if (!tenantId) {
+        throw new Error('Tenant ID is required');
+      }
 
-      const patient = await Patient.findByPk(patientId);
+      const patient = await Patient.findOne({ where: { id: patientId, tenant_id: tenantId } });
 
       if (!patient) {
         throw new Error('Patient not found');

@@ -23,5 +23,13 @@ export const mpiValidation = {
     national_id: Joi.string().max(30).trim().optional(),
     last_name: Joi.string().max(100).trim().optional(),
     date_of_birth: commonSchemas.date.optional()
-  }).or('national_id', 'last_name', 'date_of_birth')
+  }).or('national_id', 'last_name', 'date_of_birth'),
+
+  // Grant a cross-tenant record share (source tenant → recipient tenant).
+  createShare: Joi.object({
+    recipient_tenant_id: commonSchemas.uuid,
+    scope: Joi.string().valid('demographics', 'allergies', 'medications', 'lab_results', 'clinical_notes', 'full_record').required(),
+    expires_at: commonSchemas.date.optional(),
+    consent_signature_id: commonSchemas.optionalUuid
+  })
 };

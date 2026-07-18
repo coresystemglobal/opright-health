@@ -72,8 +72,11 @@ export class MLPredictionService {
     RECENT_DAYS: parseInt(process.env.RECENT_DAYS || '90')
   };
 
-  static async predictPatientRisk(patientId: string): Promise<PredictionResponse> {
-    const patient = await Patient.findByPk(patientId, {
+  static async predictPatientRisk(patientId: string, tenantId?: string): Promise<PredictionResponse> {
+    const where: any = { id: patientId };
+    if (tenantId) where.tenant_id = tenantId; // tenant-scope when a context is available
+    const patient = await Patient.findOne({
+      where,
       include: [
         'appointments',
         { model: Allergy, as: 'allergies', where: { is_active: true }, required: false },
@@ -226,8 +229,11 @@ export class MLPredictionService {
     return this.ruleBasedDemandPrediction(historicalData);
   }
 
-  static async generateHealthInsights(patientId: string): Promise<any[]> {
-    const patient = await Patient.findByPk(patientId, {
+  static async generateHealthInsights(patientId: string, tenantId?: string): Promise<any[]> {
+    const where: any = { id: patientId };
+    if (tenantId) where.tenant_id = tenantId; // tenant-scope when a context is available
+    const patient = await Patient.findOne({
+      where,
       include: ['appointments']
     });
 

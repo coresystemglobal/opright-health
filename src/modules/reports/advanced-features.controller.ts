@@ -42,7 +42,8 @@ export class AdvancedFeaturesController {
   static async predictPatientRisk(req: TenantRequest, res: Response) {
     try {
       const { patientId } = req.params;
-      const prediction = await MLPredictionService.predictPatientRisk(patientId);
+      const tenantId = (req as any).tenant?.id || req.headers['x-tenant-id'] as string;
+      const prediction = await MLPredictionService.predictPatientRisk(patientId, tenantId);
       return ResponseUtil.success(res, prediction, 'Risk prediction completed');
     } catch (error: any) {
       return ResponseUtil.error(res, error.message);
