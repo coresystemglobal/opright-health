@@ -84,4 +84,39 @@ patientRouter.delete('/:id/link-person',
   (req: Request, res: Response) => mpiController.unlinkPerson(req, res)
 );
 
+// ── MPI Phase 2: consent-gated cross-tenant record sharing ──────────────────
+// Source tenant grants/lists/revokes; recipient tenant reads external records.
+patientRouter.post('/:id/record-shares',
+  authentication,
+  tenantMiddleware,
+  checkPermission(PERMISSIONS.RECORD_SHARE_GRANT),
+  validateParams(genericValidation.id),
+  validate(mpiValidation.createShare),
+  (req: Request, res: Response) => mpiController.createShare(req, res)
+);
+
+patientRouter.get('/:id/record-shares',
+  authentication,
+  tenantMiddleware,
+  checkPermission(PERMISSIONS.RECORD_SHARE_GRANT),
+  validateParams(genericValidation.id),
+  (req: Request, res: Response) => mpiController.listShares(req, res)
+);
+
+patientRouter.post('/:id/record-shares/:shareId/revoke',
+  authentication,
+  tenantMiddleware,
+  checkPermission(PERMISSIONS.RECORD_SHARE_GRANT),
+  validateParams(genericValidation.id),
+  (req: Request, res: Response) => mpiController.revokeShare(req, res)
+);
+
+patientRouter.get('/:id/external-records',
+  authentication,
+  tenantMiddleware,
+  checkPermission(PERMISSIONS.RECORD_SHARE_VIEW_EXTERNAL),
+  validateParams(genericValidation.id),
+  (req: Request, res: Response) => mpiController.externalRecords(req, res)
+);
+
 export default patientRouter;

@@ -127,6 +127,7 @@ export { TelemedicineSession, TelemedicineProvider, TelemedicineStatus } from '@
 
 // MPI / Global Person Identity
 export { Person, PersonGender, PersonStatus } from '@modules/mpi/person.model';
+export { PatientRecordShare, ShareScope, ShareStatus } from '@modules/mpi/patient-record-share.model';
 
 // Medical Supplies / Equipment Models
 export { SupplyItem, SupplyCategory, SupplyUnit } from '@modules/supplies/supply-item.model';
@@ -289,6 +290,8 @@ import { TelemedicineSession } from '@modules/telemedicine/telemedicine-session.
 
 import { Person } from '@modules/mpi/person.model';
 
+import { PatientRecordShare } from '@modules/mpi/patient-record-share.model';
+
 import { SupplyItem } from '@modules/supplies/supply-item.model';
 
 import { SupplyMovement } from '@modules/supplies/supply-movement.model';
@@ -387,6 +390,7 @@ export const models = [
   TelemedicineSession,
   // MPI / Global Person Identity
   Person,
+  PatientRecordShare,
   SupplyItem,
   SupplyMovement,
   Equipment,
