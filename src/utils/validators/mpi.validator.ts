@@ -25,6 +25,13 @@ export const mpiValidation = {
     date_of_birth: commonSchemas.date.optional()
   }).or('national_id', 'last_name', 'date_of_birth'),
 
+  // Direct-to-consumer self-enrollment (no hospital / tenant required).
+  selfEnroll: Joi.object({
+    date_of_birth: commonSchemas.date.required(),
+    national_id: Joi.string().max(30).trim().optional(),
+    phone: Joi.string().max(30).trim().optional()
+  }),
+
   // Grant a cross-tenant record share (source tenant → recipient tenant).
   createShare: Joi.object({
     recipient_tenant_id: commonSchemas.uuid,
