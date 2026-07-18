@@ -97,6 +97,21 @@ const mpiController = {
       const data = await recordShareService.getExternalRecords(req.params.id, tenantId, userOf(req));
       return ResponseUtil.success(res, data, 'External records retrieved successfully');
     } catch (e) { return fail(res, e, 'retrieve external records'); }
+  },
+
+  // POST /api/persons/self-enroll  (DTC: no hospital required)
+  selfEnroll: async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const userId = userOf(req);
+      if (!userId) return ResponseUtil.unauthorized(res);
+      const { date_of_birth, national_id, phone } = req.body;
+      const result = await personService.selfEnrollConsumer(userId, { date_of_birth, national_id, phone });
+      return ResponseUtil.success(
+        res, result,
+        result.already_enrolled ? 'Already enrolled as a platform patient' : 'Enrolled as a platform patient successfully',
+        result.already_enrolled ? 200 : 201
+      );
+    } catch (e) { return fail(res, e, 'self-enroll'); }
   }
 };
 
