@@ -12,6 +12,7 @@ import {
 import { User } from '@modules/users/user.model';
 
 import { TestResultStatus, ReferenceRange } from '@appTypes/laboratory.types';
+import { Tenant } from '@modules/tenancy/tenant.model';
 import { Op, fn, col } from 'sequelize';
 
 // Forward declaration to handle circular dependency
@@ -30,6 +31,9 @@ interface ITestOrder {
   paranoid: true,
   freezeTableName: true,
   indexes: [
+    {
+      fields: ['tenant_id']
+    },
     {
       fields: ['test_order_id']
     },
@@ -64,6 +68,18 @@ export class TestResult extends Model {
     primaryKey: true
   })
   override id!: string;
+
+  // Owning tenant (denormalized from the parent order for simple scoping;
+  // nullable so legacy rows survive).
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
 
   @ForeignKey(() => getTestOrderModel())
   @Column({

@@ -1,15 +1,15 @@
-import { 
-  LabTest, 
-  TestOrder, 
-  TestResult, 
-  Patient, 
-  Doctor, 
-  Appointment 
+import {
+  LabTest,
+  TestOrder,
+  TestResult,
+  Patient,
+  Doctor,
+  Appointment
 } from '../../models';
-import { 
-  TestCategory, 
-  SpecimenType, 
-  TestOrderStatus, 
+import {
+  TestCategory,
+  SpecimenType,
+  TestOrderStatus,
   TestUrgency,
   TestResultStatus,
   CreateTestOrderRequest,
@@ -21,22 +21,30 @@ import {
 import { PaginationOptions, ApiResponse } from '@appTypes/common.types';
 import { Op, Transaction, fn, col } from 'sequelize';
 
+/**
+ * Laboratory data is tenant-scoped: every method takes the caller's tenantId
+ * and only ever reads/writes rows for that tenant. Creates stamp tenant_id,
+ * reads filter by it, and by-id mutations verify the loaded row belongs to the
+ * tenant (a row from another tenant reads as "not found"). The lab-test catalog
+ * is per-tenant.
+ */
 export class LaboratoryService {
   // Lab Test Catalog Management
   static async getAllTests(
-    options: PaginationOptions & { 
+    tenantId: string,
+    options: PaginationOptions & {
       category?: TestCategory;
       department?: string;
       isActive?: boolean;
       search?: string;
     } = { page: 1, limit: 50, offset: 0 }
   ): Promise<{ tests: LabTest[]; total: number }> {
-    const whereClause: any = {};
-    
+    const whereClause: any = { tenant_id: tenantId };
+
     if (options.category) whereClause.category = options.category;
     if (options.department) whereClause.department = options.department;
     if (options.isActive !== undefined) whereClause.is_active = options.isActive;
-    
+
     if (options.search) {
       whereClause[Op.or] = [
         { test_name: { [Op.iLike]: `%${options.search}%` } },
@@ -58,18 +66,21 @@ export class LaboratoryService {
     };
   }
 
-  static async getTestById(id: string): Promise<LabTest | null> {
-    return LabTest.findByPk(id);
+  static async getTestById(id: string, tenantId: string): Promise<LabTest | null> {
+    return LabTest.findOne({ where: { id, tenant_id: tenantId } });
   }
 
-  static async getTestByCode(testCode: string): Promise<LabTest | null> {
+  static async getTestByCode(testCode: string, tenantId: string): Promise<LabTest | null> {
     return LabTest.findOne({
-      where: { test_code: testCode, is_active: true }
+      where: { test_code: testCode, tenant_id: tenantId, is_active: true }
     });
   }
 
-  static async getTestsByCategory(category: TestCategory): Promise<LabTest[]> {
-    return LabTest.getTestsByCategory(category);
+  static async getTestsByCategory(category: TestCategory, tenantId: string): Promise<LabTest[]> {
+    return LabTest.findAll({
+      where: { category, tenant_id: tenantId, is_active: true },
+      order: [['test_name', 'ASC']]
+    });
   }
 
   static async createLabTest(testData: {
@@ -84,20 +95,22 @@ export class LaboratoryService {
     fasting_required?: boolean;
     special_requirements?: string;
     reference_ranges?: any[];
-  }): Promise<LabTest> {
-    return LabTest.create(testData);
+  }, tenantId: string): Promise<LabTest> {
+    return LabTest.create({ ...testData, tenant_id: tenantId } as any);
   }
 
-  static async updateLabTest(id: string, updates: Partial<LabTest>): Promise<LabTest | null> {
-    const test = await LabTest.findByPk(id);
+  static async updateLabTest(id: string, updates: Partial<LabTest>, tenantId: string): Promise<LabTest | null> {
+    const test = await LabTest.findOne({ where: { id, tenant_id: tenantId } });
     if (!test) return null;
 
-    await test.update(updates);
+    const safeUpdates: any = { ...updates };
+    delete safeUpdates.tenant_id; // never reassign ownership via update
+    await test.update(safeUpdates);
     return test;
   }
 
-  static async deactivateLabTest(id: string): Promise<boolean> {
-    const test = await LabTest.findByPk(id);
+  static async deactivateLabTest(id: string, tenantId: string): Promise<boolean> {
+    const test = await LabTest.findOne({ where: { id, tenant_id: tenantId } });
     if (!test) return false;
 
     await test.update({ is_active: false });
@@ -107,16 +120,17 @@ export class LaboratoryService {
   // Test Order Management
   static async createTestOrder(
     orderData: CreateTestOrderRequest,
+    tenantId: string,
     transaction?: Transaction
   ): Promise<TestOrder> {
-    // Validate test exists and is active
-    const labTest = await LabTest.findByPk(orderData.test_ids[0]);
+    // Validate test exists, is active, and belongs to this tenant
+    const labTest = await LabTest.findOne({ where: { id: orderData.test_ids[0], tenant_id: tenantId } });
     if (!labTest || !labTest.is_active) {
       throw new Error('Lab test not found or inactive');
     }
 
-    // Validate patient exists
-    const patient = await Patient.findByPk(orderData.patient_id);
+    // Validate patient exists within this tenant
+    const patient = await Patient.findOne({ where: { id: orderData.patient_id, tenant_id: tenantId } });
     if (!patient) {
       throw new Error('Patient not found');
     }
@@ -137,6 +151,7 @@ export class LaboratoryService {
 
     // For now, create one order per test (can be enhanced for bulk orders)
     const testOrder = await TestOrder.create({
+      tenant_id: tenantId,
       patient_id: orderData.patient_id,
       doctor_id: orderData.doctor_id,
       lab_test_id: orderData.test_ids[0],
@@ -150,8 +165,9 @@ export class LaboratoryService {
     return testOrder;
   }
 
-  static async getTestOrder(id: string): Promise<TestOrder | null> {
-    return TestOrder.findByPk(id, {
+  static async getTestOrder(id: string, tenantId: string): Promise<TestOrder | null> {
+    return TestOrder.findOne({
+      where: { id, tenant_id: tenantId },
       include: [
         { model: Patient },
         { model: Doctor },
@@ -164,13 +180,14 @@ export class LaboratoryService {
 
   static async getTestOrdersByPatient(
     patientId: string,
-    options: PaginationOptions & { 
+    tenantId: string,
+    options: PaginationOptions & {
       status?: TestOrderStatus;
       dateRange?: { start: Date; end: Date };
     } = { page: 1, limit: 20, offset: 0 }
   ): Promise<{ orders: TestOrder[]; total: number }> {
-    const whereClause: any = { patient_id: patientId };
-    
+    const whereClause: any = { patient_id: patientId, tenant_id: tenantId };
+
     if (options.status) whereClause.status = options.status;
     if (options.dateRange) {
       whereClause.created_at = {
@@ -198,13 +215,14 @@ export class LaboratoryService {
 
   static async getTestOrdersByDoctor(
     doctorId: string,
-    options: PaginationOptions & { 
+    tenantId: string,
+    options: PaginationOptions & {
       status?: TestOrderStatus;
       urgency?: TestUrgency;
     } = { page: 1, limit: 20, offset: 0 }
   ): Promise<{ orders: TestOrder[]; total: number }> {
-    const whereClause: any = { doctor_id: doctorId };
-    
+    const whereClause: any = { doctor_id: doctorId, tenant_id: tenantId };
+
     if (options.status) whereClause.status = options.status;
     if (options.urgency) whereClause.urgency = options.urgency;
 
@@ -226,9 +244,10 @@ export class LaboratoryService {
     };
   }
 
-  static async getPendingOrders(): Promise<TestOrder[]> {
+  static async getPendingOrders(tenantId: string): Promise<TestOrder[]> {
     return TestOrder.findAll({
       where: {
+        tenant_id: tenantId,
         status: {
           [Op.in]: [
             TestOrderStatus.ORDERED,
@@ -246,16 +265,17 @@ export class LaboratoryService {
     });
   }
 
-  static async getOverdueOrders(): Promise<TestOrder[]> {
+  static async getOverdueOrders(tenantId: string): Promise<TestOrder[]> {
     const orders = await TestOrder.getOverdueOrders();
-    return orders.filter(order => order.is_overdue);
+    return orders.filter(order => order.tenant_id === tenantId && order.is_overdue);
   }
 
   static async updateTestOrder(
     id: string,
-    updates: UpdateTestOrderRequest
+    updates: UpdateTestOrderRequest,
+    tenantId: string
   ): Promise<TestOrder | null> {
-    const order = await TestOrder.findByPk(id);
+    const order = await TestOrder.findOne({ where: { id, tenant_id: tenantId } });
     if (!order) return null;
 
     await order.update(updates);
@@ -265,9 +285,10 @@ export class LaboratoryService {
   // Specimen Collection
   static async collectSpecimen(
     orderId: string,
-    collectionData: SpecimenCollection
+    collectionData: SpecimenCollection,
+    tenantId: string
   ): Promise<TestOrder> {
-    const order = await TestOrder.findByPk(orderId);
+    const order = await TestOrder.findOne({ where: { id: orderId, tenant_id: tenantId } });
     if (!order) {
       throw new Error('Test order not found');
     }
@@ -281,8 +302,8 @@ export class LaboratoryService {
     return order;
   }
 
-  static async startProcessing(orderId: string): Promise<TestOrder> {
-    const order = await TestOrder.findByPk(orderId);
+  static async startProcessing(orderId: string, tenantId: string): Promise<TestOrder> {
+    const order = await TestOrder.findOne({ where: { id: orderId, tenant_id: tenantId } });
     if (!order) {
       throw new Error('Test order not found');
     }
@@ -295,9 +316,10 @@ export class LaboratoryService {
   static async addTestResults(
     orderId: string,
     results: TestResultInterface[],
-    performedBy: string
+    performedBy: string,
+    tenantId: string
   ): Promise<TestResult[]> {
-    const order = await TestOrder.findByPk(orderId);
+    const order = await TestOrder.findOne({ where: { id: orderId, tenant_id: tenantId } });
     if (!order) {
       throw new Error('Test order not found');
     }
@@ -306,6 +328,7 @@ export class LaboratoryService {
 
     for (const result of results) {
       const testResult = await TestResult.create({
+        tenant_id: tenantId,
         test_order_id: orderId,
         parameter_name: result.parameter_name,
         value: result.value.toString(),
@@ -333,18 +356,19 @@ export class LaboratoryService {
     return testResults;
   }
 
-  static async getTestResults(orderId: string): Promise<TestResult[]> {
+  static async getTestResults(orderId: string, tenantId: string): Promise<TestResult[]> {
     return TestResult.findAll({
-      where: { test_order_id: orderId },
+      where: { test_order_id: orderId, tenant_id: tenantId },
       order: [['parameter_name', 'ASC']]
     });
   }
 
   static async reviewTestResults(
     orderId: string,
-    reviewerId: string
+    reviewerId: string,
+    tenantId: string
   ): Promise<TestOrder> {
-    const order = await TestOrder.findByPk(orderId);
+    const order = await TestOrder.findOne({ where: { id: orderId, tenant_id: tenantId } });
     if (!order) {
       throw new Error('Test order not found');
     }
@@ -354,9 +378,9 @@ export class LaboratoryService {
   }
 
   // Reporting and Analytics
-  static async getLabReport(request: LabReportRequest): Promise<any> {
-    const whereClause: any = { patient_id: request.patient_id };
-    
+  static async getLabReport(request: LabReportRequest, tenantId: string): Promise<any> {
+    const whereClause: any = { patient_id: request.patient_id, tenant_id: tenantId };
+
     if (request.date_range) {
       whereClause.results_available_at = {
         [Op.between]: [
@@ -369,16 +393,16 @@ export class LaboratoryService {
     const orders = await TestOrder.findAll({
       where: whereClause,
       include: [
-        { 
+        {
           model: LabTest,
-          where: request.test_categories ? 
-            { category: { [Op.in]: request.test_categories } } : 
+          where: request.test_categories ?
+            { category: { [Op.in]: request.test_categories } } :
             undefined
         },
-        { 
+        {
           model: TestResult,
-          where: request.include_normal_results ? 
-            undefined : 
+          where: request.include_normal_results ?
+            undefined :
             { status: { [Op.ne]: TestResultStatus.NORMAL } }
         },
         { model: Patient },
@@ -395,13 +419,15 @@ export class LaboratoryService {
     };
   }
 
-  static async getCriticalResults(): Promise<TestResult[]> {
-    return TestResult.getCriticalResults();
+  static async getCriticalResults(tenantId: string): Promise<TestResult[]> {
+    const results = await TestResult.getCriticalResults();
+    return results.filter(r => r.tenant_id === tenantId);
   }
 
-  static async getLabStatistics(dateRange: { start: Date; end: Date }): Promise<any> {
+  static async getLabStatistics(dateRange: { start: Date; end: Date }, tenantId: string): Promise<any> {
     const totalOrders = await TestOrder.count({
       where: {
+        tenant_id: tenantId,
         created_at: {
           [Op.between]: [dateRange.start, dateRange.end]
         }
@@ -410,6 +436,7 @@ export class LaboratoryService {
 
     const completedOrders = await TestOrder.count({
       where: {
+        tenant_id: tenantId,
         status: TestOrderStatus.COMPLETED,
         created_at: {
           [Op.between]: [dateRange.start, dateRange.end]
@@ -419,6 +446,7 @@ export class LaboratoryService {
 
     const urgentOrders = await TestOrder.count({
       where: {
+        tenant_id: tenantId,
         urgency: { [Op.in]: [TestUrgency.URGENT, TestUrgency.STAT, TestUrgency.EMERGENCY] },
         created_at: {
           [Op.between]: [dateRange.start, dateRange.end]
@@ -428,6 +456,7 @@ export class LaboratoryService {
 
     const criticalResults = await TestResult.count({
       where: {
+        tenant_id: tenantId,
         is_critical: true,
         performed_at: {
           [Op.between]: [dateRange.start, dateRange.end]
@@ -446,8 +475,8 @@ export class LaboratoryService {
   }
 
   // Utility Methods
-  static async cancelTestOrder(orderId: string, reason?: string): Promise<TestOrder> {
-    const order = await TestOrder.findByPk(orderId);
+  static async cancelTestOrder(orderId: string, reason: string | undefined, tenantId: string): Promise<TestOrder> {
+    const order = await TestOrder.findOne({ where: { id: orderId, tenant_id: tenantId } });
     if (!order) {
       throw new Error('Test order not found');
     }
@@ -456,9 +485,9 @@ export class LaboratoryService {
     return order;
   }
 
-  static async getWorkload(dateRange?: { start: Date; end: Date }): Promise<any> {
-    const whereClause: any = {};
-    
+  static async getWorkload(tenantId: string, dateRange?: { start: Date; end: Date }): Promise<any> {
+    const whereClause: any = { tenant_id: tenantId };
+
     if (dateRange) {
       whereClause.created_at = {
         [Op.between]: [dateRange.start, dateRange.end]

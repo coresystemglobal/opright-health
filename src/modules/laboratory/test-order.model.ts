@@ -23,6 +23,7 @@ import { LabTest } from '@modules/laboratory/lab-test.model';
 import { TestResult } from '@modules/laboratory/test-result.model';
 
 import { TestOrderStatus, TestUrgency } from '@appTypes/laboratory.types';
+import { Tenant } from '@modules/tenancy/tenant.model';
 import { Op } from 'sequelize';
 
 @Table({
@@ -32,6 +33,9 @@ import { Op } from 'sequelize';
   paranoid: true,
   freezeTableName: true,
   indexes: [
+    {
+      fields: ['tenant_id']
+    },
     {
       unique: true,
       fields: ['order_number']
@@ -72,6 +76,17 @@ export class TestOrder extends Model {
     primaryKey: true
   })
   override id!: string;
+
+  // Owning tenant (nullable so legacy rows survive; new rows are tenant-scoped).
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
 
   @Index({ unique: true })
   @Column({
