@@ -1,13 +1,16 @@
-import { 
-  Table, 
-  Column, 
-  Model, 
-  DataType, 
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
   Index,
-  HasMany
+  HasMany,
+  ForeignKey,
+  BelongsTo
 } from 'sequelize-typescript';
 import { TestCategory, SpecimenType } from '@appTypes/laboratory.types';
 import { Department } from '@modules/doctors/doctor.model';
+import { Tenant } from '@modules/tenancy/tenant.model';
 
 import { Op } from 'sequelize';
 
@@ -19,8 +22,12 @@ import { Op } from 'sequelize';
   freezeTableName: true,
   indexes: [
     {
+      fields: ['tenant_id']
+    },
+    {
       unique: true,
-      fields: ['test_code']
+      fields: ['tenant_id', 'test_code'],
+      name: 'lab_tests_tenant_code_uq'
     },
     {
       fields: ['category']
@@ -47,11 +54,21 @@ export class LabTest extends Model {
   })
   override id!: string;
 
-  @Index({ unique: true })
+  // Nullable so legacy tenant-less rows survive; new rows are tenant-scoped.
+  // The lab-test catalog is per-tenant (unique test_code within a tenant).
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
+
   @Column({
     type: DataType.STRING(50),
-    allowNull: false,
-    unique: true
+    allowNull: false
   })
   test_code!: string;
 

@@ -11,6 +11,10 @@ import {
   SpecimenCollection 
 } from '@appTypes/laboratory.types';
 
+/** Tenant is guaranteed by tenantMiddleware on every /api/laboratory route. */
+const tenantOf = (req: ExpressRequest): string =>
+  (req as any).tenant?.id || (req.headers['x-tenant-id'] as string);
+
 /**
  * Laboratory controller for handling lab test operations
  */
@@ -39,7 +43,7 @@ const laboratoryController = {
         search: search as string
       };
 
-      const result = await LaboratoryService.getAllTests(options);
+      const result = await LaboratoryService.getAllTests(tenantOf(req), options);
 
       return ResponseUtil.success(res, {
         tests: result.tests,
@@ -69,7 +73,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Test ID is required']);
       }
 
-      const test = await LaboratoryService.getTestById(testId);
+      const test = await LaboratoryService.getTestById(testId, tenantOf(req));
       
       if (!test) {
         return ResponseUtil.notFound(res, 'Lab test not found');
@@ -93,7 +97,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Test code is required']);
       }
 
-      const test = await LaboratoryService.getTestByCode(testCode);
+      const test = await LaboratoryService.getTestByCode(testCode, tenantOf(req));
       
       if (!test) {
         return ResponseUtil.notFound(res, 'Lab test not found');
@@ -117,7 +121,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Valid test category is required']);
       }
 
-      const tests = await LaboratoryService.getTestsByCategory(category as TestCategory);
+      const tests = await LaboratoryService.getTestsByCategory(category as TestCategory, tenantOf(req));
 
       return ResponseUtil.success(res, tests, 'Tests retrieved successfully');
     } catch (error) {
@@ -140,7 +144,7 @@ const laboratoryController = {
         ]);
       }
 
-      const test = await LaboratoryService.createLabTest(testData);
+      const test = await LaboratoryService.createLabTest(testData, tenantOf(req));
       
       return ResponseUtil.success(res, test, 'Lab test created successfully', 201);
     } catch (error) {
@@ -165,7 +169,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Test ID is required']);
       }
 
-      const test = await LaboratoryService.updateLabTest(testId, updateData);
+      const test = await LaboratoryService.updateLabTest(testId, updateData, tenantOf(req));
       
       if (!test) {
         return ResponseUtil.notFound(res, 'Lab test not found');
@@ -189,7 +193,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Test ID is required']);
       }
 
-      const success = await LaboratoryService.deactivateLabTest(testId);
+      const success = await LaboratoryService.deactivateLabTest(testId, tenantOf(req));
       
       if (!success) {
         return ResponseUtil.notFound(res, 'Lab test not found');
@@ -216,7 +220,7 @@ const laboratoryController = {
         ]);
       }
 
-      const order = await LaboratoryService.createTestOrder(orderData);
+      const order = await LaboratoryService.createTestOrder(orderData, tenantOf(req));
       
       return ResponseUtil.success(res, order, 'Test order created successfully', 201);
     } catch (error) {
@@ -243,7 +247,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Order ID is required']);
       }
 
-      const order = await LaboratoryService.getTestOrder(orderId);
+      const order = await LaboratoryService.getTestOrder(orderId, tenantOf(req));
       
       if (!order) {
         return ResponseUtil.notFound(res, 'Test order not found');
@@ -285,7 +289,7 @@ const laboratoryController = {
         } : undefined
       };
 
-      const result = await LaboratoryService.getTestOrdersByPatient(patientId, options);
+      const result = await LaboratoryService.getTestOrdersByPatient(patientId, tenantOf(req), options);
 
       return ResponseUtil.success(res, {
         orders: result.orders,
@@ -327,7 +331,7 @@ const laboratoryController = {
         urgency: urgency as TestUrgency
       };
 
-      const result = await LaboratoryService.getTestOrdersByDoctor(doctorId, options);
+      const result = await LaboratoryService.getTestOrdersByDoctor(doctorId, tenantOf(req), options);
 
       return ResponseUtil.success(res, {
         orders: result.orders,
@@ -349,7 +353,7 @@ const laboratoryController = {
    */
   getPendingOrders: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
-      const orders = await LaboratoryService.getPendingOrders();
+      const orders = await LaboratoryService.getPendingOrders(tenantOf(req));
 
       return ResponseUtil.success(res, orders, 'Pending test orders retrieved successfully');
     } catch (error) {
@@ -363,7 +367,7 @@ const laboratoryController = {
    */
   getOverdueOrders: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
-      const orders = await LaboratoryService.getOverdueOrders();
+      const orders = await LaboratoryService.getOverdueOrders(tenantOf(req));
 
       return ResponseUtil.success(res, orders, 'Overdue test orders retrieved successfully');
     } catch (error) {
@@ -390,7 +394,7 @@ const laboratoryController = {
         ]);
       }
 
-      const order = await LaboratoryService.collectSpecimen(orderId, collectionData);
+      const order = await LaboratoryService.collectSpecimen(orderId, collectionData, tenantOf(req));
 
       return ResponseUtil.success(res, order, 'Specimen collected successfully');
     } catch (error) {
@@ -418,7 +422,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Order ID is required']);
       }
 
-      const order = await LaboratoryService.startProcessing(orderId);
+      const order = await LaboratoryService.startProcessing(orderId, tenantOf(req));
 
       return ResponseUtil.success(res, order, 'Test processing started successfully');
     } catch (error) {
@@ -454,7 +458,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Performed by user ID is required']);
       }
 
-      const testResults = await LaboratoryService.addTestResults(orderId, results, performedBy);
+      const testResults = await LaboratoryService.addTestResults(orderId, results, performedBy, tenantOf(req));
 
       return ResponseUtil.success(res, testResults, 'Test results added successfully', 201);
     } catch (error) {
@@ -482,7 +486,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Order ID is required']);
       }
 
-      const results = await LaboratoryService.getTestResults(orderId);
+      const results = await LaboratoryService.getTestResults(orderId, tenantOf(req));
 
       return ResponseUtil.success(res, results, 'Test results retrieved successfully');
     } catch (error) {
@@ -507,7 +511,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Reviewer ID is required']);
       }
 
-      const order = await LaboratoryService.reviewTestResults(orderId, reviewerId);
+      const order = await LaboratoryService.reviewTestResults(orderId, reviewerId, tenantOf(req));
 
       return ResponseUtil.success(res, order, 'Test results reviewed successfully');
     } catch (error) {
@@ -532,7 +536,7 @@ const laboratoryController = {
         return ResponseUtil.validationError(res, ['Order ID is required']);
       }
 
-      const order = await LaboratoryService.cancelTestOrder(orderId, reason);
+      const order = await LaboratoryService.cancelTestOrder(orderId, reason, tenantOf(req));
 
       return ResponseUtil.success(res, order, 'Test order cancelled successfully');
     } catch (error) {
@@ -554,7 +558,7 @@ const laboratoryController = {
    */
   getCriticalResults: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
-      const results = await LaboratoryService.getCriticalResults();
+      const results = await LaboratoryService.getCriticalResults(tenantOf(req));
 
       return ResponseUtil.success(res, results, 'Critical test results retrieved successfully');
     } catch (error) {
@@ -585,7 +589,7 @@ const laboratoryController = {
         include_normal_results: include_normal_results === true
       };
 
-      const report = await LaboratoryService.getLabReport(reportRequest);
+      const report = await LaboratoryService.getLabReport(reportRequest, tenantOf(req));
 
       return ResponseUtil.success(res, report, 'Lab report generated successfully');
     } catch (error) {
@@ -610,7 +614,7 @@ const laboratoryController = {
         end: new Date(end_date as string)
       };
 
-      const statistics = await LaboratoryService.getLabStatistics(dateRange);
+      const statistics = await LaboratoryService.getLabStatistics(dateRange, tenantOf(req));
 
       return ResponseUtil.success(res, statistics, 'Laboratory statistics retrieved successfully');
     } catch (error) {
@@ -631,7 +635,7 @@ const laboratoryController = {
         end: new Date(end_date as string)
       } : undefined;
 
-      const workload = await LaboratoryService.getWorkload(dateRange);
+      const workload = await LaboratoryService.getWorkload(tenantOf(req), dateRange);
 
       return ResponseUtil.success(res, workload, 'Workload information retrieved successfully');
     } catch (error) {

@@ -43,7 +43,7 @@ export const patientPortalService = {
   getLabResults: async (userId: string, tenantId: string, paginationQuery: PaginationQuery) => {
     const patient: any = await patientPortalService.resolvePatient(userId, tenantId);
     const options = PaginationUtil.parsePaginationQuery(paginationQuery);
-    const { orders, total } = await LaboratoryService.getTestOrdersByPatient(patient.id, {
+    const { orders, total } = await LaboratoryService.getTestOrdersByPatient(patient.id, tenantId, {
       page: options.page,
       limit: options.limit,
       offset: options.offset
@@ -63,7 +63,7 @@ export const patientPortalService = {
       appointmentService.getPatientAppointments(patient.id, pageOne, 'scheduled').catch(() => ({ count: 0, appointments: [] } as any)),
       prescriptionService.getPatientPrescriptions(patient.id, pageOne).catch(() => ({ count: 0, prescriptions: [] } as any)),
       invoiceService.getPatientInvoices(patient.id, pageOne).catch(() => ({ count: 0, invoices: [] } as any)),
-      LaboratoryService.getTestOrdersByPatient(patient.id, { page: 1, limit: 5, offset: 0 }).catch(() => ({ total: 0, orders: [] } as any))
+      LaboratoryService.getTestOrdersByPatient(patient.id, tenantId, { page: 1, limit: 5, offset: 0 }).catch(() => ({ total: 0, orders: [] } as any))
     ]);
 
     return {
