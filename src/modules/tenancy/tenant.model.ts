@@ -10,6 +10,22 @@ export enum TenantStatus {
   SUSPENDED = 'suspended'
 }
 
+/**
+ * The kind of health facility a tenant represents. Lets a standalone
+ * laboratory or pharmacy be a first-class tenant (not only a department inside
+ * a hospital), and is the basis for facility-specific onboarding / module
+ * gating. `platform` is the system-owned direct-to-consumer tenant.
+ */
+export enum TenantType {
+  HOSPITAL = 'hospital',
+  LABORATORY = 'laboratory',
+  PHARMACY = 'pharmacy',
+  CLINIC = 'clinic',
+  DIAGNOSTIC_CENTER = 'diagnostic_center',
+  PLATFORM = 'platform',
+  OTHER = 'other'
+}
+
 export interface ReminderSettings {
   enabled?: boolean;
   /** Lead time in hours for the first ("long") reminder. */
@@ -57,6 +73,14 @@ export class Tenant extends Model {
     defaultValue: TenantStatus.ACTIVE
   })
   status!: TenantStatus;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(TenantType)),
+    allowNull: false,
+    defaultValue: TenantType.HOSPITAL,
+    comment: 'The kind of health facility this tenant represents'
+  })
+  facility_type!: TenantType;
 
   @Column({
     type: DataType.STRING(255),

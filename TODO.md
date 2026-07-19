@@ -137,7 +137,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [ ] 🔴 Allergy and medication interaction alerts
 - [ ] 🟡 Lab test ordering and results (`lab-integration.service.ts`, `laboratory.service.ts`)
 - [x] 🟢 Laboratory API access control — all `/api/laboratory/*` now require auth + tenant (were entirely unauthenticated); per-route gating: catalog/admin views → `lab:manage` (new), ordering/cancel → `lab:order`, specimen/results/review/reports → `lab:result`
-- [ ] 🔴 Labs (and pharmacies) as standalone tenants — add `Tenant.facility_type` and **tenant-scope the lab tables** (`lab_tests`/`test_orders`/`test_results` have no `tenant_id` today, so lab data isn't isolated per tenant); enables standalone-lab onboarding + module gating by facility type
+- [~] 🟡 Labs (and pharmacies) as standalone tenants — **PR A done**: `Tenant.facility_type` (hospital/laboratory/pharmacy/clinic/diagnostic_center/platform/other, migration 063) + `Laboratory`/`Pharmacy` facility-profile tables linked to `Tenant` (migrations 064/065), mirroring `Hospital`. **PR B (next)**: tenant-scope the lab tables (`lab_tests`/`test_orders`/`test_results` have no `tenant_id` today, so lab data isn't isolated per tenant) + thread `tenant_id` through `LaboratoryService`
 - [ ] 🔴 Radiology / imaging order management (DICOM-lite, at minimum order tracking)
 - [ ] 🔴 Surgical procedure scheduling and records
 
