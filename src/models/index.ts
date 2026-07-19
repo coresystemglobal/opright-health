@@ -12,6 +12,8 @@ export { Invoice, PaymentStatus as InvoicePaymentStatus, InvoiceType, InvoiceLin
 export { Payment, PaymentMethod, PaymentStatus } from '@modules/billing/payment.model';
 
 export { Hospital, HospitalType, AccreditationStatus, ContactPerson, OperatingHours, DayHours } from '@modules/hospital/hospital.model';
+export { Laboratory, LaboratoryType } from '@modules/facilities/laboratory-facility.model';
+export { Pharmacy, PharmacyType } from '@modules/facilities/pharmacy-facility.model';
 
 export { LabTest } from '@modules/laboratory/lab-test.model';
 
@@ -178,6 +180,8 @@ import { Invoice } from '@modules/billing/invoice.model';
 import { Payment } from '@modules/billing/payment.model';
 
 import { Hospital } from '@modules/hospital/hospital.model';
+import { Laboratory } from '@modules/facilities/laboratory-facility.model';
+import { Pharmacy } from '@modules/facilities/pharmacy-facility.model';
 
 import { LabTest } from '@modules/laboratory/lab-test.model';
 
@@ -332,6 +336,8 @@ export const models = [
   Invoice,
   Payment,
   Hospital,
+  Laboratory,
+  Pharmacy,
   LabTest,
   TestOrder,
   TestResult,
