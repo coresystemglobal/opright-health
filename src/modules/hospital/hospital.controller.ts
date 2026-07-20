@@ -4,12 +4,15 @@ import { hospitalService } from '@modules/hospital/hospital.service';
 import { ResponseUtil } from '@utils/response.util';
 import { PaginationQuery } from '@appTypes/common.types';
 
+const tenantOf = (req: Request): string =>
+  (req as any).tenant?.id || (req.headers['x-tenant-id'] as string);
+
 const hospitalController = {
   getAllHospitals: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { page = '1', limit = '10', q, city, state } = req.query;
       const paginationQuery: PaginationQuery = { page: page as string, limit: limit as string };
-      const result = await hospitalService.getAllHospitals(paginationQuery, q as string, city as string, state as string);
+      const result = await hospitalService.getAllHospitals(paginationQuery, tenantOf(req), q as string, city as string, state as string);
       return ResponseUtil.paginated(res, result.hospitals, result.count, result.page, result.limit, 'Hospitals retrieved successfully');
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -20,7 +23,7 @@ const hospitalController = {
   getHospitalById: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      const hospital = await hospitalService.getHospitalById(id);
+      const hospital = await hospitalService.getHospitalById(id, tenantOf(req));
       return ResponseUtil.success(res, hospital, 'Hospital retrieved successfully');
     } catch (error) {
       if (error instanceof Error && error.message === 'Hospital not found') return ResponseUtil.notFound(res, 'Hospital not found');
@@ -32,7 +35,7 @@ const hospitalController = {
 
   createHospital: async (req: Request, res: Response): Promise<Response> => {
     try {
-      const hospital = await hospitalService.createHospital(req.body);
+      const hospital = await hospitalService.createHospital(req.body, tenantOf(req));
       return ResponseUtil.success(res, hospital, 'Hospital created successfully', 201);
     } catch (error) {
       if (error instanceof Error && error.message.includes('already in use')) return ResponseUtil.conflict(res, error.message);
@@ -46,7 +49,7 @@ const hospitalController = {
   updateHospital: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      const hospital = await hospitalService.updateHospital(id, req.body);
+      const hospital = await hospitalService.updateHospital(id, tenantOf(req), req.body);
       return ResponseUtil.success(res, hospital, 'Hospital updated successfully');
     } catch (error) {
       if (error instanceof Error && error.message === 'Hospital not found') return ResponseUtil.notFound(res, 'Hospital not found');
@@ -59,7 +62,7 @@ const hospitalController = {
   deleteHospital: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      await hospitalService.deleteHospital(id);
+      await hospitalService.deleteHospital(id, tenantOf(req));
       return ResponseUtil.success(res, null, 'Hospital deleted successfully');
     } catch (error) {
       if (error instanceof Error && error.message === 'Hospital not found') return ResponseUtil.notFound(res, 'Hospital not found');
@@ -71,7 +74,7 @@ const hospitalController = {
   toggleStatus: async (req: Request, res: Response): Promise<Response> => {
     try {
       const { id } = req.params;
-      const result = await hospitalService.toggleHospitalStatus(id);
+      const result = await hospitalService.toggleHospitalStatus(id, tenantOf(req));
       const status = result.is_active ? 'activated' : 'deactivated';
       return ResponseUtil.success(res, result, `Hospital ${status} successfully`);
     } catch (error) {
