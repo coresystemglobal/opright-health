@@ -56,8 +56,8 @@ invoiceRouter.get("/:invoiceId/pdf", async (req: ExpressRequest, res: Response) 
       return;
     }
 
-    // Best-effort: fetch the first hospital record for the header
-    const hospital = await Hospital.findOne().catch(() => null);
+    // Best-effort: the invoice's own tenant's hospital for the header.
+    const hospital = await Hospital.findOne({ where: { tenant_id: (invoice as any).tenant_id } }).catch(() => null);
 
     const pdfBuffer = await generateInvoicePdf({ invoice: invoice as any, hospital });
 

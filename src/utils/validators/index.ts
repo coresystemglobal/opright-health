@@ -23,3 +23,4 @@ export * from './staff.validator';
 export * from './iot.validator';
 export * from './telemedicine.validator';
 export * from './mpi.validator';
+export * from './facility.validator';

@@ -1,12 +1,15 @@
-import { 
-  Table, 
-  Column, 
-  Model, 
-  DataType, 
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
   HasMany,
-  Index
+  Index,
+  ForeignKey,
+  BelongsTo
 } from 'sequelize-typescript';
 import { Op } from 'sequelize';
+import { Tenant } from '@modules/tenancy/tenant.model';
 
 export enum HospitalType {
   GENERAL = 'general',
@@ -34,6 +37,9 @@ export enum AccreditationStatus {
   freezeTableName: true,
   indexes: [
     {
+      fields: ['tenant_id']
+    },
+    {
       unique: true,
       fields: ['license_number']
     },
@@ -55,6 +61,17 @@ export class Hospital extends Model {
     primaryKey: true
   })
   override id!: string;
+
+  // Owning tenant (nullable so legacy rows survive; new rows are tenant-scoped).
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
 
   @Column({
     type: DataType.STRING(200),

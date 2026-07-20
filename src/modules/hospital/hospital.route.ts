@@ -1,14 +1,17 @@
 import express, { Request, Response } from 'express';
 import hospitalController from './hospital.controller';
 import authentication from '@middlewares/authentication';
+import { tenantMiddleware } from '@middlewares/tenant.middleware';
 import { checkPermission } from '@middlewares/permission.middleware';
 import { PERMISSIONS } from '@config/rbac.config';
 import { validateParams, genericValidation } from '@utils/validator';
 
+// A hospital profile belongs to its tenant — every route is tenant-scoped.
 const hospitalRouter = express.Router();
 
 hospitalRouter.get('/',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.HOSPITAL_VIEW),
   async (req: Request, res: Response) => {
     await hospitalController.getAllHospitals(req, res);
@@ -17,6 +20,7 @@ hospitalRouter.get('/',
 
 hospitalRouter.get('/:id',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.HOSPITAL_VIEW),
   validateParams(genericValidation.id),
   async (req: Request, res: Response) => {
@@ -26,6 +30,7 @@ hospitalRouter.get('/:id',
 
 hospitalRouter.post('/',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.HOSPITAL_CREATE),
   async (req: Request, res: Response) => {
     await hospitalController.createHospital(req, res);
@@ -34,6 +39,7 @@ hospitalRouter.post('/',
 
 hospitalRouter.put('/:id',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.HOSPITAL_UPDATE),
   validateParams(genericValidation.id),
   async (req: Request, res: Response) => {
@@ -43,6 +49,7 @@ hospitalRouter.put('/:id',
 
 hospitalRouter.patch('/:id/status',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.HOSPITAL_UPDATE),
   validateParams(genericValidation.id),
   async (req: Request, res: Response) => {
@@ -52,6 +59,7 @@ hospitalRouter.patch('/:id/status',
 
 hospitalRouter.delete('/:id',
   authentication,
+  tenantMiddleware,
   checkPermission(PERMISSIONS.HOSPITAL_DELETE),
   validateParams(genericValidation.id),
   async (req: Request, res: Response) => {
