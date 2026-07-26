@@ -30,6 +30,7 @@
 - [x] 🟢 Enforcement middleware — `requireActiveSubscription` gates all `/api/*` routes for any request carrying x-tenant-id
 - [x] 🟢 `checkResourceLimit` wired onto POST /api/patients (patient cap); user seats tracked on /auth/register with tenant header
 - [x] 🟢 Flat all-inclusive enforced — every tier carries `all_features` in `plan.config.ts`; tiers differ only by capacity (patients/users/storage/API), per decision #1
+- [x] 🟢 Plans-as-data + feature entitlements (Payments PR 1) — new `plans` table (migration 069) seeds the 4 tiers with **real per-tier features** (individual: none, basic: telemedicine, standard: +analytics/workflow, pro: all_features), superseding the flat model. `BillingService` loads plans from the DB into its cache (`refreshPlansCache`, called at boot + after admin writes; `plan.config.ts` is now the fallback), so `requireFeature` gates for real. Platform-admin CRUD at `/api/plans` (`plan:view`/`plan:manage`, SUPER_ADMIN only)
 - [ ] 🔴 Plan management admin API (create, edit, deactivate plans)
 - [ ] 🔴 Self-service plan upgrade / downgrade (with proration)
 - [x] 🟢 Free trial logic — TRIALING passes with `X-Trial-Days-Remaining` header; PAST_DUE honours grace period, then 402

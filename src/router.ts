@@ -71,6 +71,7 @@ import laboratoryRouter from '@modules/laboratory/laboratory.route';
 
 // Billing
 import billingRouter from '@modules/billing/billing.route';
+import planRouter from '@modules/billing/plan.route';
 import invoiceRouter from '@modules/billing/invoice.route';
 import paymentRouter from '@modules/billing/payment.route';
 
@@ -157,6 +158,7 @@ router.use('/api/laboratory', laboratoryRouter);
 
 // Billing
 router.use('/api/billing', billingRouter);
+router.use('/api/plans', planRouter);
 router.use('/api/invoices', invoiceRouter);
 router.use('/api/payments', paymentRouter);
 

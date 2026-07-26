@@ -4,6 +4,7 @@ import { Subscription, PlanType, BillingCycle, SubscriptionStatus } from '@modul
 import { UsageTracking } from '@modules/billing/usage-tracking.model';
 
 import { Tenant } from '@modules/tenancy/tenant.model';
+import { Plan } from '@modules/billing/plan.model';
 import { PlanConfig } from '@config/plan.config';
 import type { PlanLimits, PlanPricing } from '@config/plan.config';
 import { getFromRedis, saveToRedis } from '@core/redis';
@@ -14,9 +15,37 @@ const SUBSCRIPTION_CACHE_TTL = 300; // 5 minutes
 export class BillingService {
   private static stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' });
 
-  // Use configurable pricing and limits from PlanConfig
-  private static readonly PLAN_LIMITS: Record<PlanType, PlanLimits> = PlanConfig.limits;
-  private static readonly PLAN_PRICING: Record<PlanType, PlanPricing> = PlanConfig.pricing;
+  // Plan limits/pricing cache. Seeded from PlanConfig (the fallback) and
+  // overwritten by refreshPlansCache() from the `plans` DB table. Kept in
+  // memory so getPlanLimits/getPlanPricing stay synchronous for all callers.
+  private static PLAN_LIMITS: Record<PlanType, PlanLimits> = { ...PlanConfig.limits };
+  private static PLAN_PRICING: Record<PlanType, PlanPricing> = { ...PlanConfig.pricing };
+
+  /**
+   * Load plans from the DB into the in-memory cache. Call at boot and after any
+   * plan admin write. If the table is empty/unavailable, the PlanConfig
+   * fallback stays in place.
+   */
+  static async refreshPlansCache(): Promise<void> {
+    try {
+      const plans = await Plan.findAll({ where: { is_active: true } });
+      for (const p of plans) {
+        this.PLAN_LIMITS[p.tier] = {
+          maxPatients: p.max_patients,
+          maxUsers: p.max_users,
+          maxStorageMB: p.max_storage_mb,
+          maxAPICallsPerMonth: p.max_api_calls_per_month,
+          features: p.features || []
+        };
+        this.PLAN_PRICING[p.tier] = {
+          monthly: parseFloat(p.price_monthly.toString()),
+          yearly: parseFloat(p.price_yearly.toString())
+        };
+      }
+    } catch (error) {
+      console.error('refreshPlansCache failed; using PlanConfig fallback:', error);
+    }
+  }
 
   static async createSubscription(
     tenantId: string,
