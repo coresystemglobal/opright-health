@@ -12,6 +12,7 @@ import { Op } from 'sequelize';
 import { Invoice } from '@modules/billing/invoice.model';
 
 import { User } from '@modules/users/user.model';
+import { Tenant } from '@modules/tenancy/tenant.model';
 
 
 export enum PaymentMethod {
@@ -32,8 +33,7 @@ export enum PaymentStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
-  REFUNDED = 'refunded',
-  PAID = "PAID"
+  REFUNDED = 'refunded'
 }
 
 @Table({
@@ -43,6 +43,9 @@ export enum PaymentStatus {
   paranoid: true,
   freezeTableName: true,
   indexes: [
+    {
+      fields: ['tenant_id']
+    },
     {
       fields: ['invoice_id']
     },
@@ -70,6 +73,17 @@ export class Payment extends Model {
     primaryKey: true
   })
   override id!: string;
+
+  // Owning tenant (nullable so legacy rows survive; new rows are tenant-scoped).
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
 
   @ForeignKey(() => Invoice)
   @Column({

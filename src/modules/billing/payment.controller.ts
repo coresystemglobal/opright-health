@@ -3,6 +3,9 @@ import { paymentService } from '@modules/billing/payment.service';
 
 import { ResponseUtil } from '@utils/response.util';
 
+const tenantOf = (req: Request): string =>
+  (req as any).tenant?.id || (req.headers['x-tenant-id'] as string) || (req as any).user?.tenant_id;
+
 const paymentController = {
   initiatePayment: async (req: Request, res: Response): Promise<Response> => {
     try {
@@ -11,7 +14,8 @@ const paymentController = {
 
       const result = await paymentService.initiatePayment({
         ...req.body,
-        created_by: userId
+        created_by: userId,
+        tenant_id: tenantOf(req)
       });
 
       return res.status(result.statusCode).json(result);
@@ -62,7 +66,7 @@ const paymentController = {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const result = await paymentService.getAllPayments({ pageNumber: page, limitNumber: limit });
+      const result = await paymentService.getAllPayments({ pageNumber: page, limitNumber: limit, tenant_id: tenantOf(req) });
       return res.status(result.statusCode).json(result);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';

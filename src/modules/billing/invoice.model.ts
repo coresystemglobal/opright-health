@@ -16,6 +16,7 @@ import { Doctor } from '@modules/doctors/doctor.model';
 import { Appointment } from '@modules/appointments/appointment.model';
 
 import { Payment } from '@modules/billing/payment.model';
+import { Tenant } from '@modules/tenancy/tenant.model';
 
 
 export enum PaymentStatus {
@@ -44,6 +45,9 @@ export enum InvoiceType {
   freezeTableName: true,
   indexes: [
     {
+      fields: ['tenant_id']
+    },
+    {
       unique: true,
       fields: ['invoice_number']
     },
@@ -71,6 +75,17 @@ export class Invoice extends Model {
     primaryKey: true
   })
   override id!: string;
+
+  // Owning tenant (nullable so legacy rows survive; new rows are tenant-scoped).
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
 
   @Index({ unique: true })
   @Column({

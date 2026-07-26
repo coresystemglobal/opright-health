@@ -28,6 +28,7 @@ export const paymentService = {
     invoice_id?: string;
     appointment_id?: string;
     created_by: string;
+    tenant_id?: string;
     metadata?: Record<string, unknown>;
   }): Promise<PaymentResponse> => {
     try {
@@ -40,6 +41,7 @@ export const paymentService = {
         invoice_id,
         appointment_id,
         created_by,
+        tenant_id,
         metadata = {}
       } = paymentData;
 
@@ -95,6 +97,7 @@ export const paymentService = {
 
       // Persist payment record
       await Payment.create({
+        tenant_id: tenant_id || null,
         invoice_id: invoice_id || null,
         amount,
         currency,
@@ -254,6 +257,7 @@ export const paymentService = {
       if (limitNumber < 1) limitNumber = 10;
 
       const { count, rows: payments } = await Payment.findAndCountAll({
+        where: params.tenant_id ? { tenant_id: params.tenant_id } : {},
         include: [{ model: Invoice, as: 'invoice' }],
         order: [['createdAt', 'DESC']],
         offset: (pageNumber - 1) * limitNumber,
