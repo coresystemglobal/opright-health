@@ -79,7 +79,11 @@ export const PERMISSIONS = {
 
   // Facility profiles (laboratory / pharmacy)
   FACILITY_VIEW: 'facility:view',
-  FACILITY_MANAGE: 'facility:manage'
+  FACILITY_MANAGE: 'facility:manage',
+
+  // Subscription plan catalogue (platform-level; SUPER_ADMIN only)
+  PLAN_VIEW: 'plan:view',
+  PLAN_MANAGE: 'plan:manage'
 };
 
 export const ROLE_PERMISSIONS = {

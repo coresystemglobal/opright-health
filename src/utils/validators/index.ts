@@ -24,3 +24,4 @@ export * from './iot.validator';
 export * from './telemedicine.validator';
 export * from './mpi.validator';
 export * from './facility.validator';
+export * from './plan.validator';

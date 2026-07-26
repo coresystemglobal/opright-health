@@ -244,6 +244,11 @@ const startServer = async () => {
     // Purge stale idempotency records on startup
     cleanupOldSyncLogs().catch(() => {});
 
+    // Load subscription plans (pricing/limits/features) from the DB into cache
+    import('../modules/billing/billing.service')
+      .then(({ BillingService }) => BillingService.refreshPlansCache())
+      .catch(() => {});
+
     // Overdue-invoice dunning emails (daily cycle)
     scheduleDunning();
 
