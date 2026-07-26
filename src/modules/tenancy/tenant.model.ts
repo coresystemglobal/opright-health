@@ -107,6 +107,26 @@ export class Tenant extends Model {
   stripe_customer_id?: string;
 
   @Column({
+    type: DataType.STRING(100),
+    allowNull: true
+  })
+  paystack_customer_id?: string;
+
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: true,
+    comment: 'Where SaaS billing correspondence goes; falls back to contact_email'
+  })
+  billing_email?: string;
+
+  @Column({
+    type: DataType.STRING(30),
+    allowNull: true,
+    comment: 'Denormalized current subscription status (active/trialing/past_due/cancelled)'
+  })
+  subscription_status?: string;
+
+  @Column({
     type: DataType.JSONB,
     allowNull: true,
     comment: 'Appointment reminder config: {enabled, long_lead_hours, short_lead_hours}'

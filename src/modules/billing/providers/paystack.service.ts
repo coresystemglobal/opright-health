@@ -276,6 +276,97 @@ class PaystackPaymentProcessor {
       };
     }
   }
+
+  // ── Subscription support ──────────────────────────────────────────────────
+  private authConfig() {
+    return { headers: { Authorization: `Bearer ${this.secretKey}`, 'Content-Type': 'application/json' } };
+  }
+
+  /** Create (or fetch) a Paystack customer; returns the customer_code. */
+  async createCustomer(email: string, first_name?: string, phone?: string): Promise<string | null> {
+    try {
+      const res = await axios.post(`${this.baseUrl}/customer`, { email, first_name, phone }, this.authConfig());
+      const data = res.data as PaystackSuccessResponse;
+      return data.status ? (data.data as any).customer_code : null;
+    } catch (error) {
+      console.error('Paystack createCustomer error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Initialize a subscription transaction: charges the customer for the plan and
+   * (on success) Paystack creates the recurring subscription automatically.
+   * Returns the checkout authorization_url + reference.
+   */
+  async initializeSubscription(email: string, planCode: string, metadata: Record<string, unknown> = {}) {
+    try {
+      const body: any = {
+        email,
+        plan: planCode,
+        callback_url: process.env.PAYSTACK_CALLBACK_URL || `${process.env.API_BASE_URL}/api/payments/paystack/callback`,
+        metadata
+      };
+      const res = await axios.post(`${this.baseUrl}/transaction/initialize`, body, this.authConfig());
+      const data = res.data as PaystackSuccessResponse;
+      if (!data.status) return { statusCode: 400, status: 'error', message: 'Failed to initialize subscription', data };
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'Subscription checkout initialized',
+        data: { authorization_url: data.data.authorization_url, reference: data.data.reference, access_code: data.data.access_code }
+      };
+    } catch (error) {
+      console.error('Paystack initializeSubscription error:', error);
+      return { statusCode: 500, status: 'error', message: 'Failed to initialize subscription', data: null };
+    }
+  }
+
+  /** Fetch a subscription (needed to get the email_token required to disable it). */
+  async fetchSubscription(subscriptionCode: string): Promise<any | null> {
+    try {
+      const res = await axios.get(`${this.baseUrl}/subscription/${subscriptionCode}`, this.authConfig());
+      const data = res.data as PaystackSuccessResponse;
+      return data.status ? data.data : null;
+    } catch (error) {
+      console.error('Paystack fetchSubscription error:', error);
+      return null;
+    }
+  }
+
+  /** Disable (cancel) a subscription. Fetches the email_token if not supplied. */
+  async disableSubscription(subscriptionCode: string, emailToken?: string): Promise<boolean> {
+    try {
+      let token = emailToken;
+      if (!token) {
+        const sub = await this.fetchSubscription(subscriptionCode);
+        token = sub?.email_token;
+      }
+      if (!token) return false;
+      const res = await axios.post(`${this.baseUrl}/subscription/disable`, { code: subscriptionCode, token }, this.authConfig());
+      return !!(res.data as PaystackSuccessResponse).status;
+    } catch (error) {
+      console.error('Paystack disableSubscription error:', error);
+      return false;
+    }
+  }
+
+  /** Re-enable a previously disabled subscription. */
+  async enableSubscription(subscriptionCode: string, emailToken?: string): Promise<boolean> {
+    try {
+      let token = emailToken;
+      if (!token) {
+        const sub = await this.fetchSubscription(subscriptionCode);
+        token = sub?.email_token;
+      }
+      if (!token) return false;
+      const res = await axios.post(`${this.baseUrl}/subscription/enable`, { code: subscriptionCode, token }, this.authConfig());
+      return !!(res.data as PaystackSuccessResponse).status;
+    } catch (error) {
+      console.error('Paystack enableSubscription error:', error);
+      return false;
+    }
+  }
 }
 
 export default new PaystackPaymentProcessor();

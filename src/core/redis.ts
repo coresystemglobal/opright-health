@@ -110,4 +110,15 @@ initializeRedisConnection().catch(err => {
   process.exit(1);
 });
 
-export { getFromRedis, saveToRedis, initializeRedisConnection };
+async function deleteFromRedis(key: string): Promise<void> {
+  if (!redisClient) {
+    return;
+  }
+  try {
+    await redisClient.del(key);
+  } catch (error) {
+    console.error(`Error deleting key ${key} from Redis:`, error);
+  }
+}
+
+export { getFromRedis, saveToRedis, deleteFromRedis, initializeRedisConnection };
