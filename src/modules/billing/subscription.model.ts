@@ -49,6 +49,14 @@ export class Subscription extends Model {
   })
   plan_type!: PlanType;
 
+  // A downgrade scheduled to take effect at the next renewal (applied by the
+  // webhook/cron on charge.success).
+  @Column({
+    type: DataType.ENUM(...Object.values(PlanType)),
+    allowNull: true
+  })
+  pending_plan_type?: PlanType;
+
   @Column({
     type: DataType.ENUM(...Object.values(BillingCycle)),
     allowNull: false,

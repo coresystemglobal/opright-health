@@ -26,12 +26,37 @@ billingRouter.post('/upgrade',
   BillingController.upgradePlan
 );
 
+billingRouter.post('/downgrade',
+  tenantMiddleware,
+  authentication,
+  BillingController.downgradePlan
+);
+
+billingRouter.post('/cancel',
+  tenantMiddleware,
+  authentication,
+  BillingController.cancelSubscription
+);
+
+billingRouter.post('/reactivate',
+  tenantMiddleware,
+  authentication,
+  BillingController.reactivateSubscription
+);
+
+billingRouter.get('/history',
+  tenantMiddleware,
+  authentication,
+  BillingController.getHistory
+);
+
 billingRouter.get('/usage',
   tenantMiddleware,
   authentication,
   BillingController.getUsage
 );
 
+// Paystack subscription webhook — public, signature-verified, no tenant middleware.
 billingRouter.post('/webhook', BillingController.handleWebhook);
 
 export default billingRouter;
