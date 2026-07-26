@@ -6,8 +6,15 @@ import { Patient } from '@modules/patients/patient.model';
 import { Doctor } from '@modules/doctors/doctor.model';
 import { Hospital } from '@modules/hospital/hospital.model';
 import { generateInvoicePdf } from './pdf-invoice.service';
+import authentication from '@middlewares/authentication';
+import { tenantMiddleware } from '@middlewares/tenant.middleware';
 
+// Invoices are authenticated and tenant-scoped (previously fully open).
 const invoiceRouter = express.Router();
+invoiceRouter.use(authentication, tenantMiddleware);
+
+const tenantOf = (req: ExpressRequest): string =>
+  (req as any).tenant?.id || (req.headers['x-tenant-id'] as string);
 
 invoiceRouter.get("/", async (req: ExpressRequest, res: Response) => {
   await invoiceController.getAllInvoices(req, res);
@@ -44,7 +51,8 @@ invoiceRouter.delete("/:invoiceId", async (req: ExpressRequest, res: Response) =
 // Download invoice as PDF
 invoiceRouter.get("/:invoiceId/pdf", async (req: ExpressRequest, res: Response) => {
   try {
-    const invoice = await Invoice.findByPk(req.params.invoiceId, {
+    const invoice = await Invoice.findOne({
+      where: { id: req.params.invoiceId, tenant_id: tenantOf(req) },
       include: [
         { model: Patient, as: 'patient' },
         { model: Doctor,  as: 'doctor'  }

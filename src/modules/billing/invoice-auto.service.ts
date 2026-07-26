@@ -25,6 +25,7 @@ export async function autoCreateInvoiceForPayment(payment: Payment): Promise<Inv
   dueDate.setDate(dueDate.getDate() + 30);
 
   const invoice = await Invoice.create({
+    tenant_id:      (payment as any).tenant_id || null,
     patient_id:     patientId,
     doctor_id:      doctorId,
     invoice_type:   InvoiceType.OTHER,

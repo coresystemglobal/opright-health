@@ -37,7 +37,7 @@ export const patientPortalService = {
 
   getInvoices: async (userId: string, tenantId: string, paginationQuery: PaginationQuery, status?: string) => {
     const patient: any = await patientPortalService.resolvePatient(userId, tenantId);
-    return invoiceService.getPatientInvoices(patient.id, paginationQuery, status);
+    return invoiceService.getPatientInvoices(patient.id, tenantId, paginationQuery, status);
   },
 
   getLabResults: async (userId: string, tenantId: string, paginationQuery: PaginationQuery) => {
@@ -62,7 +62,7 @@ export const patientPortalService = {
     const [appointments, prescriptions, invoices, labs] = await Promise.all([
       appointmentService.getPatientAppointments(patient.id, pageOne, 'scheduled').catch(() => ({ count: 0, appointments: [] } as any)),
       prescriptionService.getPatientPrescriptions(patient.id, pageOne).catch(() => ({ count: 0, prescriptions: [] } as any)),
-      invoiceService.getPatientInvoices(patient.id, pageOne).catch(() => ({ count: 0, invoices: [] } as any)),
+      invoiceService.getPatientInvoices(patient.id, tenantId, pageOne).catch(() => ({ count: 0, invoices: [] } as any)),
       LaboratoryService.getTestOrdersByPatient(patient.id, tenantId, { page: 1, limit: 5, offset: 0 }).catch(() => ({ total: 0, orders: [] } as any))
     ]);
 

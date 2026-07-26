@@ -55,6 +55,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Refund handling API (`POST /refund/:paymentId`, backed by all three providers)
 - [x] 🟢 Automatic invoice generation on payment — `invoice-auto.service.ts` creates a linked invoice when none was supplied at initiation
 - [x] 🟢 Payment receipt emails — `payment-email.service.ts` sends branded receipt after every verified payment
+- [x] 🟢 Billing hygiene + tenant isolation (Payments PR 0) — nullable `tenant_id` on `invoices`/`payments` (migration 068) with reads/creates tenant-scoped; `/api/invoices` now authenticated + tenant-scoped (was fully open); removed the bogus `PaymentStatus.PAID` member and the duplicate enum in `invoice.service`; fixed the broken invoice CRUD (was writing non-existent `items`/`balance`/`payment_transactions` columns and omitting required `doctor_id`/`subtotal`) to use the real schema + model methods (`addPayment`/`cancel`)
 - [ ] 🟡 Multi-currency support — NGN via Paystack, USD/GBP/EUR via Stripe; needs per-invoice currency handling
 - [ ] 🔴 VAT / tax calculation per region
 - [ ] 🔴 Bulk payment collection for patient fees (outpatient, inpatient, lab, pharmacy)
