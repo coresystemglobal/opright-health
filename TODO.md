@@ -53,6 +53,7 @@ Gateway integration implemented 2026-06-12 (`src/modules/billing/providers/`).
 - [x] 🟢 Webhook handlers for success / failure / refund events (raw-body signature verification)
 - [ ] 🔴 Dispute/chargeback webhook events
 - [x] 🟢 PDF invoice export — `pdf-invoice.service.ts` using PDFKit; Clinical Blue design; `GET /invoices/:id/pdf` download endpoint
+- [x] 🟢 Billing robustness (Payments PR 4) — `webhook_events` idempotency ledger (migration 071, unique `(provider, event_key)`) wired into both the payment and subscription webhooks so a re-delivered event can't double-apply (stronger than the old status-only guard); `payment-reconciliation.service` cron (hourly, wired in `core/index.ts`) re-verifies PENDING payments 10 min–2 days old against Paystack to recover missed webhooks/callbacks; Stripe/Flutterwave webhook→DB persistence formally marked experimental (only Paystack persists)
 - [ ] 🔴 Payment retry logic for failed recurring charges
 - [x] 🟢 Dunning flow — `dunning.service.ts`: marks overdue, sends day-1/3/7/14 branded emails; idempotent per stage; cron fires at 08:00 daily
 - [x] 🟢 Refund handling API (`POST /refund/:paymentId`, backed by all three providers)

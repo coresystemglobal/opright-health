@@ -8,6 +8,7 @@ import { saveToRedis } from '@core/redis';
 import { Payment, PaymentStatus, PaymentMethod } from '@modules/billing/payment.model';
 
 import { Invoice } from '@modules/billing/invoice.model';
+import { WebhookEvent } from '@modules/billing/webhook-event.model';
 
 import { User } from '@modules/users/user.model';
 
@@ -214,6 +215,20 @@ export const paymentService = {
       }
 
       const webhookResult = await paymentProcessorFactory.handleWebhookEvent(signature, body, provider);
+
+      // Idempotency: skip an event we've already recorded (a re-delivered
+      // charge.success must not double-apply). Keyed by outcome + reference.
+      if (webhookResult.data?.reference && (webhookResult.status === 'success' || webhookResult.status === 'failed')) {
+        const eventKey = `${webhookResult.status}:${webhookResult.data.reference}`;
+        const isNew = await WebhookEvent.recordOnce(provider, eventKey, webhookResult.status);
+        if (!isNew) {
+          return { statusCode: 200, status: 'success', message: 'Duplicate event ignored', data: webhookResult.data };
+        }
+      }
+
+      // NOTE: only the Paystack branch persists to the DB below. Stripe and
+      // Flutterwave webhooks are signature-verified by the factory but their
+      // DB persistence is not yet wired — treat them as experimental.
 
       // Persist the outcome for successful Paystack charges
       if (

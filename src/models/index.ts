@@ -34,6 +34,7 @@ export { AuditLog, AuditAction } from '@modules/audit/audit-log.model';
 
 export { Subscription, PlanType, BillingCycle, SubscriptionStatus } from '@modules/billing/subscription.model';
 export { Plan } from '@modules/billing/plan.model';
+export { WebhookEvent } from '@modules/billing/webhook-event.model';
 
 export { UsageTracking } from '@modules/billing/usage-tracking.model';
 
@@ -203,6 +204,7 @@ import { AuditLog } from '@modules/audit/audit-log.model';
 
 import { Subscription } from '@modules/billing/subscription.model';
 import { Plan } from '@modules/billing/plan.model';
+import { WebhookEvent } from '@modules/billing/webhook-event.model';
 
 import { UsageTracking } from '@modules/billing/usage-tracking.model';
 
@@ -351,6 +353,7 @@ export const models = [
   AuditLog,
   Subscription,
   Plan,
+  WebhookEvent,
   UsageTracking,
   FAQ,
   Queue,
