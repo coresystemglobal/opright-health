@@ -192,6 +192,31 @@ function scheduleDunning() {
   }, 5 * 60 * 1000);
 }
 
+function scheduleSubscriptionLifecycle() {
+  const runCycle = async () => {
+    const { runSubscriptionLifecycleCycle } = await import('../modules/billing/subscription-lifecycle.service');
+    const { trialsExpired, graceCancelled, periodEndCancelled } = await runSubscriptionLifecycleCycle();
+    if (trialsExpired || graceCancelled || periodEndCancelled) {
+      console.log(`Subscription lifecycle: ${trialsExpired} trial(s) expired, ${graceCancelled} suspended (grace lapsed), ${periodEndCancelled} cancelled at period end.`);
+    }
+  };
+
+  // Run 6 minutes after startup, then daily at 08:05.
+  setTimeout(() => {
+    runCycle().catch(e => console.error('Subscription lifecycle error:', e));
+
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(8, 5, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+
+    setTimeout(() => {
+      runCycle().catch(e => console.error('Subscription lifecycle error:', e));
+      setInterval(() => runCycle().catch(e => console.error('Subscription lifecycle error:', e)), 24 * 60 * 60 * 1000);
+    }, next.getTime() - now.getTime());
+  }, 6 * 60 * 1000);
+}
+
 function scheduleAppointmentReminders() {
   const runCycle = async () => {
     const { runReminderCycle } = await import('../modules/appointments/appointment-reminder.service');
@@ -251,6 +276,9 @@ const startServer = async () => {
 
     // Overdue-invoice dunning emails (daily cycle)
     scheduleDunning();
+
+    // Subscription lifecycle sweeper — trial expiry, grace enforcement, cancels
+    scheduleSubscriptionLifecycle();
 
     // Appointment SMS reminders (24h / 2h before, every 30 min)
     scheduleAppointmentReminders();

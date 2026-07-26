@@ -162,6 +162,11 @@ export class LaboratoryService {
       created_by: orderData.doctor_id // Assuming doctor creates the order
     }, { transaction });
 
+    // Meter lab-test usage for the tenant's plan limits (non-fatal).
+    import('@modules/billing/billing.service')
+      .then(({ BillingService }) => BillingService.trackUsage(tenantId, 'lab_tests_count'))
+      .catch(() => {});
+
     return testOrder;
   }
 
