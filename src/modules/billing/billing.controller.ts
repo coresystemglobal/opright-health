@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { BillingService } from '@modules/billing/billing.service';
 import { Subscription, PlanType, BillingCycle } from '@modules/billing/subscription.model';
+import { WebhookEvent } from '@modules/billing/webhook-event.model';
 import { ResponseUtil } from '@utils/response.util';
 import { TenantRequest } from '@middlewares/tenant.middleware';
 
@@ -119,7 +120,13 @@ export class BillingController {
       }
 
       const event = typeof req.body === 'object' ? req.body : JSON.parse(raw);
-      // Acknowledge fast; process without blocking the 200.
+
+      // Idempotency: process each Paystack event once.
+      const d = event?.data || {};
+      const eventKey = `${event?.event || 'unknown'}:${d.id || d.reference || d.subscription_code || ''}`;
+      const isNew = await WebhookEvent.recordOnce('paystack', eventKey, event?.event);
+      if (!isNew) return res.status(200).json({ received: true, duplicate: true });
+
       await BillingService.handleSubscriptionWebhook(event);
       return res.status(200).json({ received: true });
     } catch (error: any) {

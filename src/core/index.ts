@@ -217,6 +217,20 @@ function scheduleSubscriptionLifecycle() {
   }, 6 * 60 * 1000);
 }
 
+function schedulePaymentReconciliation() {
+  const runCycle = async () => {
+    const { runPaymentReconciliation } = await import('../modules/billing/payment-reconciliation.service');
+    const { checked, resolved } = await runPaymentReconciliation();
+    if (resolved > 0) console.log(`Payment reconciliation: resolved ${resolved}/${checked} pending payment(s).`);
+  };
+
+  // Run 7 minutes after startup, then hourly.
+  setTimeout(() => {
+    runCycle().catch(e => console.error('Payment reconciliation error:', e));
+    setInterval(() => runCycle().catch(e => console.error('Payment reconciliation error:', e)), 60 * 60 * 1000);
+  }, 7 * 60 * 1000);
+}
+
 function scheduleAppointmentReminders() {
   const runCycle = async () => {
     const { runReminderCycle } = await import('../modules/appointments/appointment-reminder.service');
@@ -279,6 +293,9 @@ const startServer = async () => {
 
     // Subscription lifecycle sweeper — trial expiry, grace enforcement, cancels
     scheduleSubscriptionLifecycle();
+
+    // Reconcile PENDING payments against the gateway (missed webhooks)
+    schedulePaymentReconciliation();
 
     // Appointment SMS reminders (24h / 2h before, every 30 min)
     scheduleAppointmentReminders();
