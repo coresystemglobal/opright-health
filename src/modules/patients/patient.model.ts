@@ -5,8 +5,7 @@ import {
   DataType, 
   HasMany,
   BelongsTo,
-  ForeignKey,
-  BeforeCreate
+  ForeignKey
 } from 'sequelize-typescript';
 import { User } from '@modules/users/user.model';
 import { Person } from '@modules/mpi/person.model';
@@ -191,8 +190,8 @@ export class Patient extends Model {
   // sequence, unique within the tenant. Uniqueness is enforced per-tenant by
   // the (tenant_id, mrn) index; this picks the next free number with a bounded
   // retry, and the index is the backstop against a concurrent-insert race.
-  @BeforeCreate
   static async generateMRN(instance: Patient) {
+    console.log('[MRN-HOOK] fired for', instance.constructor.name, 'tenant:', instance.tenant_id, 'existing mrn:', instance.mrn);
     if (instance.mrn) return;
     const model = instance.constructor as typeof Patient;
     const tenantId = instance.tenant_id;

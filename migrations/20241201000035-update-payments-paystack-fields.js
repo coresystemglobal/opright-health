@@ -12,11 +12,14 @@ module.exports = {
     });
 
     // Add currency field (primary: NGN for Nigeria)
-    await queryInterface.addColumn('payments', 'currency', {
-      type: Sequelize.STRING(10),
-      allowNull: false,
-      defaultValue: 'NGN'
-    });
+    const columns = await queryInterface.describeTable('payments');
+    if (!columns.currency) {
+      await queryInterface.addColumn('payments', 'currency', {
+        type: Sequelize.STRING(10),
+        allowNull: false,
+        defaultValue: 'NGN'
+      });
+    }
 
     // Add index on reference_number for fast webhook lookups
     await queryInterface.addIndex('payments', ['reference_number'], {
