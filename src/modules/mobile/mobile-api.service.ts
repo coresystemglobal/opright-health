@@ -34,19 +34,22 @@ interface MobilePatientProfile {
 }
 
 export class MobileAPIService {
-  static async getPatientProfile(patientId: string, tenantId: string): Promise<MobilePatientProfile> {
-    const patient = await Patient.findOne({
-      where: { id: patientId, tenant_id: tenantId },
-      include: ['appointments']
-    });
+  // Mobile routes receive req.user.userId (the auth user id), but appointments
+  // are keyed by patients.id. Resolve the patient from the user id so every
+  // mobile read/write targets the patient record consistently.
+  private static async resolvePatient(userId: string, tenantId?: string): Promise<Patient> {
+    const where: any = tenantId ? { user_id: userId, tenant_id: tenantId } : { user_id: userId };
+    const patient = await Patient.findOne({ where });
+    if (!patient) throw new Error('Patient not found');
+    return patient;
+  }
 
-    if (!patient) {
-      throw new Error('Patient not found');
-    }
+  static async getPatientProfile(userId: string, tenantId: string): Promise<MobilePatientProfile> {
+    const patient = await this.resolvePatient(userId, tenantId);
 
     const upcomingAppointments = await Appointment.count({
       where: {
-        patient_id: patientId,
+        patient_id: patient.id,
         appointment_date: { $gte: new Date() },
         status: ['scheduled', 'confirmed']
       }
@@ -54,7 +57,7 @@ export class MobileAPIService {
 
     const lastAppointment = await Appointment.findOne({
       where: {
-        patient_id: patientId,
+        patient_id: patient.id,
         status: 'completed'
       },
       order: [['appointment_date', 'DESC']]
@@ -63,7 +66,7 @@ export class MobileAPIService {
     return {
       id: patient.id,
       name: `${patient.first_name} ${patient.last_name}`,
-      dateOfBirth: patient.date_of_birth.toISOString().split('T')[0],
+      dateOfBirth: String(patient.date_of_birth).slice(0, 10),
       phone: patient.phone,
       email: patient.email,
       emergencyContact: patient.emergency_contact_name ? {
@@ -71,14 +74,15 @@ export class MobileAPIService {
         phone: patient.emergency_contact_phone || ''
       } : undefined,
       upcomingAppointments,
-      lastVisit: lastAppointment?.appointment_date.toISOString().split('T')[0]
+      lastVisit: lastAppointment ? String(lastAppointment.appointment_date).slice(0, 10) : undefined
     };
   }
 
-  static async getUpcomingAppointments(patientId: string, tenantId: string): Promise<MobileAppointment[]> {
+  static async getUpcomingAppointments(userId: string, tenantId: string): Promise<MobileAppointment[]> {
+    const patient = await this.resolvePatient(userId, tenantId);
     const appointments = await Appointment.findAll({
       where: {
-        patient_id: patientId,
+        patient_id: patient.id,
         appointment_date: { $gte: new Date() },
         status: ['scheduled', 'confirmed']
       },
@@ -89,7 +93,7 @@ export class MobileAPIService {
 
     return appointments.map(apt => ({
       id: apt.id,
-      date: apt.appointment_date.toISOString().split('T')[0],
+      date: String(apt.appointment_date).slice(0, 10),
       time: apt.appointment_time,
       doctorName: apt.doctor ? `Dr. ${(apt.doctor as any).first_name} ${(apt.doctor as any).last_name}` : 'Unknown',
       department: apt.doctor?.specialization || 'General',
@@ -99,9 +103,10 @@ export class MobileAPIService {
     }));
   }
 
-  static async cancelAppointment(appointmentId: string, patientId: string, reason?: string): Promise<void> {
+  static async cancelAppointment(appointmentId: string, userId: string, reason?: string): Promise<void> {
+    const patient = await this.resolvePatient(userId);
     const appointment = await Appointment.findOne({
-      where: { id: appointmentId, patient_id: patientId }
+      where: { id: appointmentId, patient_id: patient.id }
     });
 
     if (!appointment) {
@@ -112,7 +117,7 @@ export class MobileAPIService {
       throw new Error('Appointment cannot be cancelled');
     }
 
-    await appointment.cancel(patientId, reason);
+    await appointment.cancel(userId, reason);
 
     // Send notification
     await NotificationService.sendNotification({
@@ -120,12 +125,12 @@ export class MobileAPIService {
       title: 'Appointment Cancelled',
       message: `Your appointment on ${appointment.appointment_date} has been cancelled`,
       tenantId: (appointment as any).tenant_id || '',
-      userId: patientId
+      userId: patient.id
     });
   }
 
   static async requestAppointment(
-    patientId: string,
+    userId: string,
     tenantId: string,
     appointmentData: {
       doctorId: string;
@@ -135,6 +140,8 @@ export class MobileAPIService {
     }
   ): Promise<{ success: boolean; message: string; appointmentId?: string }> {
     try {
+      const patient = await this.resolvePatient(userId, tenantId);
+
       // Check doctor availability (simplified)
       const existingAppointment = await Appointment.findOne({
         where: {
@@ -154,14 +161,14 @@ export class MobileAPIService {
 
       // Create appointment request (pending approval)
       const appointment = await Appointment.create({
-        patient_id: patientId,
+        patient_id: patient.id,
         doctor_id: appointmentData.doctorId,
         appointment_date: new Date(appointmentData.preferredDate),
         appointment_time: appointmentData.preferredTime,
         chief_complaint: appointmentData.reason,
         status: 'scheduled',
         tenant_id: tenantId,
-        created_by: patientId
+        created_by: userId
       });
 
       // Notify staff
@@ -186,7 +193,8 @@ export class MobileAPIService {
     }
   }
 
-  static async getLabResults(patientId: string, tenantId: string): Promise<any[]> {
+  static async getLabResults(userId: string, tenantId: string): Promise<any[]> {
+    const patient = await this.resolvePatient(userId, tenantId);
     // Simplified lab results for mobile
     const results = await sequelize.query(`
       SELECT 
@@ -210,7 +218,7 @@ export class MobileAPIService {
       ORDER BY tr.result_date DESC
       LIMIT 20
     `, {
-      replacements: { patientId, tenantId },
+      replacements: { patientId: patient.id, tenantId },
       type: QueryTypes.SELECT
     });
 

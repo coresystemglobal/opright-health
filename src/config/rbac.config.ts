@@ -63,6 +63,7 @@ export const PERMISSIONS = {
   // Laboratory
   LAB_ORDER: 'lab:order',
   LAB_RESULT: 'lab:result',
+  LAB_MANAGE: 'lab:manage',
 
   // Reports
   REPORTS_VIEW: 'reports:view',
@@ -74,7 +75,15 @@ export const PERMISSIONS = {
 
   // Cross-tenant record sharing (MPI)
   RECORD_SHARE_GRANT: 'record_share:grant',
-  RECORD_SHARE_VIEW_EXTERNAL: 'record_share:view_external'
+  RECORD_SHARE_VIEW_EXTERNAL: 'record_share:view_external',
+
+  // Facility profiles (laboratory / pharmacy)
+  FACILITY_VIEW: 'facility:view',
+  FACILITY_MANAGE: 'facility:manage',
+
+  // Subscription plan catalogue (platform-level; SUPER_ADMIN only)
+  PLAN_VIEW: 'plan:view',
+  PLAN_MANAGE: 'plan:manage'
 };
 
 export const ROLE_PERMISSIONS = {
@@ -106,7 +115,10 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.STAFF_VIEW,
     PERMISSIONS.STAFF_MANAGE,
     PERMISSIONS.RECORD_SHARE_GRANT,
-    PERMISSIONS.RECORD_SHARE_VIEW_EXTERNAL
+    PERMISSIONS.RECORD_SHARE_VIEW_EXTERNAL,
+    PERMISSIONS.LAB_MANAGE,
+    PERMISSIONS.FACILITY_VIEW,
+    PERMISSIONS.FACILITY_MANAGE
   ],
 
   [ROLES.DOCTOR]: [
@@ -152,7 +164,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.PATIENT_VIEW,
     PERMISSIONS.DOCTOR_VIEW,
     PERMISSIONS.LAB_ORDER,
-    PERMISSIONS.LAB_RESULT
+    PERMISSIONS.LAB_RESULT,
+    PERMISSIONS.LAB_MANAGE
   ],
 
   [ROLES.BILLING]: [

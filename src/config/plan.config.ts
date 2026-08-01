@@ -47,10 +47,11 @@ const getPlanPricing = (): Record<PlanType, PlanPricing> => {
 /**
  * Get plan limits from environment variables or use defaults
  */
-// Flat all-inclusive model (recorded decision): every tier gets EVERY feature.
-// Tiers differ only by capacity (patients / users / storage / API volume).
-// `all_features` is the wildcard requireFeature() honours, so no tenant is
-// ever denied a feature on plan grounds — only on capacity limits.
+// FALLBACK ONLY. Real per-tier feature entitlements now live in the `plans`
+// DB table (see migration 20241201000069) and are loaded by
+// BillingService.refreshPlansCache(). This config is the seed/fallback used
+// only when the plans table is empty or unavailable; `all_features` is the
+// wildcard requireFeature() honours (fail-open when no plans are seeded).
 const ALL_FEATURES = ['all_features'];
 
 const getPlanLimits = (): Record<PlanType, PlanLimits> => {

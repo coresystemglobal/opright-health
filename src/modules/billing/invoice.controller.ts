@@ -4,6 +4,9 @@ import { invoiceService } from '@modules/billing/invoice.service';
 import { ResponseUtil } from '@utils/response.util';
 import { PaginationQuery } from '@appTypes/common.types';
 
+const tenantOf = (req: ExpressRequest): string =>
+  (req as any).tenant?.id || (req.headers['x-tenant-id'] as string);
+
 /**
  * Invoice controller for handling invoice operations
  */
@@ -20,7 +23,7 @@ const invoiceController = {
         limit: limit as string
       };
 
-      const result = await invoiceService.getAllInvoices(paginationQuery, status as string);
+      const result = await invoiceService.getAllInvoices(paginationQuery, tenantOf(req), status as string);
 
       return ResponseUtil.success(res, {
         invoices: result.invoices,
@@ -48,7 +51,7 @@ const invoiceController = {
         return ResponseUtil.validationError(res, ['Invoice ID is required']);
       }
 
-      const invoice = await invoiceService.getInvoiceById(invoiceId);
+      const invoice = await invoiceService.getInvoiceById(invoiceId, tenantOf(req));
       
       return ResponseUtil.success(res, invoice, 'Invoice retrieved successfully');
     } catch (error) {
@@ -84,6 +87,7 @@ const invoiceController = {
 
       const result = await invoiceService.getPatientInvoices(
         patientId,
+        tenantOf(req),
         paginationQuery,
         status as string
       );
@@ -121,7 +125,7 @@ const invoiceController = {
         ]);
       }
 
-      const invoice = await invoiceService.createInvoice(invoiceData);
+      const invoice = await invoiceService.createInvoice(invoiceData, tenantOf(req));
       
       return ResponseUtil.success(res, invoice, 'Invoice created successfully', 201);
     } catch (error) {
@@ -155,7 +159,7 @@ const invoiceController = {
         return ResponseUtil.validationError(res, ['Invoice ID is required']);
       }
 
-      const invoice = await invoiceService.updateInvoice(invoiceId, updateData);
+      const invoice = await invoiceService.updateInvoice(invoiceId, tenantOf(req), updateData);
       
       return ResponseUtil.success(res, invoice, 'Invoice updated successfully');
     } catch (error) {
@@ -183,7 +187,7 @@ const invoiceController = {
   recordPayment: async (req: ExpressRequest, res: Response): Promise<Response> => {
     try {
       const { invoiceId } = req.params;
-      const { amount, payment_reference } = req.body;
+      const { amount } = req.body;
 
       if (!invoiceId) {
         return ResponseUtil.validationError(res, ['Invoice ID is required']);
@@ -193,7 +197,7 @@ const invoiceController = {
         return ResponseUtil.validationError(res, ['Payment amount must be greater than zero']);
       }
 
-      const invoice = await invoiceService.recordPayment(invoiceId, amount, payment_reference);
+      const invoice = await invoiceService.recordPayment(invoiceId, tenantOf(req), amount);
       
       return ResponseUtil.success(res, invoice, 'Payment recorded successfully');
     } catch (error) {
@@ -231,7 +235,7 @@ const invoiceController = {
         return ResponseUtil.validationError(res, ['Cancellation reason is required']);
       }
 
-      const invoice = await invoiceService.cancelInvoice(invoiceId, reason);
+      const invoice = await invoiceService.cancelInvoice(invoiceId, tenantOf(req), reason);
       
       return ResponseUtil.success(res, invoice, 'Invoice cancelled successfully');
     } catch (error) {
@@ -264,7 +268,7 @@ const invoiceController = {
         return ResponseUtil.validationError(res, ['Invoice ID is required']);
       }
 
-      await invoiceService.deleteInvoice(invoiceId);
+      await invoiceService.deleteInvoice(invoiceId, tenantOf(req));
       
       return ResponseUtil.success(res, null, 'Invoice deleted successfully');
     } catch (error) {

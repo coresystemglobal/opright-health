@@ -685,7 +685,7 @@ export const appointmentService = {
             end: doctor.working_hours_end
           } : null,
           appointments: appointments.filter(apt => 
-            apt.appointment_date.toISOString().split('T')[0] === dateStr
+            String(apt.appointment_date).slice(0, 10) === dateStr
           ),
           totalAppointments: 0,
           availableSlots: []

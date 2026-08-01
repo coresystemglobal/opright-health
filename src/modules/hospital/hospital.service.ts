@@ -42,11 +42,11 @@ interface UpdateHospitalData {
 }
 
 export const hospitalService = {
-  getAllHospitals: async (paginationQuery: PaginationQuery, search?: string, city?: string, state?: string) => {
+  getAllHospitals: async (paginationQuery: PaginationQuery, tenantId: string, search?: string, city?: string, state?: string) => {
     try {
       const paginationOptions = PaginationUtil.parsePaginationQuery(paginationQuery);
 
-      const whereConditions: any = {};
+      const whereConditions: any = { tenant_id: tenantId };
 
       if (search) {
         const sanitized = search.trim();
@@ -78,13 +78,13 @@ export const hospitalService = {
     }
   },
 
-  getHospitalById: async (hospitalId: string) => {
+  getHospitalById: async (hospitalId: string, tenantId: string) => {
     try {
       if (!ValidationUtil.isValidUUID(hospitalId)) {
         throw new Error('Invalid hospital ID format');
       }
 
-      const hospital = await Hospital.findByPk(hospitalId);
+      const hospital = await Hospital.findOne({ where: { id: hospitalId, tenant_id: tenantId } });
 
       if (!hospital) {
         throw new Error('Hospital not found');
@@ -97,7 +97,7 @@ export const hospitalService = {
     }
   },
 
-  createHospital: async (hospitalData: CreateHospitalData) => {
+  createHospital: async (hospitalData: CreateHospitalData, tenantId: string) => {
     try {
       const {
         name,
@@ -134,6 +134,7 @@ export const hospitalService = {
       }
 
       const hospital = await Hospital.create({
+        tenant_id: tenantId,
         name,
         license_number,
         hospital_type: hospital_type || HospitalType.GENERAL,
@@ -159,13 +160,13 @@ export const hospitalService = {
     }
   },
 
-  updateHospital: async (hospitalId: string, updateData: UpdateHospitalData) => {
+  updateHospital: async (hospitalId: string, tenantId: string, updateData: UpdateHospitalData) => {
     try {
       if (!ValidationUtil.isValidUUID(hospitalId)) {
         throw new Error('Invalid hospital ID format');
       }
 
-      const hospital = await Hospital.findByPk(hospitalId);
+      const hospital = await Hospital.findOne({ where: { id: hospitalId, tenant_id: tenantId } });
 
       if (!hospital) {
         throw new Error('Hospital not found');
@@ -179,7 +180,9 @@ export const hospitalService = {
         throw new Error('Invalid phone number format');
       }
 
-      await hospital.update(updateData);
+      const safe: any = { ...updateData };
+      delete safe.tenant_id; // never reassign ownership
+      await hospital.update(safe);
 
       return hospital;
     } catch (error) {
@@ -188,13 +191,13 @@ export const hospitalService = {
     }
   },
 
-  deleteHospital: async (hospitalId: string) => {
+  deleteHospital: async (hospitalId: string, tenantId: string) => {
     try {
       if (!ValidationUtil.isValidUUID(hospitalId)) {
         throw new Error('Invalid hospital ID format');
       }
 
-      const hospital = await Hospital.findByPk(hospitalId);
+      const hospital = await Hospital.findOne({ where: { id: hospitalId, tenant_id: tenantId } });
 
       if (!hospital) {
         throw new Error('Hospital not found');
@@ -208,13 +211,13 @@ export const hospitalService = {
     }
   },
 
-  toggleHospitalStatus: async (hospitalId: string) => {
+  toggleHospitalStatus: async (hospitalId: string, tenantId: string) => {
     try {
       if (!ValidationUtil.isValidUUID(hospitalId)) {
         throw new Error('Invalid hospital ID format');
       }
 
-      const hospital = await Hospital.findByPk(hospitalId);
+      const hospital = await Hospital.findOne({ where: { id: hospitalId, tenant_id: tenantId } });
 
       if (!hospital) {
         throw new Error('Hospital not found');

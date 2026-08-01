@@ -28,15 +28,14 @@
     "noPropertyAccessFromIndexSignature": false,
     "typeRoots": ["node_modules/@types"],
     "ignoreDeprecations": "5.0",
-    "baseUrl": "./src",
     "paths": {
-      "@modules/*":     ["modules/*"],
-      "@core/*":        ["core/*"],
-      "@shared/*":      ["shared/*"],
-      "@middlewares/*": ["middlewares/*"],
-      "@config/*":      ["config/*"],
-      "@utils/*":       ["utils/*"],
-      "@appTypes/*":    ["types/*"]
+      "@modules/*":     ["./src/modules/*"],
+      "@core/*":        ["./src/core/*"],
+      "@shared/*":      ["./src/shared/*"],
+      "@middlewares/*": ["./src/middlewares/*"],
+      "@config/*":      ["./src/config/*"],
+      "@utils/*":       ["./src/utils/*"],
+      "@appTypes/*":    ["./src/types/*"]
     }
   },
   "include": [

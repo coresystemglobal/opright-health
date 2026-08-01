@@ -21,6 +21,8 @@ import reviewRouter from '@modules/doctors/review.route';
 
 // Hospital
 import hospitalRouter from '@modules/hospital/hospital.route';
+import laboratoryFacilityRouter from '@modules/facilities/laboratory-facility.route';
+import pharmacyFacilityRouter from '@modules/facilities/pharmacy-facility.route';
 import departmentRouter from '@modules/hospital/department.route';
 
 // Wards & Beds
@@ -69,6 +71,7 @@ import laboratoryRouter from '@modules/laboratory/laboratory.route';
 
 // Billing
 import billingRouter from '@modules/billing/billing.route';
+import planRouter from '@modules/billing/plan.route';
 import invoiceRouter from '@modules/billing/invoice.route';
 import paymentRouter from '@modules/billing/payment.route';
 
@@ -121,6 +124,8 @@ router.use('/api/reviews', reviewRouter);
 
 // Hospital
 router.use('/api/hospitals', hospitalRouter);
+router.use('/api/laboratories', laboratoryFacilityRouter);
+router.use('/api/pharmacies', pharmacyFacilityRouter);
 router.use('/api/departments', departmentRouter);
 router.use('/api/wards', wardRouter);
 router.use('/api/beds', bedRouter);
@@ -153,6 +158,7 @@ router.use('/api/laboratory', laboratoryRouter);
 
 // Billing
 router.use('/api/billing', billingRouter);
+router.use('/api/plans', planRouter);
 router.use('/api/invoices', invoiceRouter);
 router.use('/api/payments', paymentRouter);
 

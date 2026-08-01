@@ -10,11 +10,20 @@ import {
   BeforeCreate,
   BeforeUpdate
 } from 'sequelize-typescript';
+
+// DATEONLY columns come back from Sequelize as 'YYYY-MM-DD' strings, not Date
+// objects. Normalize to a Date-only string regardless of the stored form.
+function dateOnlyString(value: unknown): string {
+  if (value instanceof Date) return value.toISOString().split('T')[0];
+  return String(value).slice(0, 10);
+}
 import { Patient } from '@modules/patients/patient.model';
 
 import { Doctor } from '@modules/doctors/doctor.model';
 
 import { User } from '@modules/users/user.model';
+
+import { Tenant } from '@modules/tenancy/tenant.model';
 
 import { Invoice } from '@modules/billing/invoice.model';
 import { encryptedColumn } from '@utils/encryption.util';
@@ -100,6 +109,16 @@ export class Appointment extends Model {
 
   @BelongsTo(() => Patient)
   patient?: Patient;
+
+  @ForeignKey(() => Tenant)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  tenant_id?: string;
+
+  @BelongsTo(() => Tenant)
+  tenant?: Tenant;
 
   @ForeignKey(() => Doctor)
   @Column({
@@ -316,7 +335,7 @@ export class Appointment extends Model {
 
   // Virtual fields
   get appointment_datetime(): Date {
-    const dateStr = this.appointment_date.toISOString().split('T')[0];
+    const dateStr = dateOnlyString(this.appointment_date);
     return new Date(`${dateStr}T${this.appointment_time}`);
   }
 
@@ -334,7 +353,7 @@ export class Appointment extends Model {
 
   get is_today(): boolean {
     const today = new Date().toISOString().split('T')[0];
-    const appointmentDate = this.appointment_date.toISOString().split('T')[0];
+    const appointmentDate = dateOnlyString(this.appointment_date);
     return today === appointmentDate;
   }
 
@@ -361,7 +380,7 @@ export class Appointment extends Model {
   // Instance methods
   isConflictWith(otherAppointment: Appointment): boolean {
     if (this.doctor_id !== otherAppointment.doctor_id) return false;
-    if (this.appointment_date.toISOString() !== otherAppointment.appointment_date.toISOString()) return false;
+    if (dateOnlyString(this.appointment_date) !== dateOnlyString(otherAppointment.appointment_date)) return false;
     
     const thisStart = this.appointment_time;
     const thisEnd = this.end_time;

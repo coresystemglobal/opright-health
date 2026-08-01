@@ -10,6 +10,22 @@ export enum TenantStatus {
   SUSPENDED = 'suspended'
 }
 
+/**
+ * The kind of health facility a tenant represents. Lets a standalone
+ * laboratory or pharmacy be a first-class tenant (not only a department inside
+ * a hospital), and is the basis for facility-specific onboarding / module
+ * gating. `platform` is the system-owned direct-to-consumer tenant.
+ */
+export enum TenantType {
+  HOSPITAL = 'hospital',
+  LABORATORY = 'laboratory',
+  PHARMACY = 'pharmacy',
+  CLINIC = 'clinic',
+  DIAGNOSTIC_CENTER = 'diagnostic_center',
+  PLATFORM = 'platform',
+  OTHER = 'other'
+}
+
 export interface ReminderSettings {
   enabled?: boolean;
   /** Lead time in hours for the first ("long") reminder. */
@@ -59,6 +75,14 @@ export class Tenant extends Model {
   status!: TenantStatus;
 
   @Column({
+    type: DataType.ENUM(...Object.values(TenantType)),
+    allowNull: false,
+    defaultValue: TenantType.HOSPITAL,
+    comment: 'The kind of health facility this tenant represents'
+  })
+  facility_type!: TenantType;
+
+  @Column({
     type: DataType.STRING(255),
     allowNull: false
   })
@@ -81,6 +105,26 @@ export class Tenant extends Model {
     allowNull: true
   })
   stripe_customer_id?: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: true
+  })
+  paystack_customer_id?: string;
+
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: true,
+    comment: 'Where SaaS billing correspondence goes; falls back to contact_email'
+  })
+  billing_email?: string;
+
+  @Column({
+    type: DataType.STRING(30),
+    allowNull: true,
+    comment: 'Denormalized current subscription status (active/trialing/past_due/cancelled)'
+  })
+  subscription_status?: string;
 
   @Column({
     type: DataType.JSONB,

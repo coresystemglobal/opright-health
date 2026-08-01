@@ -67,7 +67,7 @@ export class FHIRService {
         }
       ] : undefined,
       gender: patient.gender as any,
-      birthDate: patient.date_of_birth.toISOString().split('T')[0],
+      birthDate: String(patient.date_of_birth).slice(0, 10),
       address: patient.address ? [
         {
           use: 'home',

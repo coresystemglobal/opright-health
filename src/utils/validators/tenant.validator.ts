@@ -7,7 +7,8 @@ export const tenantValidation = {
     subdomain: Joi.string().alphanum().min(3).max(100).required(),
     contact_email: commonSchemas.email.required(),
     contact_phone: commonSchemas.phone.required(),
-    address: commonSchemas.longText.optional()
+    address: commonSchemas.longText.optional(),
+    facility_type: Joi.string().valid('hospital', 'laboratory', 'pharmacy', 'clinic', 'diagnostic_center', 'other').optional()
   }),
 
   reminderSettings: Joi.object({
