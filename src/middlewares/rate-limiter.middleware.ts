@@ -6,13 +6,21 @@ import { initializeRedisConnection } from '../core/redis';
 // Lazily resolved Redis client shared across all stores
 let _redisClient: Redis | null = null;
 async function getRedisClient(): Promise<Redis | null> {
-  if (_redisClient) return _redisClient;
+  if (_redisClient && _redisClient.status !== 'end') {
+    return _redisClient;
+  }
+  _redisClient = null;
   try {
     _redisClient = await initializeRedisConnection();
     return _redisClient;
   } catch {
+    _redisClient = null;
     return null;
   }
+}
+
+function redisReady(client: Redis | null): client is Redis {
+  return !!client && client.status === 'ready';
 }
 
 class RedisRateLimitStore implements Store {
@@ -25,36 +33,53 @@ class RedisRateLimitStore implements Store {
     getRedisClient().catch(() => {}); // warm up connection
   }
 
+  private fallback(): ClientRateLimitInfo {
+    return { totalHits: 1, resetTime: new Date(Date.now() + this.windowMs) };
+  }
+
   async increment(key: string): Promise<ClientRateLimitInfo> {
     const client = await getRedisClient();
-    if (!client) {
-      return { totalHits: 1, resetTime: new Date(Date.now() + this.windowMs) };
+    if (!redisReady(client)) {
+      return this.fallback();
     }
 
-    const redisKey = `${this.prefix}${key}`;
-    const results = await client.multi().incr(redisKey).pttl(redisKey).exec();
+    try {
+      const redisKey = `${this.prefix}${key}`;
+      const results = await client.multi().incr(redisKey).pttl(redisKey).exec();
 
-    const totalHits = (results?.[0]?.[1] as number) ?? 1;
-    const pttl = (results?.[1]?.[1] as number) ?? -1;
+      const totalHits = (results?.[0]?.[1] as number) ?? 1;
+      const pttl = (results?.[1]?.[1] as number) ?? -1;
 
-    if (totalHits === 1 || pttl < 0) {
-      await client.pexpire(redisKey, this.windowMs);
+      if (totalHits === 1 || pttl < 0) {
+        await client.pexpire(redisKey, this.windowMs);
+      }
+
+      const ttlMs = pttl > 0 ? pttl : this.windowMs;
+      return { totalHits, resetTime: new Date(Date.now() + ttlMs) };
+    } catch (err) {
+      console.error('Rate limit store error, falling back to in-memory:', err);
+      return this.fallback();
     }
-
-    const ttlMs = pttl > 0 ? pttl : this.windowMs;
-    return { totalHits, resetTime: new Date(Date.now() + ttlMs) };
   }
 
   async decrement(key: string): Promise<void> {
     const client = await getRedisClient();
-    if (!client) return;
-    await client.decr(`${this.prefix}${key}`);
+    if (!redisReady(client)) return;
+    try {
+      await client.decr(`${this.prefix}${key}`);
+    } catch (err) {
+      console.error('Rate limit decrement error:', err);
+    }
   }
 
   async resetKey(key: string): Promise<void> {
     const client = await getRedisClient();
-    if (!client) return;
-    await client.del(`${this.prefix}${key}`);
+    if (!redisReady(client)) return;
+    try {
+      await client.del(`${this.prefix}${key}`);
+    } catch (err) {
+      console.error('Rate limit reset error:', err);
+    }
   }
 }
 
