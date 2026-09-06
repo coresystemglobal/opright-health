@@ -59,6 +59,7 @@ class PaystackPaymentProcessor {
         callback_url: process.env.PAYSTACK_CALLBACK_URL || `${process.env.API_BASE_URL}/api/payments/paystack/callback`,
         channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
         metadata: {
+          application_id: process.env.APPLICATION_ID || 'com.coresystemglobal.hms',
           payment_provider: 'paystack',
           custom_fields: [
             { display_name: 'Platform', variable_name: 'platform', value: 'MediCore HMS' }
@@ -174,7 +175,6 @@ class PaystackPaymentProcessor {
       
       switch (event.event) {
         case 'charge.success':
-          // Handle successful payment
           return {
             statusCode: 200,
             status: 'success',
@@ -184,6 +184,10 @@ class PaystackPaymentProcessor {
               amount: event.data.amount / 100,
               status: event.data.status,
               channel: event.data.channel,
+              application_id: event.data.metadata?.application_id || null,
+              invoice_id: event.data.metadata?.invoice_id || null,
+              appointment_id: event.data.metadata?.appointment_id || null,
+              created_by: event.data.metadata?.created_by || null,
               metadata: event.data.metadata
             }
           };

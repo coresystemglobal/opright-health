@@ -77,6 +77,7 @@ export const paymentService = {
         payment_provider,
         payment_method,
         metadata: {
+          application_id: process.env.APPLICATION_ID || 'com.coresystemglobal.hms',
           invoice_id: invoice_id || null,
           appointment_id: appointment_id || null,
           created_by,
