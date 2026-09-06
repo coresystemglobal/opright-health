@@ -19,12 +19,23 @@ export interface PaymentResponse {
   data: any;
 }
 
+export enum TransactionPurpose {
+  SUBSCRIPTION        = 'subscription',
+  PATIENT_REGISTRATION = 'patient_registration',
+  HOSPITAL_BILL       = 'hospital_bill',
+  LAB_TEST            = 'lab_test',
+  PHARMACY_BILL       = 'pharmacy_bill',
+  SETTLEMENT          = 'settlement',
+  OTHER               = 'other'
+}
+
 export interface PaymentRequestData {
   amount: number;
   email: string;
   currency: string;
   payment_provider: string;
   payment_method: string;
+  transaction_purpose?: TransactionPurpose;
 }
 
 export interface AllPaymentsResponse {

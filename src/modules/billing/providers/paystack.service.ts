@@ -185,6 +185,7 @@ class PaystackPaymentProcessor {
               status: event.data.status,
               channel: event.data.channel,
               application_id: event.data.metadata?.application_id || null,
+              transaction_purpose: event.data.metadata?.transaction_purpose || null,
               invoice_id: event.data.metadata?.invoice_id || null,
               appointment_id: event.data.metadata?.appointment_id || null,
               created_by: event.data.metadata?.created_by || null,

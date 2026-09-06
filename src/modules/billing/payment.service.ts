@@ -2,7 +2,8 @@ import {
   PaymentResponse,
   PaymentRequestData,
   AllPaymentsResponse,
-  FetchPaymentsRequestData
+  FetchPaymentsRequestData,
+  TransactionPurpose
 } from '@appTypes/payment.types';
 import { saveToRedis } from '@core/redis';
 import { Payment, PaymentStatus, PaymentMethod } from '@modules/billing/payment.model';
@@ -30,6 +31,7 @@ export const paymentService = {
     appointment_id?: string;
     created_by: string;
     tenant_id?: string;
+    transaction_purpose?: TransactionPurpose;
     metadata?: Record<string, unknown>;
   }): Promise<PaymentResponse> => {
     try {
@@ -43,6 +45,7 @@ export const paymentService = {
         appointment_id,
         created_by,
         tenant_id,
+        transaction_purpose = TransactionPurpose.OTHER,
         metadata = {}
       } = paymentData;
 
@@ -78,6 +81,7 @@ export const paymentService = {
         payment_method,
         metadata: {
           application_id: process.env.APPLICATION_ID || 'com.coresystemglobal.hms',
+          transaction_purpose,
           invoice_id: invoice_id || null,
           appointment_id: appointment_id || null,
           created_by,
