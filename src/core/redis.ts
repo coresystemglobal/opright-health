@@ -6,6 +6,10 @@ const RETRY_BASE_DELAY = 1000; // 1 second
 let redisClient: Redis | null = null;
 
 async function initializeRedisConnection(): Promise<Redis> {
+  if (redisClient && redisClient.status === 'end') {
+    redisClient = null;
+  }
+
   if (!redisClient) {
     const redisOptions = {
       maxRetriesPerRequest: MAX_RETRIES,
@@ -44,6 +48,11 @@ async function initializeRedisConnection(): Promise<Redis> {
 
     redisClient.on('close', () => {
       console.log('Redis connection closed');
+    });
+
+    redisClient.on('end', () => {
+      console.log('Redis connection ended permanently');
+      redisClient = null;
     });
 
     redisClient.on('reconnecting', (delay: number) => {
