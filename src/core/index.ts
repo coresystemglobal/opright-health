@@ -16,6 +16,8 @@ import {
 import { idempotencyMiddleware, cleanupOldSyncLogs } from '../middlewares/idempotency.middleware';
 import { errorTrackingMiddleware } from '../middlewares/error-tracking.middleware';
 import { NotificationService } from '../modules/notifications/notification.service';
+import { accessControl } from '../security/gate';
+import { assertPolicyComplete } from '../security/reconcile';
 
 /**
  * Validate that all critical environment variables are present at startup.
@@ -134,7 +136,15 @@ server.get("/health", (req, res) => {
   });
 });
 
-server.use('/api/v1', router);
+// ── Access control ─────────────────────────────────────────────────────────
+// Deny-by-default. Every route under /api/v1 must have an entry in
+// src/security/policy.ts; anything else is refused (403 NO_POLICY). This
+// replaces per-route authentication/checkPermission as the authority — those
+// can stay in place harmlessly during migration and be removed afterwards.
+//
+// Set POLICY_MODE=report to log would-be denials without enforcing, which is
+// how to roll this out safely. Default is enforce.
+server.use('/api/v1', accessControl, router);
 
 // Log errors and fire Slack alerts for high/critical severity
 server.use(errorTrackingMiddleware);
@@ -267,6 +277,13 @@ function scheduleReportRunner() {
 const startServer = async () => {
   // Fail fast if required secrets are missing
   validateRequiredEnvVars();
+
+  // Fail fast if any route is reachable without a declared access policy.
+  // This is the guarantee that a new route cannot be added without an
+  // authorisation decision being made for it.
+  assertPolicyComplete(router, {
+    strict: process.env.POLICY_STRICT === 'true',
+  });
 
   try {
     await sequelize.authenticate();

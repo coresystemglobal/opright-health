@@ -1,3 +1,9 @@
+// MUST be the first import: patches express.Router so every route records its
+// own path for the boot-time policy reconciler. Any router created before this
+// is invisible to it. See src/security/install.ts for why it is a side-effect
+// import rather than a function call here.
+import './security/install';
+
 import { Router } from 'express';
 import { authRateLimit, apiRateLimit } from './middlewares/rate-limiter.middleware';
 import { requireActiveSubscription } from './middlewares/billing.middleware';
