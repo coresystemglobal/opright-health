@@ -14,6 +14,7 @@ import { WebhookEvent } from '@modules/billing/webhook-event.model';
 import { User } from '@modules/users/user.model';
 
 import paymentProcessorFactory from '@modules/billing/providers/payment-processor.factory';
+import { classifyWebhookOwnership } from '@config/application.config';
 
 import { ValidationUtil } from '@utils/validation.util';
 import { Op } from 'sequelize';
@@ -220,6 +221,44 @@ export const paymentService = {
       }
 
       const webhookResult = await paymentProcessorFactory.handleWebhookEvent(signature, body, provider);
+
+      // ── Application routing ────────────────────────────────────────────────
+      // The payment account is shared across Opright applications, so a large
+      // share of inbound events belong to a sibling app. Filter BEFORE the
+      // idempotency record and before any persistence: recording another app's
+      // event would burn the key and mask a later legitimate delivery.
+      const ownership = classifyWebhookOwnership(webhookResult.data?.application_id);
+
+      if (ownership === 'other') {
+        return {
+          statusCode: 200,
+          status: 'ignored',
+          message: 'Event belongs to another application',
+          data: null
+        };
+      }
+
+      if (ownership === 'unknown') {
+        // No application id: a legacy transaction, or a sibling app that does
+        // not stamp one. Treat the event as ours only if we hold the reference.
+        const reference = webhookResult.data?.reference;
+        const known = reference
+          ? await Payment.findOne({ where: { reference_number: reference }, attributes: ['id'] })
+          : null;
+
+        if (!known) {
+          console.warn(
+            `[webhook] ${provider} event with no application_id and unknown reference ` +
+            `${reference ?? '(none)'} — ignoring.`
+          );
+          return {
+            statusCode: 200,
+            status: 'ignored',
+            message: 'Event not recognised by this application',
+            data: null
+          };
+        }
+      }
 
       // Idempotency: skip an event we've already recorded (a re-delivered
       // charge.success must not double-apply). Keyed by outcome + reference.

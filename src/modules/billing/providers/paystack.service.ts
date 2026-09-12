@@ -1,6 +1,8 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { PaymentRequestData } from '@appTypes/payment.types';
+import { applicationId } from '@config/application.config';
+import { timingSafeEqualStr } from '@utils/secure-compare.util';
 
 // Define types for Paystack responses
 interface PaystackSuccessResponse {
@@ -59,12 +61,14 @@ class PaystackPaymentProcessor {
         callback_url: process.env.PAYSTACK_CALLBACK_URL || `${process.env.API_BASE_URL}/api/payments/paystack/callback`,
         channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
         metadata: {
-          application_id: process.env.APPLICATION_ID || 'com.coresystemglobal.hms',
           payment_provider: 'paystack',
           custom_fields: [
             { display_name: 'Platform', variable_name: 'platform', value: 'MediCore HMS' }
           ],
-          ...(paymentData as any).metadata
+          ...(paymentData as any).metadata,
+          // Stamped LAST so caller-supplied metadata can never overwrite it:
+          // the shared Paystack account routes webhooks on this value.
+          application_id: applicationId()
         }
       };
 
@@ -162,7 +166,8 @@ class PaystackPaymentProcessor {
         .update(rawBody)
         .digest('hex');
 
-      if (hash !== signature) {
+      // Constant-time: a plain !== leaks how much of the digest matched.
+      if (!timingSafeEqualStr(hash, signature)) {
         return {
           statusCode: 400,
           status: 'error',
@@ -203,7 +208,8 @@ class PaystackPaymentProcessor {
               reference: event.data.reference,
               amount: event.data.amount / 100,
               status: event.data.status,
-              channel: event.data.channel
+              channel: event.data.channel,
+              application_id: event.data.metadata?.application_id || null
             }
           };
 

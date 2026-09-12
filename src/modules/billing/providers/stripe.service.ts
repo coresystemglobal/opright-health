@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { PaymentRequestData, PaymentResponse } from '@appTypes/payment.types';
+import { applicationId } from '@config/application.config';
 
 /**
  * Stripe Payment Processor Service
@@ -30,7 +31,12 @@ class StripePaymentProcessor {
         },
         metadata: {
           email,
-          payment_provider: 'stripe'
+          payment_provider: 'stripe',
+          ...((paymentData as any).metadata ?? {}),
+          // Stamped LAST so caller-supplied metadata cannot overwrite it: the
+          // payment account is shared across Opright applications and inbound
+          // webhooks are routed on this value.
+          application_id: applicationId()
         }
       });
 
@@ -130,6 +136,9 @@ class StripePaymentProcessor {
               payment_intent_id: paymentIntent.id,
               amount: paymentIntent.amount / 100,
               status: paymentIntent.status,
+              // `reference` is the field the shared webhook pipeline keys on.
+              reference: paymentIntent.id,
+              application_id: paymentIntent.metadata?.application_id || null,
               metadata: paymentIntent.metadata
             }
           };
