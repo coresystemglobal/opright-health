@@ -106,6 +106,9 @@ server.use('/api/v1/payments', paymentRateLimit);
 server.use('/api/v1', apiRateLimit);
 server.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
+  // Status pings must never be throttled - behind a proxy without trust proxy
+  // every caller shares one bucket, so a monitor would 429 within minutes.
+  if (req.path === '/' || req.path === '/health') return next();
   return generalRateLimit(req, res, next);
 });
 
@@ -115,17 +118,8 @@ server.use('/api/v1', (req, res, next) => {
   return idempotencyMiddleware(req, res, next);
 });
 
-server.get("/", (req, res) => {
-  res.json({ 
-    message: "Hospital Management System API",
-    version: "1.0.0",
-    documentation: "/api-docs",
-    endpoints: {
-      health: "/health",
-      api: "/api/v1"
-    }
-  });
-});
+// Uptime / status pings. Kept minimal and exempt from rate limiting (see above).
+server.get('/', (req, res) => res.status(200).send('OK'));
 
 server.get("/health", (req, res) => {
   res.json({ 
