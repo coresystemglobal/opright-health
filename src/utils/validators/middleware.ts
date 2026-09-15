@@ -47,7 +47,16 @@ export const validateQuery = (schema: Joi.ObjectSchema) => {
       });
     }
 
-    req.query = value;
+    // Express 5 exposes req.query via a getter-only accessor, so a plain
+    // assignment throws "Cannot set property query". Define an own data
+    // property that shadows the prototype getter instead, so downstream
+    // handlers read the validated/coerced value.
+    Object.defineProperty(req, 'query', {
+      value,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
     next();
   };
 };
