@@ -558,6 +558,9 @@ export const POLICY: PolicyEntry[] = [
 
   // --- /health -----------------------------------------------------
   { m: 'GET',    p: '/health',                                           perm: PUBLIC, tenant: 'none' },
+  // HEAD is used by clients as a lightweight connectivity probe (offline
+  // detection). The gate matches on method, so it needs its own entry.
+  { m: 'HEAD',   p: '/health',                                           perm: PUBLIC, tenant: 'none' },
 
   // --- /live -------------------------------------------------------
   { m: 'GET',    p: '/live',                                             perm: PUBLIC, tenant: 'none' },

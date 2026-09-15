@@ -17,7 +17,7 @@ export const SELF = Symbol('policy.self');
 
 export type TenantScope = 'required' | 'optional' | 'none';
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'ALL';
+export type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'ALL';
 
 export interface PolicyEntry {
   /** HTTP method. */
