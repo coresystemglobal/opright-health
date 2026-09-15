@@ -145,7 +145,11 @@ export const authService = {
         email: user.email,
         phone: user.phone,
         verified: user.verified,
-        is_active: user.is_active
+        is_active: user.is_active,
+        // Clients need the tenant to send `x-tenant-id` on tenant-scoped
+        // requests, and the role to drive UI. Both are already known here.
+        tenant_id: user.tenant_id,
+        role: roleName
       };
 
       return {
