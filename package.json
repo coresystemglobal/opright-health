@@ -32,7 +32,9 @@
     "seed": "sequelize-cli db:seed:all",
     "seed:test": "NODE_ENV=test sequelize-cli db:seed:all",
     "db:create:test": "NODE_ENV=test sequelize-cli db:create",
-    "db:drop:test": "NODE_ENV=test sequelize-cli db:drop"
+    "db:drop:test": "NODE_ENV=test sequelize-cli db:drop",
+    "verify:policy": "ts-node -r tsconfig-paths/register src/scripts/verify-policy.ts",
+    "verify:policy:strict": "ts-node -r tsconfig-paths/register src/scripts/verify-policy.ts --strict"
   },
   "dependencies": {
     "@types/aws-sdk": "^0.0.42",
@@ -61,6 +63,7 @@
     "multer": "^2.0.2",
     "nodemailer": "^6.9.7",
     "otplib": "^13.4.1",
+    "path-to-regexp": "^8.2.0",
     "pdfkit": "^0.19.1",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",

@@ -4,6 +4,7 @@ import { RoleType } from '@modules/rbac/role.model';
 import { ValidationUtil } from '@utils/validation.util';
 import { PaginationUtil } from '@utils/pagination.util';
 import { PaginationQuery } from '@appTypes/common.types';
+import { invalidatePrincipal, invalidateRoleMembers } from '@security/permissions';
 
 export const roleService = {
   getAllRoles: async (paginationQuery: PaginationQuery) => {
@@ -102,6 +103,9 @@ export const roleService = {
       }
 
       await role.$set('permissions', permissions);
+      // Permissions are cached per user; without this a grant or revoke does
+      // not take effect until the cache TTL expires.
+      await invalidateRoleMembers(roleId);
       return role;
     } catch (error) {
       console.error('Assign permissions error:', error);
@@ -127,6 +131,7 @@ export const roleService = {
         }
       });
 
+      await invalidateRoleMembers(roleId);
       return { success: true };
     } catch (error) {
       console.error('Remove permissions error:', error);
@@ -192,6 +197,8 @@ export const roleService = {
 
       user.role_id = roleId;
       await user.save();
+      // Drop the caller's cached permissions so the new role applies at once.
+      await invalidatePrincipal(userId);
       return { success: true };
     } catch (error) {
       console.error('Assign role to user error:', error);

@@ -16,6 +16,8 @@ import {
 import { idempotencyMiddleware, cleanupOldSyncLogs } from '../middlewares/idempotency.middleware';
 import { errorTrackingMiddleware } from '../middlewares/error-tracking.middleware';
 import { NotificationService } from '../modules/notifications/notification.service';
+import { accessControl } from '../security/gate';
+import { assertPolicyComplete } from '../security/reconcile';
 
 /**
  * Validate that all critical environment variables are present at startup.
@@ -104,6 +106,9 @@ server.use('/api/v1/payments', paymentRateLimit);
 server.use('/api/v1', apiRateLimit);
 server.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
+  // Status pings must never be throttled - behind a proxy without trust proxy
+  // every caller shares one bucket, so a monitor would 429 within minutes.
+  if (req.path === '/' || req.path === '/health') return next();
   return generalRateLimit(req, res, next);
 });
 
@@ -113,17 +118,8 @@ server.use('/api/v1', (req, res, next) => {
   return idempotencyMiddleware(req, res, next);
 });
 
-server.get("/", (req, res) => {
-  res.json({ 
-    message: "Hospital Management System API",
-    version: "1.0.0",
-    documentation: "/api-docs",
-    endpoints: {
-      health: "/health",
-      api: "/api/v1"
-    }
-  });
-});
+// Uptime / status pings. Kept minimal and exempt from rate limiting (see above).
+server.get('/', (req, res) => res.status(200).send('OK'));
 
 server.get("/health", (req, res) => {
   res.json({ 
@@ -134,7 +130,28 @@ server.get("/health", (req, res) => {
   });
 });
 
-server.use('/api/v1', router);
+// ── Access control ─────────────────────────────────────────────────────────
+// Deny-by-default. Every route under /api/v1 must have an entry in
+// src/security/policy.ts; anything else is refused (403 NO_POLICY). This
+// replaces per-route authentication/checkPermission as the authority — those
+// can stay in place harmlessly during migration and be removed afterwards.
+//
+// Set POLICY_MODE=report to log would-be denials without enforcing, which is
+// how to roll this out safely. Default is enforce.
+server.use('/api/v1', accessControl, router);
+
+// ── 404 catch-all ──────────────────────────────────────────────────────────
+// Any request that matched no route above lands here. Online scanners probe
+// random paths (/wp-login.php, /.env, /admin, …); answer them with a small
+// JSON 404 instead of Express's default HTML error page. Kept quiet on purpose
+// — this is expected background noise, not an application error worth logging.
+server.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Not found',
+    error: 'NOT_FOUND',
+  });
+});
 
 // Log errors and fire Slack alerts for high/critical severity
 server.use(errorTrackingMiddleware);
@@ -267,6 +284,13 @@ function scheduleReportRunner() {
 const startServer = async () => {
   // Fail fast if required secrets are missing
   validateRequiredEnvVars();
+
+  // Fail fast if any route is reachable without a declared access policy.
+  // This is the guarantee that a new route cannot be added without an
+  // authorisation decision being made for it.
+  assertPolicyComplete(router, {
+    strict: process.env.POLICY_STRICT === 'true',
+  });
 
   try {
     await sequelize.authenticate();

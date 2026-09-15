@@ -53,7 +53,12 @@ export class ValidationUtil {
    * Validate UUID format
    */
   static isValidUUID(uuid: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    // Accept any canonical UUID string (8-4-4-4-12 hex), matching what the
+    // Postgres UUID column itself accepts. A strict RFC-4122 v1–5 check (which
+    // pins the version and variant nibbles) rejected legitimately-stored ids
+    // such as the seed's `b0000000-0000-0000-0000-000000000005`, producing
+    // spurious "Invalid ID format" 500s on routes like /patients/me.
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
 

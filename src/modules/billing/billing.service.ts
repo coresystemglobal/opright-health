@@ -88,7 +88,13 @@ export class BillingService {
     const email = tenant.billing_email || tenant.contact_email;
     await this.getOrCreatePaystackCustomer(tenant);
 
-    const init: any = await paystack.initializeSubscription(email, planCode, { tenant_id: tenantId, plan_type: planType, billing_cycle: billingCycle });
+    const init: any = await paystack.initializeSubscription(email, planCode, {
+      application_id: process.env.APPLICATION_ID || 'com.coresystemglobal.hms',
+      transaction_purpose: 'subscription',
+      tenant_id: tenantId,
+      plan_type: planType,
+      billing_cycle: billingCycle
+    });
     if (init.statusCode !== 200) throw new Error(init.message || 'Failed to initialize subscription checkout');
 
     const now = new Date();

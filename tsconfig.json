@@ -35,7 +35,8 @@
       "@middlewares/*": ["./src/middlewares/*"],
       "@config/*":      ["./src/config/*"],
       "@utils/*":       ["./src/utils/*"],
-      "@appTypes/*":    ["./src/types/*"]
+      "@appTypes/*":    ["./src/types/*"],
+      "@security/*":    ["./src/security/*"]
     }
   },
   "include": [

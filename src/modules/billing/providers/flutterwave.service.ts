@@ -1,6 +1,8 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { PaymentRequestData } from '@appTypes/payment.types';
+import { applicationId } from '@config/application.config';
+import { timingSafeEqualStr } from '@utils/secure-compare.util';
 
 // Define types for Flutterwave responses
 interface FlutterwaveSuccessResponse {
@@ -62,7 +64,12 @@ class FlutterwavePaymentProcessor {
           description: 'Payment for medical services'
         },
         meta: {
-          payment_provider: 'flutterwave'
+          payment_provider: 'flutterwave',
+          ...((paymentData as any).metadata ?? {}),
+          // Stamped LAST so caller-supplied metadata cannot overwrite it: the
+          // payment account is shared across Opright applications and inbound
+          // webhooks are routed on this value.
+          application_id: applicationId()
         }
       };
 
@@ -203,8 +210,25 @@ class FlutterwavePaymentProcessor {
   async handleWebhookEvent(signature: string, rawBody: string) {
     try {
       const secretHash = process.env.FLUTTERWAVE_WEBHOOK_HASH;
-      
-      if (signature !== secretHash) {
+
+      // Fail CLOSED when the secret is not configured (audit finding H-3).
+      // The previous `signature !== secretHash` compared two `undefined`s when
+      // the env var was unset and the caller omitted the verif-hash header,
+      // which evaluates to false and ADMITTED the request — accepting forged
+      // charge.completed events and marking payments as settled.
+      if (!secretHash) {
+        console.error(
+          '[flutterwave] FLUTTERWAVE_WEBHOOK_HASH is not configured; rejecting webhook.'
+        );
+        return {
+          statusCode: 500,
+          status: 'error',
+          message: 'Webhook verification is not configured',
+          data: null
+        };
+      }
+
+      if (!signature || !timingSafeEqualStr(signature, secretHash)) {
         return {
           statusCode: 400,
           status: 'error',
@@ -226,6 +250,10 @@ class FlutterwavePaymentProcessor {
           data: {
             transaction_id: event.data.id,
             tx_ref: event.data.tx_ref,
+            // `reference` is the field the shared webhook pipeline keys on.
+            reference: event.data.tx_ref,
+            application_id:
+              event.data.meta?.application_id ?? event.meta?.application_id ?? null,
             amount: event.data.amount,
             currency: event.data.currency,
             status: event.data.status,

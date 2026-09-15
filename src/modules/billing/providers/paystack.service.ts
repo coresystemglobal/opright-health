@@ -1,6 +1,8 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { PaymentRequestData } from '@appTypes/payment.types';
+import { applicationId } from '@config/application.config';
+import { timingSafeEqualStr } from '@utils/secure-compare.util';
 
 // Define types for Paystack responses
 interface PaystackSuccessResponse {
@@ -63,7 +65,10 @@ class PaystackPaymentProcessor {
           custom_fields: [
             { display_name: 'Platform', variable_name: 'platform', value: 'MediCore HMS' }
           ],
-          ...(paymentData as any).metadata
+          ...(paymentData as any).metadata,
+          // Stamped LAST so caller-supplied metadata can never overwrite it:
+          // the shared Paystack account routes webhooks on this value.
+          application_id: applicationId()
         }
       };
 
@@ -161,7 +166,8 @@ class PaystackPaymentProcessor {
         .update(rawBody)
         .digest('hex');
 
-      if (hash !== signature) {
+      // Constant-time: a plain !== leaks how much of the digest matched.
+      if (!timingSafeEqualStr(hash, signature)) {
         return {
           statusCode: 400,
           status: 'error',
@@ -174,7 +180,6 @@ class PaystackPaymentProcessor {
       
       switch (event.event) {
         case 'charge.success':
-          // Handle successful payment
           return {
             statusCode: 200,
             status: 'success',
@@ -184,6 +189,11 @@ class PaystackPaymentProcessor {
               amount: event.data.amount / 100,
               status: event.data.status,
               channel: event.data.channel,
+              application_id: event.data.metadata?.application_id || null,
+              transaction_purpose: event.data.metadata?.transaction_purpose || null,
+              invoice_id: event.data.metadata?.invoice_id || null,
+              appointment_id: event.data.metadata?.appointment_id || null,
+              created_by: event.data.metadata?.created_by || null,
               metadata: event.data.metadata
             }
           };
@@ -198,7 +208,8 @@ class PaystackPaymentProcessor {
               reference: event.data.reference,
               amount: event.data.amount / 100,
               status: event.data.status,
-              channel: event.data.channel
+              channel: event.data.channel,
+              application_id: event.data.metadata?.application_id || null
             }
           };
 
