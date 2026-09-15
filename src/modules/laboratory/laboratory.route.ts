@@ -85,14 +85,14 @@ laboratoryRouter.post("/orders",
 );
 
 laboratoryRouter.get("/orders/:orderId",
-  validateParams(genericValidation.id),
+  validateParams(genericValidation.orderId),
   async (req: ExpressRequest, res: Response) => {
     await laboratoryController.getTestOrder(req, res);
   }
 );
 
 laboratoryRouter.get("/orders/patient/:patientId",
-  validateParams(genericValidation.id),
+  validateParams(genericValidation.patientId),
   validateQuery(laboratoryValidation.searchOrders),
   async (req: ExpressRequest, res: Response) => {
     await laboratoryController.getPatientTestOrders(req, res);
@@ -100,7 +100,7 @@ laboratoryRouter.get("/orders/patient/:patientId",
 );
 
 laboratoryRouter.get("/orders/doctor/:doctorId",
-  validateParams(genericValidation.id),
+  validateParams(genericValidation.doctorId),
   validateQuery(laboratoryValidation.searchOrders),
   async (req: ExpressRequest, res: Response) => {
     await laboratoryController.getDoctorTestOrders(req, res);
