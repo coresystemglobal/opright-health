@@ -140,6 +140,19 @@ server.get("/health", (req, res) => {
 // how to roll this out safely. Default is enforce.
 server.use('/api/v1', accessControl, router);
 
+// ── 404 catch-all ──────────────────────────────────────────────────────────
+// Any request that matched no route above lands here. Online scanners probe
+// random paths (/wp-login.php, /.env, /admin, …); answer them with a small
+// JSON 404 instead of Express's default HTML error page. Kept quiet on purpose
+// — this is expected background noise, not an application error worth logging.
+server.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Not found',
+    error: 'NOT_FOUND',
+  });
+});
+
 // Log errors and fire Slack alerts for high/critical severity
 server.use(errorTrackingMiddleware);
 
